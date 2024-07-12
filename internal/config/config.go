@@ -21,6 +21,7 @@ var (
 
 type Config struct {
 	LogLevel string `mapstructure:"log_level"`
+	Capture  Capture
 }
 
 func init() {
@@ -45,6 +46,11 @@ func LoadConfig() error {
 	// flag 优先
 	if *LogLevel != Cfg.LogLevel {
 		Cfg.LogLevel = *LogLevel
+	}
+
+	// Default Setting
+	if Cfg.Capture.SnapLen == 0 {
+		Cfg.Capture.SnapLen = 16 << 10
 	}
 	return nil
 
