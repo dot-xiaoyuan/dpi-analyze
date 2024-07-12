@@ -52,22 +52,15 @@ func main() {
 
 	select {
 	case <-done:
-		closed := assembly.Assembler.FlushAll()
-		assembly.Factory.WaitGoRoutines()
-		log.Printf("Flushed %d streams\n", closed)
-	}
-	go func() {
-		<-signalChan
-		log.Println("Received an interrupt, stopping analysis...")
-
 		cancel()
-		<-done
-		log.Println("Flushing and waiting for goroutines")
 		closed := assembly.Assembler.FlushAll()
 		assembly.Factory.WaitGoRoutines()
 		log.Printf("Flushed %d streams\n", closed)
-
+	case <-signalChan:
+		cancel()
+		log.Println("Received an interrupt, stopping analysis...")
 		time.Sleep(time.Second)
 		os.Exit(0)
-	}()
+	}
+
 }
