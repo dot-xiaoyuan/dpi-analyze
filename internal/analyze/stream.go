@@ -2,10 +2,10 @@ package analyze
 
 import (
 	"fmt"
-	"github.com/dot-xiaoyuan/dpi-analyze/internal/logger"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/reassembly"
+	"go.uber.org/zap"
 	"sync"
 )
 
@@ -37,7 +37,7 @@ func (s *Stream) Accept(tcp *layers.TCP, ci gopacket.CaptureInfo, dir reassembly
 	// Options
 	err := s.optChecker.Accept(tcp, ci, dir, nextSeq, start)
 	if err != nil {
-		logger.Error(fmt.Sprintf("OptionChecker %s: Packet rejected by OptionChecker: %s", s.ident, err))
+		zap.L().Error(fmt.Sprintf("OptionChecker %s: Packet rejected by OptionChecker: %s", s.ident, err))
 		//stats.rejectOpt++
 		//if !*nooptcheck {
 		//	return false
@@ -95,7 +95,7 @@ func (s *Stream) ReassembledSG(sg reassembly.ScatterGather, ac reassembly.Assemb
 	} else {
 		ident = fmt.Sprintf("%v %v(%s): ", s.net.Reverse(), s.transport.Reverse(), dir)
 	}
-	logger.Debug(fmt.Sprintf("%s: SG reassembled packet with %d bytes (start:%v,end:%v,skip:%d,saved:%d,nb:%d,%d,overlap:%d,%d)\n", ident, length, start, end, skip, saved, sgStats.Packets, sgStats.Chunks, sgStats.OverlapBytes, sgStats.OverlapPackets))
+	zap.L().Debug(fmt.Sprintf("%s: SG reassembled packet with %d bytes (start:%v,end:%v,skip:%d,saved:%d,nb:%d,%d,overlap:%d,%d)\n", ident, length, start, end, skip, saved, sgStats.Packets, sgStats.Chunks, sgStats.OverlapBytes, sgStats.OverlapPackets))
 	//if skip == -1 && *allowMissingInit {
 	//	// this is allowed
 	//} else if skip != 0 {
@@ -139,7 +139,7 @@ func (s *Stream) ReassembledSG(sg reassembly.ScatterGather, ac reassembly.Assemb
 }
 
 func (s *Stream) ReassemblyComplete(ac reassembly.AssemblerContext) bool {
-	logger.Debug(fmt.Sprintf("%s: Connection closed", s.ident))
+	zap.L().Debug(fmt.Sprintf("%s: Connection closed", s.ident))
 	close(s.client.bytes)
 	close(s.server.bytes)
 	return false

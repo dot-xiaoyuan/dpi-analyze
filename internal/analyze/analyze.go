@@ -1,11 +1,11 @@
 package analyze
 
 import (
-	"github.com/dot-xiaoyuan/dpi-analyze/internal/logger"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/reassembly"
+	"go.uber.org/zap"
 	"time"
 )
 
@@ -33,7 +33,7 @@ func NewAnalyzer() *Analyze {
 	streamPool := reassembly.NewStreamPool(streamFactory)
 	assembler := reassembly.NewAssembler(streamPool)
 
-	logger.Info("Analyze initialized")
+	zap.L().Info("Analyze initialized")
 
 	return &Analyze{
 		Assembler: assembler,

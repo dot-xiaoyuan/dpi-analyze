@@ -75,23 +75,3 @@ func parseLogLevel(level string) zapcore.Level {
 		return zapcore.InfoLevel
 	}
 }
-
-// Info 记录信息级别日志
-func Info(msg string, fields ...zap.Field) {
-	logger.Info(msg, fields...)
-}
-
-// Error 记录错误级别日志
-func Error(msg string, fields ...zap.Field) {
-	logger.Error(msg, fields...)
-}
-
-// Debug 记录调试级别日志
-func Debug(msg string, fields ...zap.Field) {
-	logger.Debug(msg, fields...)
-}
-
-// Warn 记录警告级别日志
-func Warn(msg string, fields ...zap.Field) {
-	logger.Warn(msg, fields...)
-}
