@@ -41,11 +41,11 @@ func StartCapture(ctx context.Context, c Config, handler PacketHandler, done cha
 		logger.Info("pcap open live ", zap.String("Nic", c.Nic), zap.Error(Err))
 	}
 
-	defer Handle.Close()
-
 	if Err != nil {
 		panic(Err)
 	}
+
+	defer Handle.Close()
 
 	decoderName := fmt.Sprintf("%s", Handle.LinkType())
 	if Decoder, OK = gopacket.DecodersByLayerName[decoderName]; !OK {

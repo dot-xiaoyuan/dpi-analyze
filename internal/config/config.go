@@ -14,6 +14,7 @@ var (
 	Env      = flag.StringP("env", "e", EnvProductionMode, "environment name")
 	File     = flag.StringP("config", "c", DevConfigFilename, "path to the config file")
 	LogLevel = flag.StringP("log_level", "l", "info", "Log level")
+	PcapFile = flag.StringP("pcap_file", "p", "", "path to the pcap file")
 	Cfg      *Config
 )
 
@@ -46,6 +47,10 @@ func LoadConfig() error {
 	// flag 优先
 	if *LogLevel != Cfg.LogLevel {
 		Cfg.LogLevel = *LogLevel
+	}
+
+	if len(*PcapFile) > 0 {
+		Cfg.Capture.OfflineFile = *PcapFile
 	}
 
 	// Default Setting

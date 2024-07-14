@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/analyze"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/config"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/logger"
@@ -17,13 +18,13 @@ var ()
 
 func main() {
 	log.SetOutput(os.Stdout)
-	//defer func() {
-	//	if err := recover(); err != nil {
-	//		log.Printf("PANIC : %v", err)
-	//		fmt.Println("发生严重错误，请联系支持人员。")
-	//		os.Exit(1)
-	//	}
-	//}()
+	defer func() {
+		if err := recover(); err != nil {
+			log.Printf("PANIC : %v", err)
+			fmt.Println("发生严重错误，请联系支持人员。")
+			os.Exit(1)
+		}
+	}()
 
 	// 加载配置
 	err := config.LoadConfig()
@@ -40,7 +41,7 @@ func main() {
 	// Packet Capture
 	assembly := analyze.NewAnalyzer()
 	done := make(chan struct{})
-	capture.StartCapture(ctx, capture.Config{
+	go capture.StartCapture(ctx, capture.Config{
 		OffLine: config.Cfg.Capture.OfflineFile,
 		Nic:     config.Cfg.Capture.NIC,
 		SnapLen: config.Cfg.Capture.SnapLen,
