@@ -33,7 +33,7 @@ func InitLogger(logLevel string) {
 	)
 
 	// make zap Log
-	logger = zap.New(core, zap.AddCaller())
+	logger = zap.New(core, zap.AddCaller(), zap.AddStacktrace(zap.PanicLevel))
 
 	zap.ReplaceGlobals(logger)
 }

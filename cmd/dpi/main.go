@@ -1,12 +1,20 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"github.com/dot-xiaoyuan/dpi-analyze/internal/analyze"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/config"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/logger"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 )
+
+var ()
 
 func main() {
 	log.SetOutput(os.Stdout)
@@ -26,4 +34,34 @@ func main() {
 
 	// 加载日志
 	logger.InitLogger(config.Cfg.LogLevel)
+
+	// Make Context
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// Packet Capture
+	assembly := analyze.NewAnalyzer()
+	done := make(chan struct{})
+	go capture.StartCapture(ctx, capture.Config{
+		OffLine: config.Cfg.Capture.OfflineFile,
+		Nic:     config.Cfg.Capture.NIC,
+		SnapLen: config.Cfg.Capture.SnapLen,
+	}, assembly, done)
+
+	// 信号阻塞
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
+
+	select {
+	case <-done:
+		cancel()
+		closed := assembly.Assembler.FlushAll()
+		assembly.Factory.WaitGoRoutines()
+		log.Printf("Flushed %d streams\n", closed)
+	case <-signalChan:
+		cancel()
+		log.Println("Received an interrupt, stopping analysis...")
+		time.Sleep(time.Second)
+		os.Exit(0)
+	}
+
 }
