@@ -2,7 +2,6 @@ package analyze
 
 import (
 	"bufio"
-	"github.com/dot-xiaoyuan/dpi-analyze/internal/logger"
 	"go.uber.org/zap"
 	"io"
 	"sync"
@@ -53,7 +52,7 @@ func (sr *StreamReader) run(wg *sync.WaitGroup) {
 			if err == io.EOF {
 				break
 			}
-			logger.Debug("Error reading stream: %s", zap.Error(err))
+			zap.L().Debug("Error reading stream: %s", zap.Error(err))
 			continue
 		}
 		buffer = append(buffer, data[:n]...)
@@ -62,14 +61,14 @@ func (sr *StreamReader) run(wg *sync.WaitGroup) {
 			if sr.Protocol != "unknown" {
 				handler = sr.Handlers[sr.Protocol]
 				protocolIdentified = true
-				logger.Debug("Protocol identified: %v", zap.String("protocol", sr.Protocol))
+				zap.L().Debug("Protocol identified: %v", zap.String("protocol", sr.Protocol))
 			}
 		}
 
 		if handler != nil {
 			handler.HandleData(buffer, sr)
 		} else {
-			logger.Debug("no handler for Protocol: %v", zap.String("protocol", sr.Protocol))
+			zap.L().Debug("no handler for Protocol: %v", zap.String("protocol", sr.Protocol))
 		}
 	}
 }
