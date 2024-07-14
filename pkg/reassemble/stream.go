@@ -1,4 +1,4 @@
-package analyze
+package reassemble
 
 import (
 	"fmt"
@@ -11,19 +11,20 @@ import (
 
 type Stream struct {
 	sync.Mutex
-	client         StreamReader
-	server         StreamReader
-	tcpState       *reassembly.TCPSimpleFSM
-	optChecker     reassembly.TCPOptionCheck
-	net, transport gopacket.Flow
+	Client         StreamReader
+	Server         StreamReader
+	TcpState       *reassembly.TCPSimpleFSM
+	OptChecker     reassembly.TCPOptionCheck
+	Net, Transport gopacket.Flow
 	fsmErr         bool
 	Urls           []string
-	ident          string
+	Ident          string
+	Host           string
 }
 
 func (s *Stream) Accept(tcp *layers.TCP, ci gopacket.CaptureInfo, dir reassembly.TCPFlowDirection, nextSeq reassembly.Sequence, start *bool, ac reassembly.AssemblerContext) bool {
 	// FSM
-	if !s.tcpState.CheckState(tcp, dir) {
+	if !s.TcpState.CheckState(tcp, dir) {
 		//logger.Error("FSM %s: Packet rejected by FSM (state:%s)\n", zap.String("ident", s.ident), zap.String("state", s.tcpState.String()))
 		//stats.rejectFsm++
 		if !s.fsmErr {
@@ -35,9 +36,9 @@ func (s *Stream) Accept(tcp *layers.TCP, ci gopacket.CaptureInfo, dir reassembly
 		//}
 	}
 	// Options
-	err := s.optChecker.Accept(tcp, ci, dir, nextSeq, start)
+	err := s.OptChecker.Accept(tcp, ci, dir, nextSeq, start)
 	if err != nil {
-		zap.L().Error(fmt.Sprintf("OptionChecker %s: Packet rejected by OptionChecker: %s", s.ident, err))
+		zap.L().Error(fmt.Sprintf("OptionChecker %s: Packet rejected by OptionChecker: %s", s.Ident, err))
 		//stats.rejectOpt++
 		//if !*nooptcheck {
 		//	return false
@@ -91,9 +92,9 @@ func (s *Stream) ReassembledSG(sg reassembly.ScatterGather, ac reassembly.Assemb
 
 	var ident string
 	if dir == reassembly.TCPDirClientToServer {
-		ident = fmt.Sprintf("%v %v(%s): ", s.net, s.transport, dir)
+		ident = fmt.Sprintf("%v %v(%s): ", s.Net, s.Transport, dir)
 	} else {
-		ident = fmt.Sprintf("%v %v(%s): ", s.net.Reverse(), s.transport.Reverse(), dir)
+		ident = fmt.Sprintf("%v %v(%s): ", s.Net.Reverse(), s.Transport.Reverse(), dir)
 	}
 	zap.L().Debug(fmt.Sprintf("%s: SG reassembled packet with %d bytes (start:%v,end:%v,skip:%d,saved:%d,nb:%d,%d,overlap:%d,%d)\n", ident, length, start, end, skip, saved, sgStats.Packets, sgStats.Chunks, sgStats.OverlapBytes, sgStats.OverlapPackets))
 	//if skip == -1 && *allowMissingInit {
@@ -131,16 +132,16 @@ func (s *Stream) ReassembledSG(sg reassembly.ScatterGather, ac reassembly.Assemb
 	//}
 	if length > 0 {
 		if dir == reassembly.TCPDirClientToServer {
-			s.client.bytes <- data
+			s.Client.Bytes <- data
 		} else {
-			s.server.bytes <- data
+			s.Server.Bytes <- data
 		}
 	}
 }
 
 func (s *Stream) ReassemblyComplete(ac reassembly.AssemblerContext) bool {
-	zap.L().Debug(fmt.Sprintf("%s: Connection closed", s.ident))
-	close(s.client.bytes)
-	close(s.server.bytes)
+	zap.L().Debug(fmt.Sprintf("%s: Connection closed", s.Ident))
+	close(s.Client.Bytes)
+	close(s.Server.Bytes)
 	return false
 }
