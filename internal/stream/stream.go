@@ -1,4 +1,4 @@
-package reassemble
+package stream
 
 import (
 	"fmt"
@@ -130,6 +130,7 @@ func (s *Stream) ReassembledSG(sg reassembly.ScatterGather, ac reassembly.Assemb
 
 func (s *Stream) ReassemblyComplete(ac reassembly.AssemblerContext) bool {
 	zap.L().Debug("Connection Closed", zap.String("ident", s.Ident))
+	// 在重组结束时存储
 	close(s.Client.Bytes)
 	close(s.Server.Bytes)
 	return false

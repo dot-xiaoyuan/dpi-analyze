@@ -1,14 +1,14 @@
 package protocol
 
 import (
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/reassemble"
+	"github.com/dot-xiaoyuan/dpi-analyze/internal/stream"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/utils"
 	"go.uber.org/zap"
 )
 
 type TLSHandler struct{}
 
-func (TLSHandler) HandleData(data []byte, sr *reassemble.StreamReader) {
+func (TLSHandler) HandleData(data []byte, sr *stream.StreamReader) {
 	if len(data) < 5 {
 		return
 	}

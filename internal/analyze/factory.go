@@ -2,13 +2,15 @@ package analyze
 
 import (
 	"fmt"
+	stream2 "github.com/dot-xiaoyuan/dpi-analyze/internal/stream"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocol"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/reassemble"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/reassembly"
 	"sync"
 )
+
+// TCP 流重组工厂实现
 
 type Factory struct {
 	wg sync.WaitGroup
@@ -19,7 +21,7 @@ func (f *Factory) New(netFlow, tcpFlow gopacket.Flow, tcp *layers.TCP, ac reasse
 		SupportMissingEstablishment: false, // 允许缺失 SYN、SYN+ACK、ACK
 	}
 
-	stream := &reassemble.Stream{
+	stream := &stream2.Stream{
 		Net:        netFlow,
 		Transport:  tcpFlow,
 		TcpState:   reassembly.NewTCPSimpleFSM(fsmOptions),
@@ -27,27 +29,27 @@ func (f *Factory) New(netFlow, tcpFlow gopacket.Flow, tcp *layers.TCP, ac reasse
 		OptChecker: reassembly.NewTCPOptionCheck(),
 	}
 
-	stream.Client = reassemble.StreamReader{
+	stream.Client = stream2.StreamReader{
 		Bytes:    make(chan []byte),
 		Ident:    fmt.Sprintf("%s %s", netFlow, tcpFlow),
 		Parent:   stream,
 		IsClient: true,
 		SrcPort:  tcpFlow.Src().String(),
 		DstPort:  tcpFlow.Dst().String(),
-		Handlers: map[string]reassemble.ProtocolHandler{
+		Handlers: map[string]stream2.ProtocolHandler{
 			"http": &protocol.HTTPHandler{},
 			"tls":  &protocol.TLSHandler{},
 		},
 	}
 
-	stream.Server = reassemble.StreamReader{
+	stream.Server = stream2.StreamReader{
 		Bytes:    make(chan []byte),
 		Ident:    fmt.Sprintf("%s %s", netFlow.Reverse(), tcpFlow.Reverse()),
 		Parent:   stream,
 		IsClient: false,
 		SrcPort:  tcpFlow.Reverse().Src().String(),
 		DstPort:  tcpFlow.Reverse().Dst().String(),
-		Handlers: map[string]reassemble.ProtocolHandler{
+		Handlers: map[string]stream2.ProtocolHandler{
 			"http": &protocol.HTTPHandler{},
 			"tls":  &protocol.TLSHandler{},
 		},

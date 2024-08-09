@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/reassemble"
+	"github.com/dot-xiaoyuan/dpi-analyze/internal/stream"
 	"go.uber.org/zap"
 	"io"
 	"io/ioutil"
@@ -14,7 +14,7 @@ import (
 
 type HTTPHandler struct{}
 
-func (HTTPHandler) HandleData(data []byte, sr *reassemble.StreamReader) {
+func (HTTPHandler) HandleData(data []byte, sr *stream.StreamReader) {
 	r := bufio.NewReader(bytes.NewReader(data))
 	for {
 		if sr.IsClient {
