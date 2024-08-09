@@ -11,26 +11,39 @@ import (
 
 type Stream struct {
 	sync.Mutex
-	Client         StreamReader
-	Server         StreamReader
-	TcpState       *reassembly.TCPSimpleFSM
-	OptChecker     reassembly.TCPOptionCheck
-	Net, Transport gopacket.Flow
-	fsmErr         bool
-	Urls           []string
-	Ident          string
-	Host           string
+	Client              StreamReader
+	Server              StreamReader
+	TcpState            *reassembly.TCPSimpleFSM
+	OptChecker          reassembly.TCPOptionCheck
+	Net, Transport      gopacket.Flow
+	fsmErr              bool
+	Urls                []string
+	Ident               string
+	Host                string
+	RejectFSM           int // FSM (Finite State Machine)有限状态机
+	RejectConnFsm       int
+	RejectOpt           int
+	MissBytes           int
+	Sz                  int
+	Pkt                 int
+	Reassembled         int
+	OutOfOrderPackets   int
+	OutOfOrderBytes     int
+	BiggestChunkBytes   int
+	BiggestChunkPackets int
+	OverlapBytes        int
+	OverlapPackets      int
 }
 
 func (s *Stream) Accept(tcp *layers.TCP, ci gopacket.CaptureInfo, dir reassembly.TCPFlowDirection, nextSeq reassembly.Sequence, start *bool, ac reassembly.AssemblerContext) bool {
 	// FSM
 	if !s.TcpState.CheckState(tcp, dir) {
-		//logger.Error("FSM %s: Packet rejected by FSM (state:%s)\n", zap.String("ident", s.ident), zap.String("state", s.tcpState.String()))
-		//stats.rejectFsm++
+		s.RejectFSM++
 		if !s.fsmErr {
 			s.fsmErr = true
-			//stats.rejectConnFsm++
+			s.RejectConnFsm++
 		}
+		//return false
 		//if !*ignorefsmerr {
 		//	return false
 		//}
@@ -38,28 +51,27 @@ func (s *Stream) Accept(tcp *layers.TCP, ci gopacket.CaptureInfo, dir reassembly
 	// Options
 	err := s.OptChecker.Accept(tcp, ci, dir, nextSeq, start)
 	if err != nil {
-		zap.L().Error(fmt.Sprintf("OptionChecker %s: Packet rejected by OptionChecker: %s", s.Ident, err))
-		//stats.rejectOpt++
+		s.RejectOpt++
 		//if !*nooptcheck {
 		//	return false
 		//}
 	}
 	// Checksum
-	accept := true
-	//if *checksum {
-	//	c, err := tcp.ComputeChecksum()
-	//	if err != nil {
-	//		Error("ChecksumCompute", "%s: Got error computing checksum: %s\n", s.ident, err)
-	//		accept = false
-	//	} else if c != 0x0 {
-	//		Error("Checksum", "%s: Invalid checksum: 0x%x\n", s.ident, c)
-	//		accept = false
-	//	}
+	// TODO 是否需要校验 checksum
+	return true
+	//accept := true
+	//c, err := tcp.ComputeChecksum()
+	//if err != nil {
+	//	zap.L().Debug("Failed to compute checksum", zap.Error(err))
+	//	accept = false
+	//} else if c != 0x0 {
+	//	zap.L().Debug("Checksum Invalid checksum", zap.Uint16("checksum", c))
+	//	accept = false
 	//}
-	if !accept {
-		//stats.rejectOpt++
-	}
-	return accept
+	//if !accept {
+	//	s.RejectOpt++
+	//}
+	//return accept
 }
 
 func (s *Stream) ReassembledSG(sg reassembly.ScatterGather, ac reassembly.AssemblerContext) {
@@ -68,27 +80,27 @@ func (s *Stream) ReassembledSG(sg reassembly.ScatterGather, ac reassembly.Assemb
 	// update stats
 	sgStats := sg.Stats()
 	if skip > 0 {
-		// stats.missedBytes += skip // 丢失字节
+		s.MissBytes += skip // 丢失字节
 	}
-	//stats.sz += length - saved
-	//stats.pkt += sgStats.Packets
+	s.Sz += length - saved
+	s.Pkt += sgStats.Packets
 	if sgStats.Chunks > 1 {
-		//stats.reassembled++ // 重组包数
+		s.Reassembled++ // 重组包数
 	}
-	//stats.outOfOrderPackets += sgStats.QueuedPackets
-	//stats.outOfOrderBytes += sgStats.QueuedBytes
-	//if length > stats.biggestChunkBytes {
-	//	stats.biggestChunkBytes = length // 最大区块字节数
-	//}
-	//if sgStats.Packets > stats.biggestChunkPackets {
-	//	stats.biggestChunkPackets = sgStats.Packets // 最大区块包数
-	//}
+	s.OutOfOrderPackets += sgStats.QueuedPackets
+	s.OutOfOrderBytes += sgStats.QueuedBytes
+	if length > s.BiggestChunkBytes {
+		s.BiggestChunkBytes = length // 最大区块字节数
+	}
+	if sgStats.Packets > s.BiggestChunkPackets {
+		s.BiggestChunkPackets = sgStats.Packets // 最大区块包数
+	}
 	if sgStats.OverlapBytes != 0 && sgStats.OverlapPackets == 0 {
-		fmt.Printf("bytes:%d, pkts:%d\n", sgStats.OverlapBytes, sgStats.OverlapPackets)
-		//panic("Invalid overlap")
+		// fmt.Printf("bytes:%d, pkts:%d\n", sgStats.OverlapBytes, sgStats.OverlapPackets)
+		// panic("Invalid overlap")
 	}
-	//stats.overlapBytes += sgStats.OverlapBytes // 重叠字节数
-	//stats.overlapPackets += sgStats.OverlapPackets // 重叠包数
+	s.OverlapBytes += sgStats.OverlapBytes     // 重叠字节数
+	s.OverlapPackets += sgStats.OverlapPackets // 重叠包数
 
 	var ident string
 	if dir == reassembly.TCPDirClientToServer {
@@ -103,33 +115,10 @@ func (s *Stream) ReassembledSG(sg reassembly.ScatterGather, ac reassembly.Assemb
 	//	// Missing bytes in stream: do not even try to parse it
 	//	return
 	//}
+	if skip != 0 {
+		return
+	}
 	data := sg.Fetch(length)
-	//dns := &layers.DNS{}
-	//var decoded []gopacket.LayerType
-	//if len(data) < 2 {
-	//	if len(data) > 0 {
-	//		sg.KeepFrom(0)
-	//	}
-	//	return
-	//}
-	//dnsSize := binary.BigEndian.Uint16(data[:2])
-	//missing := int(dnsSize) - len(data[2:])
-	//Debug("dnsSize: %d, missing: %d\n", dnsSize, missing)
-	//if missing > 0 {
-	//	Info("Missing some bytes: %d\n", missing)
-	//	sg.KeepFrom(0)
-	//	return
-	//}
-	//p := gopacket.NewDecodingLayerParser(layers.LayerTypeDNS, dns)
-	//err := p.DecodeLayers(data[2:], &decoded)
-	//if err != nil {
-	//	Error("DNS-parser", "Failed to decode DNS: %v\n", err)
-	//} else {
-	//	Debug("DNS: %s\n", gopacket.LayerDump(dns))
-	//}
-	//if len(data) > 2+int(dnsSize) {
-	//	sg.KeepFrom(2 + int(dnsSize))
-	//}
 	if length > 0 {
 		if dir == reassembly.TCPDirClientToServer {
 			s.Client.Bytes <- data
@@ -140,7 +129,7 @@ func (s *Stream) ReassembledSG(sg reassembly.ScatterGather, ac reassembly.Assemb
 }
 
 func (s *Stream) ReassemblyComplete(ac reassembly.AssemblerContext) bool {
-	zap.L().Debug(fmt.Sprintf("%s: Connection closed", s.Ident))
+	zap.L().Debug("Connection Closed", zap.String("ident", s.Ident))
 	close(s.Client.Bytes)
 	close(s.Server.Bytes)
 	return false

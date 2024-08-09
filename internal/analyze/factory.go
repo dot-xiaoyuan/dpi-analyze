@@ -35,8 +35,8 @@ func (f *Factory) New(netFlow, tcpFlow gopacket.Flow, tcp *layers.TCP, ac reasse
 		SrcPort:  tcpFlow.Src().String(),
 		DstPort:  tcpFlow.Dst().String(),
 		Handlers: map[string]reassemble.ProtocolHandler{
-			//"http": &protocol.HTTPHandler{},
-			"tls": &protocol.TLSHandler{},
+			"http": &protocol.HTTPHandler{},
+			"tls":  &protocol.TLSHandler{},
 		},
 	}
 
@@ -48,8 +48,8 @@ func (f *Factory) New(netFlow, tcpFlow gopacket.Flow, tcp *layers.TCP, ac reasse
 		SrcPort:  tcpFlow.Reverse().Src().String(),
 		DstPort:  tcpFlow.Reverse().Dst().String(),
 		Handlers: map[string]reassemble.ProtocolHandler{
-			//"http": &protocol.HTTPHandler{},
-			"tls": &protocol.TLSHandler{},
+			"http": &protocol.HTTPHandler{},
+			"tls":  &protocol.TLSHandler{},
 		},
 	}
 

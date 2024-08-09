@@ -101,6 +101,9 @@ func GetServerExtensionName(data []byte) string {
 			}
 		}
 		pos += 4 + extensionItemLen
+		if pos >= dataLen {
+			return ""
+		}
 	}
 	return ""
 }

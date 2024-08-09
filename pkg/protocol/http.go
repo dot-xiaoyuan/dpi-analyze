@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/reassemble"
+	"go.uber.org/zap"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -30,7 +31,7 @@ func (HTTPHandler) HandleData(data []byte, sr *reassemble.StreamReader) {
 			//Error("HTTP-request-body", "Got body err: %s\n", err)
 			//}
 			req.Body.Close()
-			fmt.Printf("HTTP/%s Request: %s %s (body:%d)\n", sr.Ident, req.Method, req.URL, s)
+			zap.L().Debug("HTTP Request", zap.String("method", req.Method), zap.String("url", req.URL.String()), zap.Int("body", s))
 			sr.Parent.Lock()
 			sr.Parent.Urls = append(sr.Parent.Urls, req.URL.String())
 			sr.Parent.Unlock()
@@ -51,7 +52,8 @@ func (HTTPHandler) HandleData(data []byte, sr *reassemble.StreamReader) {
 				continue
 			}
 			res.Body.Close()
-			fmt.Println("Response:", req, res.StatusCode)
+			zap.L().Debug("HTTP Req", zap.String("req", req))
+			zap.L().Debug("HTTP Response", zap.Int("status code", res.StatusCode))
 		}
 	}
 }

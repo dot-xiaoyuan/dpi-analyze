@@ -1,9 +1,9 @@
 package protocol
 
 import (
-	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/reassemble"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/utils"
+	"go.uber.org/zap"
 )
 
 type TLSHandler struct{}
@@ -17,7 +17,7 @@ func (TLSHandler) HandleData(data []byte, sr *reassemble.StreamReader) {
 	if utils.IdentifyClientHello(data) {
 		// is ClientHello
 		if hostname := utils.GetServerExtensionName(data[5:]); hostname != "" {
-			fmt.Println("is ClientHello ================ ", hostname)
+			zap.L().Debug("Client Hello", zap.String("hostname", hostname))
 			sr.Parent.Lock()
 			sr.Parent.Host = hostname
 			sr.Parent.Unlock()

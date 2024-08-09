@@ -15,6 +15,8 @@ var (
 	File     = flag.StringP("config", "c", DevConfigFilename, "path to the config file")
 	LogLevel = flag.StringP("log_level", "l", "info", "Log level")
 	PcapFile = flag.StringP("pcap_file", "p", "", "path to the pcap file")
+	Debug    = flag.BoolP("debug", "d", false, "enable debug mode")
+	Nic      = flag.StringP("nic", "n", "", "network interface")
 	Cfg      *Config
 )
 
@@ -30,6 +32,9 @@ func init() {
 
 	if *File == DevConfigFilename && *Env == EnvProductionMode {
 		*File = ProdConfigFilename
+	}
+	if *Debug {
+		*LogLevel = "debug"
 	}
 }
 
@@ -48,7 +53,12 @@ func LoadConfig() error {
 	if *LogLevel != Cfg.LogLevel {
 		Cfg.LogLevel = *LogLevel
 	}
-
+	// 网卡
+	if len(*Nic) > 0 {
+		Cfg.Capture.OfflineFile = ""
+		Cfg.Capture.NIC = *Nic
+	}
+	// 离线包优先
 	if len(*PcapFile) > 0 {
 		Cfg.Capture.OfflineFile = *PcapFile
 	}
