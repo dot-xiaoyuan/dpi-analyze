@@ -7,14 +7,13 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/config"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/logger"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
+	"go.uber.org/zap"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 )
-
-var ()
 
 func main() {
 	log.SetOutput(os.Stdout)
@@ -29,7 +28,7 @@ func main() {
 	// 加载配置
 	err := config.LoadConfig()
 	if err != nil {
-		panic(err)
+		zap.L().Panic("Load config err", zap.Error(err))
 	}
 
 	// 加载日志

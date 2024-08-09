@@ -1,21 +1,18 @@
-package analyze
+package reassemble
 
 import (
 	"bufio"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/utils"
 	"go.uber.org/zap"
 	"io"
 	"sync"
 )
 
-type ProtocolHandler interface {
-	HandleData(data []byte, reader *StreamReader)
-}
-
 type StreamReader struct {
 	Ident    string
 	Parent   *Stream
 	IsClient bool
-	bytes    chan []byte
+	Bytes    chan []byte
 	data     []byte
 	Protocol string
 	SrcPort  string
@@ -26,7 +23,7 @@ type StreamReader struct {
 func (sr *StreamReader) Read(p []byte) (n int, err error) {
 	ok := true
 	for ok && len(sr.data) == 0 {
-		sr.data, ok = <-sr.bytes
+		sr.data, ok = <-sr.Bytes
 	}
 	if !ok || len(sr.data) == 0 {
 		return 0, io.EOF
@@ -37,7 +34,11 @@ func (sr *StreamReader) Read(p []byte) (n int, err error) {
 	return l, nil
 }
 
-func (sr *StreamReader) run(wg *sync.WaitGroup) {
+type ProtocolHandler interface {
+	HandleData(data []byte, reader *StreamReader)
+}
+
+func (sr *StreamReader) Run(wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	b := bufio.NewReader(sr)
@@ -52,30 +53,23 @@ func (sr *StreamReader) run(wg *sync.WaitGroup) {
 			if err == io.EOF {
 				break
 			}
-			zap.L().Debug("Error reading stream: %s", zap.Error(err))
+			zap.L().Debug("Error reading stream", zap.Error(err))
 			continue
 		}
 		buffer = append(buffer, data[:n]...)
 		if !protocolIdentified {
-			sr.Protocol = identifyProtocol(buffer, sr.SrcPort, sr.DstPort)
+			sr.Protocol = utils.IdentifyProtocol(buffer, sr.SrcPort, sr.DstPort)
 			if sr.Protocol != "unknown" {
 				handler = sr.Handlers[sr.Protocol]
 				protocolIdentified = true
-				zap.L().Debug("Protocol identified: %v", zap.String("protocol", sr.Protocol))
+				zap.L().Debug("Protocol identified", zap.String("protocol", sr.Protocol))
 			}
 		}
 
 		if handler != nil {
 			handler.HandleData(buffer, sr)
 		} else {
-			zap.L().Debug("no handler for Protocol: %v", zap.String("protocol", sr.Protocol))
+			zap.L().Debug("no handler for Protocol", zap.String("protocol", sr.Protocol))
 		}
 	}
-}
-
-func identifyProtocol(buffer []byte, srcPort, dstPort string) string {
-	if srcPort == "80" || dstPort == "80" {
-		return "http"
-	}
-	return "unknown"
 }

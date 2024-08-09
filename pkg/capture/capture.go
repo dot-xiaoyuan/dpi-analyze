@@ -6,6 +6,7 @@ import (
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
 	"go.uber.org/zap"
+	"os"
 )
 
 // 数据包捕获和抓取
@@ -41,7 +42,8 @@ func StartCapture(ctx context.Context, c Config, handler PacketHandler, done cha
 	}
 
 	if Err != nil {
-		panic(Err)
+		zap.L().Error("pcap panic", zap.Error(Err))
+		os.Exit(1)
 	}
 
 	defer Handle.Close()
