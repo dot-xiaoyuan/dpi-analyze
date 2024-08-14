@@ -2,3 +2,6 @@ log_level: debug
 capture:
   offline_file: /Users/yuantong/Documents/Pcap/temp.pcap
   nic:
+mongodb:
+  host: 127.0.0.1
+  port: 27017
