@@ -9,16 +9,26 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "dpi",
-	Short: "dpi CLI command",
-	Run: func(cmd *cobra.Command, args []string) {
+	Use:    "dpi",
+	Short:  "dpi CLI command",
+	PreRun: PreRunFunc,
+	Run:    RunFunc,
+}
 
-	},
+func RunFunc(c *cobra.Command, args []string) {
+	fmt.Println("language:", config.Language)
+	fmt.Println("Run")
+}
+
+// PreRunFunc before run
+func PreRunFunc(c *cobra.Command, args []string) {
+	config.Setup()
+	fmt.Println("PreRun")
 }
 
 func init() {
 	cobra.OnInitialize()
-	rootCmd.AddCommand(config.Cmd)
+	rootCmd.PersistentFlags().StringVarP(&config.Language, "language", "l", "en", "language")
 }
 
 func main() {
