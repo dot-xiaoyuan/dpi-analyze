@@ -15,6 +15,7 @@ var rootCmd = &cobra.Command{
 	Run:    RunFunc,
 }
 
+// RunFunc run
 func RunFunc(c *cobra.Command, args []string) {
 	fmt.Println("language:", config.Language)
 	fmt.Println("Run")
