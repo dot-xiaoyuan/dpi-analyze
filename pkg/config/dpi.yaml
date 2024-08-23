@@ -1,7 +1,10 @@
-log_level: error
+language: zh-CN
+log_level: info
+debug: true
+use_mongo: false
 capture:
   offline_file: /Users/yuantong/Documents/Pcap/temp.pcap
-  nic:
+  nic: en0
 mongodb:
   host: 127.0.0.1
   port: 27017

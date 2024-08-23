@@ -2,6 +2,7 @@ package logger
 
 import (
 	"fmt"
+	"github.com/dot-xiaoyuan/dpi-analyze/internal/config"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -12,7 +13,7 @@ import (
 var logger *zap.Logger
 
 // InitLogger 初始化自定义的 zap 日志记录器
-func InitLogger(logLevel string) {
+func init() {
 	// 日志分割
 	lumberjackLogger := &lumberjack.Logger{
 		Filename:   fmt.Sprintf("./runtime/%s.log", time.Now().Format("2006-01-02")),
@@ -29,7 +30,7 @@ func InitLogger(logLevel string) {
 			zapcore.AddSync(os.Stdout),
 			zapcore.AddSync(lumberjackLogger),
 		),
-		parseLogLevel(logLevel),
+		parseLogLevel(config.LogLevel),
 	)
 
 	// make zap Log

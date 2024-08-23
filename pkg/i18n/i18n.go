@@ -37,8 +37,12 @@ func NewTranslator(lang string) *Translator {
 
 // T 翻译方法
 func (t *Translator) T(messageID string, templateData map[string]interface{}) string {
-	return t.loc.MustLocalize(&i18n.LocalizeConfig{
+	localizedMessage, err := t.loc.Localize(&i18n.LocalizeConfig{
 		MessageID:    messageID,
 		TemplateData: templateData,
 	})
+	if err != nil || localizedMessage == "" {
+		return messageID
+	}
+	return localizedMessage
 }

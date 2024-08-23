@@ -1,2 +1,6 @@
 # zh-CN.toml
-"Configure related commands"="配置相关命令"
+"Configure related commands" = "配置相关命令"
+"language" = "语言"
+"log level" = "日志等级"
+"Capture nic" = "捕获网卡"
+"debug mode" = "调试模式"
