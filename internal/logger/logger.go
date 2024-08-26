@@ -31,6 +31,11 @@ func initLogger() {
 		Compress:   true,
 	}
 
+	// level debug 优先于日志等级设置，如果开启了debug，则将日志等级设置为debug
+	level := config.LogLevel
+	if config.Debug {
+		level = "debug"
+	}
 	// creat zap core
 	core := zapcore.NewCore(
 		zapcore.NewConsoleEncoder(getEncodeConfig()),
@@ -38,7 +43,7 @@ func initLogger() {
 			zapcore.AddSync(os.Stdout),
 			zapcore.AddSync(lumberjackLogger),
 		),
-		parseLogLevel(config.LogLevel),
+		parseLogLevel(level),
 	)
 
 	// make zap Log
