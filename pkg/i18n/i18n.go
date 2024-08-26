@@ -5,14 +5,26 @@ import (
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/pelletier/go-toml/v2"
 	"golang.org/x/text/language"
+	"sync"
 )
 
 //go:embed *.toml
 var LocaleFS embed.FS
 
+var (
+	Translate *Translator
+	one       sync.Once
+)
+
 // Translator 翻译管理结构体
 type Translator struct {
 	loc *i18n.Localizer
+}
+
+func Setup(l string) {
+	one.Do(func() {
+		Translate = NewTranslator(l)
+	})
 }
 
 // NewTranslator 初始化方法

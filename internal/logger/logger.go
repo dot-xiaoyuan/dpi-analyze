@@ -2,18 +2,26 @@ package logger
 
 import (
 	"fmt"
-	"github.com/dot-xiaoyuan/dpi-analyze/internal/config"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
 	"os"
+	"sync"
 	"time"
 )
 
-var logger *zap.Logger
+var (
+	logger *zap.Logger
+	one    sync.Once
+)
+
+func Setup() {
+	one.Do(initLogger)
+}
 
 // InitLogger 初始化自定义的 zap 日志记录器
-func init() {
+func initLogger() {
 	// 日志分割
 	lumberjackLogger := &lumberjack.Logger{
 		Filename:   fmt.Sprintf("./runtime/%s.log", time.Now().Format("2006-01-02")),

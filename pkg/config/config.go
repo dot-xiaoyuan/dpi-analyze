@@ -3,7 +3,6 @@ package config
 import (
 	"bytes"
 	_ "embed"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
 	"github.com/spf13/viper"
 	"os"
 )
@@ -20,7 +19,6 @@ const (
 
 var (
 	Cfg         *Yaml
-	Translate   *i18n.Translator
 	Language    string
 	LogLevel    string
 	Debug       bool

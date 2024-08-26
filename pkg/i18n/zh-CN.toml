@@ -4,3 +4,5 @@
 "log level" = "日志等级"
 "Capture nic" = "捕获网卡"
 "debug mode" = "调试模式"
+"capture commands" = "捕获数据包"
+"help for dpi" = "帮助"
