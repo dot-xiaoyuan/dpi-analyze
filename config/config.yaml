@@ -1,4 +1,0 @@
-log_level: debug
-capture:
-  offline_file: /Users/yuantong/Documents/Pcap/temp.pcap
-  nic:

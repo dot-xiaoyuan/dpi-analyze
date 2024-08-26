@@ -3,6 +3,8 @@ package utils
 import (
 	"encoding/binary"
 	"fmt"
+	"os"
+	"strings"
 )
 
 // 工具包
@@ -106,4 +108,16 @@ func GetServerExtensionName(data []byte) string {
 		}
 	}
 	return ""
+}
+
+// GetSystemLanguage 获取系统语言
+func GetSystemLanguage(l string) string {
+	if l != "" && (l == "en" || l == "zh-CN") {
+		return l
+	}
+	lang := os.Getenv("LANG")
+	if lang != "" {
+		return strings.Split(lang, ".")[0]
+	}
+	return "en"
 }

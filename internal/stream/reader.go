@@ -1,4 +1,4 @@
-package reassemble
+package stream
 
 import (
 	"bufio"
@@ -7,6 +7,8 @@ import (
 	"io"
 	"sync"
 )
+
+// Stream Reader
 
 type StreamReader struct {
 	Ident    string

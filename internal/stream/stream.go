@@ -1,7 +1,8 @@
-package reassemble
+package stream
 
 import (
 	"fmt"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/reassembly"
@@ -130,7 +131,18 @@ func (s *Stream) ReassembledSG(sg reassembly.ScatterGather, ac reassembly.Assemb
 
 func (s *Stream) ReassemblyComplete(ac reassembly.AssemblerContext) bool {
 	zap.L().Debug("Connection Closed", zap.String("ident", s.Ident))
+	// 在重组结束时存储
+	_ = s.Save(s)
 	close(s.Client.Bytes)
 	close(s.Server.Bytes)
 	return false
+}
+
+func (s *Stream) Save(data interface{}) error {
+	err := db.InsertOne("stream", data)
+	if err != nil {
+		zap.L().Error("Error on saving data", zap.Error(err))
+		return err
+	}
+	return nil
 }
