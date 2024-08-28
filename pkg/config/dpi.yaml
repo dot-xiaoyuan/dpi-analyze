@@ -1,6 +1,6 @@
 language: zh-CN
 log_level: info
-debug: true
+debug: false
 use_mongo: false
 capture:
   offline_file: /Users/yuantong/Documents/Pcap/temp.pcap

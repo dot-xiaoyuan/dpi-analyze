@@ -25,8 +25,9 @@ var CaptureCmd = &cobra.Command{
 
 func init() {
 	// define flag
-	CaptureCmd.Flags().StringVar(&config.CaptureNic, "nic", config.Cfg.NIC, "capture nic")
-	CaptureCmd.Flags().StringVar(&config.CapturePcap, "pcap", config.Cfg.OfflineFile, "capture pcap file")
+	CaptureCmd.Flags().StringVar(&config.CaptureNic, "nic", config.Cfg.Capture.NIC, "capture nic")
+	CaptureCmd.Flags().StringVar(&config.CapturePcap, "pcap", config.Cfg.Capture.OfflineFile, "capture pcap file")
+	CaptureCmd.Flags().BoolVar(&config.UseMongo, "use-mongo", config.Cfg.UseMongo, "use mongo db")
 }
 
 func CaptureRreFunc(c *cobra.Command, args []string) {

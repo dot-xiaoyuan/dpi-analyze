@@ -134,18 +134,97 @@ func (s *Stream) ReassemblyComplete(ac reassembly.AssemblerContext) bool {
 	zap.L().Debug("Connection Closed", zap.String("ident", s.Ident))
 	// 在重组结束时存储
 	if config.UseMongo {
-		_ = s.Save(s)
+		record := s.ToRecord()
+		err := s.Save(record)
+		if err != nil {
+			panic(err)
+		}
 	}
 	close(s.Client.Bytes)
 	close(s.Server.Bytes)
 	return false
 }
 
+func (s *Stream) ToMap() map[string]interface{} {
+	return map[string]interface{}{
+		"ident": s.Ident,
+	}
+}
+
 func (s *Stream) Save(data interface{}) error {
 	err := db.InsertOne("stream", data)
 	if err != nil {
-		zap.L().Panic("Error on saving data", zap.Error(err))
-		return err
+		panic(err)
 	}
 	return nil
+}
+
+func (s *Stream) ToRecord() *StreamRecord {
+
+	return &StreamRecord{
+		Ident:               s.Ident,
+		Client:              s.Client.ToRecord(),
+		Server:              s.Server.ToRecord(),
+		Net:                 s.Net.String(),
+		Transport:           s.Transport.String(),
+		TcpState:            s.TcpState.String(),
+		Urls:                s.Urls,
+		Host:                s.Host,
+		RejectFSM:           s.RejectFSM,
+		RejectConnFsm:       s.RejectConnFsm,
+		RejectOpt:           s.RejectOpt,
+		MissBytes:           s.MissBytes,
+		Sz:                  s.Sz,
+		Pkt:                 s.Pkt,
+		Reassembled:         s.Reassembled,
+		OutOfOrderPackets:   s.OutOfOrderPackets,
+		OutOfOrderBytes:     s.OutOfOrderBytes,
+		BiggestChunkBytes:   s.BiggestChunkBytes,
+		BiggestChunkPackets: s.BiggestChunkPackets,
+		OverlapBytes:        s.OverlapBytes,
+		OverlapPackets:      s.OverlapPackets,
+	}
+}
+
+func (sr *StreamReader) ToRecord() StreamReaderRecord {
+	return StreamReaderRecord{
+		Ident:    sr.Ident,
+		IsClient: sr.IsClient,
+		Protocol: sr.Protocol,
+		SrcPort:  sr.SrcPort,
+		DstPort:  sr.DstPort,
+	}
+}
+
+type StreamRecord struct {
+	Ident               string             `bson:"ident"`
+	Client              StreamReaderRecord `bson:"client"`
+	Server              StreamReaderRecord `bson:"server"`
+	Net                 string             `bson:"net"`
+	Transport           string             `bson:"transport"`
+	TcpState            string             `bson:"tcp_state"`
+	Urls                []string           `bson:"urls"`
+	Host                string             `bson:"host"`
+	RejectFSM           int                `bson:"reject_fsm"`
+	RejectConnFsm       int                `bson:"reject_conn_fsm"`
+	RejectOpt           int                `bson:"reject_opt"`
+	MissBytes           int                `bson:"miss_bytes"`
+	Sz                  int                `bson:"sz"`
+	Pkt                 int                `bson:"pkt"`
+	Reassembled         int                `bson:"reassembled"`
+	OutOfOrderPackets   int                `bson:"out_of_order_packets"`
+	OutOfOrderBytes     int                `bson:"out_of_order_bytes"`
+	BiggestChunkBytes   int                `bson:"biggest_chunk_bytes"`
+	BiggestChunkPackets int                `bson:"biggest_chunk_packets"`
+	OverlapBytes        int                `bson:"overlap_bytes"`
+	OverlapPackets      int                `bson:"overlap_packets"`
+}
+
+type StreamReaderRecord struct {
+	Ident    string `bson:"ident"`
+	IsClient bool   `bson:"is_client"`
+	Data     []byte `bson:"data"`
+	Protocol string `bson:"protocol"`
+	SrcPort  string `bson:"src_port"`
+	DstPort  string `bson:"dst_port"`
 }
