@@ -53,7 +53,7 @@ func InsertOne(collectionName string, document interface{}) error {
 		panic(errors.New("MongoDB client not initialized"))
 	}
 
-	collection := c.Database("dpi").Collection(time.Now().Format(collectionName + "_20060102_15"))
+	collection := c.Database("dpi").Collection(time.Now().Format(collectionName + "-06-01-02-15"))
 	_, err := collection.InsertOne(context.TODO(), document)
 	return err
 }

@@ -27,6 +27,10 @@ func (f *Factory) New(netFlow, tcpFlow gopacket.Flow, tcp *layers.TCP, ac reasse
 		TcpState:   reassembly.NewTCPSimpleFSM(fsmOptions),
 		Ident:      fmt.Sprintf("%s:%s", netFlow, tcpFlow),
 		OptChecker: reassembly.NewTCPOptionCheck(),
+		Collections: stream2.Collections{
+			SrcIP: netFlow.Src().String(),
+			DstIP: netFlow.Dst().String(),
+		},
 	}
 
 	stream.Client = stream2.StreamReader{

@@ -2,9 +2,6 @@ package utils
 
 import (
 	"encoding/binary"
-	"fmt"
-	"os"
-	"strings"
 )
 
 // 工具包
@@ -68,56 +65,46 @@ func GetServerExtensionName(data []byte) string {
 	if dataLen < (pos + 2) {
 		return ""
 	}
-	l = int(binary.BigEndian.Uint16(data[pos : pos+2]))
+	extensionsLen := int(binary.BigEndian.Uint16(data[pos : pos+2]))
 	pos += 2
 
 	/* Parse extensions to get SNI */
 	var extensionItemLen int
 
 	/* Parse each 4 bytes for the extension header */
-	for pos+4 <= l {
+	for pos <= dataLen && pos < extensionsLen+2 {
+		if pos+4 > dataLen {
+			return ""
+		}
+
+		extensionType := binary.BigEndian.Uint16(data[pos : pos+2])
 		extensionItemLen = int(binary.BigEndian.Uint16(data[pos+2 : pos+4]))
-		if data[pos] == 0x00 && data[pos+1] == 0x00 {
-			if (pos + 4 + extensionItemLen) > l {
-				return ""
-			}
-			// get sni string
-			pos += 6
-			extensionEnd := pos + extensionItemLen - 2
-			for pos+3 < extensionEnd {
-				serverNameLen := int(binary.BigEndian.Uint16(data[pos+1 : pos+3]))
+		pos += 4
+
+		if pos+extensionItemLen > dataLen {
+			return ""
+		}
+
+		if extensionType == 0x00 { // SNI extension
+			extensionEnd := pos + extensionItemLen
+			for pos+3 <= extensionEnd {
+				serverNameLen := int(binary.BigEndian.Uint16(data[pos+3 : pos+5]))
 				if pos+3+serverNameLen > extensionEnd {
 					return ""
 				}
 
-				switch data[pos] {
-				case 0x00: //hostname
+				if data[pos] == 0x00 {
 					hostname := make([]byte, serverNameLen)
-					copy(hostname, data[pos+3:pos+3+serverNameLen])
+					copy(hostname, data[pos+5:pos+5+serverNameLen])
 					return string(hostname)
-				default:
-					fmt.Println("Encountered error! Debug me...")
 				}
-
-				pos += 3 + l
+				// Move to next SNI item
+				pos += 3 + serverNameLen
 			}
-		}
-		pos += 4 + extensionItemLen
-		if pos >= dataLen {
-			return ""
+		} else {
+			// Move past other extension types
+			pos += extensionItemLen
 		}
 	}
 	return ""
-}
-
-// GetSystemLanguage 获取系统语言
-func GetSystemLanguage(l string) string {
-	if l != "" && (l == "en" || l == "zh-CN") {
-		return l
-	}
-	lang := os.Getenv("LANG")
-	if lang != "" {
-		return strings.Split(lang, ".")[0]
-	}
-	return "en"
 }

@@ -3,7 +3,7 @@ log_level: info
 debug: false
 use_mongo: false
 capture:
-  offline_file: /Users/yuantong/Documents/Pcap/temp.pcap
+  offline_file:
   nic: en0
 mongodb:
   host: 127.0.0.1
