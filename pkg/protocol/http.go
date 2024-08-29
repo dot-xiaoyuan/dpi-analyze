@@ -5,16 +5,22 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/dot-xiaoyuan/dpi-analyze/internal/stream"
+	"github.com/dot-xiaoyuan/dpi-analyze/internal/analyze"
 	"go.uber.org/zap"
 	"io"
 	"io/ioutil"
 	"net/http"
 )
 
+type HTTPData struct {
+	Method string `bson:"method"`
+	URL    string `bson:"url"`
+	Host   string `bson:"host"`
+}
+
 type HTTPHandler struct{}
 
-func (HTTPHandler) HandleData(data []byte, sr *stream.StreamReader) {
+func (HTTPHandler) HandleData(data []byte, sr *analyze.StreamReader) {
 	r := bufio.NewReader(bytes.NewReader(data))
 	for {
 		if sr.IsClient {
@@ -32,8 +38,17 @@ func (HTTPHandler) HandleData(data []byte, sr *stream.StreamReader) {
 			//}
 			req.Body.Close()
 			zap.L().Debug("HTTP Request", zap.String("method", req.Method), zap.String("url", req.URL.String()), zap.Int("body", s))
+			//app := &HTTPData{
+			//	Method: req.Method,
+			//	URL:    req.URL.String(),
+			//	Host:   req.Host,
+			//}
 			sr.Parent.Lock()
 			sr.Parent.Urls = append(sr.Parent.Urls, req.URL.String())
+			//sr.Parent.Protocols = append(sr.Parent.Protocols, ApplicationData{
+			//	Protocol: "http",
+			//	Data:     app,
+			//})
 			sr.Parent.Unlock()
 		} else {
 			res, err := http.ReadResponse(r, nil)
@@ -44,6 +59,15 @@ func (HTTPHandler) HandleData(data []byte, sr *stream.StreamReader) {
 			} else {
 				req, sr.Parent.Urls = sr.Parent.Urls[0], sr.Parent.Urls[1:]
 			}
+			//app := &HTTPData{
+			//	Method: "response",
+			//	URL:    res.Request.URL.String(),
+			//	Host:   res.Request.Host,
+			//}
+			//sr.Parent.Protocols = append(sr.Parent.Protocols, ApplicationData{
+			//	Protocol: "http",
+			//	Data:     app,
+			//})
 			sr.Parent.Unlock()
 			if err == io.EOF || errors.Is(err, io.ErrUnexpectedEOF) {
 				break

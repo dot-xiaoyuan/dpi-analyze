@@ -2,7 +2,6 @@ package analyze
 
 import (
 	"fmt"
-	stream2 "github.com/dot-xiaoyuan/dpi-analyze/internal/stream"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocol"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -21,39 +20,39 @@ func (f *Factory) New(netFlow, tcpFlow gopacket.Flow, tcp *layers.TCP, ac reasse
 		SupportMissingEstablishment: false, // 允许缺失 SYN、SYN+ACK、ACK
 	}
 
-	stream := &stream2.Stream{
+	stream := &Stream{
 		Net:        netFlow,
 		Transport:  tcpFlow,
 		TcpState:   reassembly.NewTCPSimpleFSM(fsmOptions),
 		Ident:      fmt.Sprintf("%s:%s", netFlow, tcpFlow),
 		OptChecker: reassembly.NewTCPOptionCheck(),
-		Collections: stream2.Collections{
+		Collections: Collections{
 			SrcIP: netFlow.Src().String(),
 			DstIP: netFlow.Dst().String(),
 		},
 	}
 
-	stream.Client = stream2.StreamReader{
+	stream.Client = StreamReader{
 		Bytes:    make(chan []byte),
 		Ident:    fmt.Sprintf("%s %s", netFlow, tcpFlow),
 		Parent:   stream,
 		IsClient: true,
 		SrcPort:  tcpFlow.Src().String(),
 		DstPort:  tcpFlow.Dst().String(),
-		Handlers: map[string]stream2.ProtocolHandler{
+		Handlers: map[string]ProtocolHandler{
 			"http": &protocol.HTTPHandler{},
 			"tls":  &protocol.TLSHandler{},
 		},
 	}
 
-	stream.Server = stream2.StreamReader{
+	stream.Server = StreamReader{
 		Bytes:    make(chan []byte),
 		Ident:    fmt.Sprintf("%s %s", netFlow.Reverse(), tcpFlow.Reverse()),
 		Parent:   stream,
 		IsClient: false,
 		SrcPort:  tcpFlow.Reverse().Src().String(),
 		DstPort:  tcpFlow.Reverse().Dst().String(),
-		Handlers: map[string]stream2.ProtocolHandler{
+		Handlers: map[string]ProtocolHandler{
 			"http": &protocol.HTTPHandler{},
 			"tls":  &protocol.TLSHandler{},
 		},

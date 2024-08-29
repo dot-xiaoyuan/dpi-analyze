@@ -2,9 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/dot-xiaoyuan/dpi-analyze/internal/logger"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"log"
