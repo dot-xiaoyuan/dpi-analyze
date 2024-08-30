@@ -2,7 +2,7 @@ package analyze
 
 import (
 	"bufio"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/utils"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
 	"go.uber.org/zap"
 	"io"
 	"sync"
@@ -16,10 +16,10 @@ type StreamReader struct {
 	IsClient bool
 	Bytes    chan []byte
 	data     []byte
-	Protocol string
+	Protocol protocols.ProtocolType
 	SrcPort  string
 	DstPort  string
-	Handlers map[string]ProtocolHandler
+	Handlers map[protocols.ProtocolType]protocols.ProtocolHandler
 }
 
 func (sr *StreamReader) Read(p []byte) (n int, err error) {
@@ -36,17 +36,13 @@ func (sr *StreamReader) Read(p []byte) (n int, err error) {
 	return l, nil
 }
 
-type ProtocolHandler interface {
-	HandleData(data []byte, reader *StreamReader)
-}
-
 func (sr *StreamReader) Run(wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	b := bufio.NewReader(sr)
 	buffer := make([]byte, 0)
 	var protocolIdentified bool
-	var handler ProtocolHandler
+	var handler protocols.ProtocolHandler
 	for {
 		// read by Reader
 		data := make([]byte, 4096)
@@ -60,18 +56,22 @@ func (sr *StreamReader) Run(wg *sync.WaitGroup) {
 		}
 		buffer = append(buffer, data[:n]...)
 		if !protocolIdentified {
-			sr.Protocol = utils.IdentifyProtocol(buffer, sr.SrcPort, sr.DstPort)
+			sr.Protocol = sr.GetIdentifier(buffer)
 			if sr.Protocol != "unknown" {
 				handler = sr.Handlers[sr.Protocol]
 				protocolIdentified = true
-				zap.L().Debug("Protocol identified", zap.String("protocol", sr.Protocol))
+				zap.L().Debug("Protocol identified", zap.String("protocols", string(sr.Protocol)))
 			}
 		}
 
 		if handler != nil {
 			handler.HandleData(buffer, sr)
 		} else {
-			zap.L().Debug("no handler for Protocol", zap.String("protocol", sr.Protocol))
+			zap.L().Debug("no handler for Protocol", zap.String("protocols", string(sr.Protocol)))
 		}
 	}
+}
+
+func (sr *StreamReader) GetIdentifier(buffer []byte) protocols.ProtocolType {
+	return protocols.IdentifyProtocol(buffer, sr.SrcPort, sr.DstPort)
 }

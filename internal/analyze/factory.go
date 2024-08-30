@@ -2,7 +2,7 @@ package analyze
 
 import (
 	"fmt"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocol"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/reassembly"
@@ -40,8 +40,8 @@ func (f *Factory) New(netFlow, tcpFlow gopacket.Flow, tcp *layers.TCP, ac reasse
 		SrcPort:  tcpFlow.Src().String(),
 		DstPort:  tcpFlow.Dst().String(),
 		Handlers: map[string]ProtocolHandler{
-			"http": &protocol.HTTPHandler{},
-			"tls":  &protocol.TLSHandler{},
+			"http": &protocols.HTTPHandler{},
+			"tls":  &protocols.TLSHandler{},
 		},
 	}
 
@@ -53,8 +53,8 @@ func (f *Factory) New(netFlow, tcpFlow gopacket.Flow, tcp *layers.TCP, ac reasse
 		SrcPort:  tcpFlow.Reverse().Src().String(),
 		DstPort:  tcpFlow.Reverse().Dst().String(),
 		Handlers: map[string]ProtocolHandler{
-			"http": &protocol.HTTPHandler{},
-			"tls":  &protocol.TLSHandler{},
+			"http": &protocols.HTTPHandler{},
+			"tls":  &protocols.TLSHandler{},
 		},
 	}
 

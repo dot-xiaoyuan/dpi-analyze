@@ -1,4 +1,4 @@
-package protocol
+package protocols
 
 import (
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/analyze"

@@ -1,6 +1,6 @@
-package protocol
+package protocols
 
 type ApplicationData struct {
-	Protocol string      `bson:"protocol"`
+	Protocol string      `bson:"protocols"`
 	Data     interface{} `bson:"data"`
 }

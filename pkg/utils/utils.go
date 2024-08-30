@@ -6,16 +6,6 @@ import (
 
 // 工具包
 
-func IdentifyProtocol(buffer []byte, srcPort, dstPort string) string {
-	if srcPort == "80" || dstPort == "80" {
-		return "http"
-	}
-	if srcPort == "443" || dstPort == "443" {
-		return "tls"
-	}
-	return "unknown"
-}
-
 func IdentifyClientHello(data []byte) bool {
 	if len(data) < 42 {
 		return false
