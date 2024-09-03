@@ -72,6 +72,30 @@ func (sr *StreamReader) Run(wg *sync.WaitGroup) {
 	}
 }
 
+func (sr *StreamReader) LockParent() {
+	sr.Parent.Lock()
+}
+
+func (sr *StreamReader) UnLockParent() {
+	sr.Parent.Unlock()
+}
+
 func (sr *StreamReader) GetIdentifier(buffer []byte) protocols.ProtocolType {
 	return protocols.IdentifyProtocol(buffer, sr.SrcPort, sr.DstPort)
+}
+
+func (sr *StreamReader) SetHostName(host string) {
+	sr.Parent.Host = host
+}
+
+func (sr *StreamReader) GetIdent() bool {
+	return sr.IsClient
+}
+
+func (sr *StreamReader) SetUrls(urls []string) {
+	sr.Parent.Urls = urls
+}
+
+func (sr *StreamReader) GetUrls() []string {
+	return sr.Parent.Urls
 }

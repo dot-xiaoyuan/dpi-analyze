@@ -1,14 +1,13 @@
 package protocols
 
 import (
-	"github.com/dot-xiaoyuan/dpi-analyze/internal/analyze"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/utils"
 	"go.uber.org/zap"
 )
 
 type TLSHandler struct{}
 
-func (TLSHandler) HandleData(data []byte, sr *analyze.StreamReader) {
+func (TLSHandler) HandleData(data []byte, reader StreamReaderInterface) {
 	if len(data) < 5 {
 		return
 	}
@@ -18,9 +17,9 @@ func (TLSHandler) HandleData(data []byte, sr *analyze.StreamReader) {
 		// is ClientHello
 		if hostname := utils.GetServerExtensionName(data[5:]); hostname != "" {
 			zap.L().Debug("Client Hello", zap.String("hostname", hostname))
-			sr.Parent.Lock()
-			sr.Parent.Host = hostname
-			sr.Parent.Unlock()
+			reader.LockParent()
+			reader.SetHostName(hostname)
+			reader.UnLockParent()
 		}
 	}
 }

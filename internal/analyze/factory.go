@@ -39,9 +39,9 @@ func (f *Factory) New(netFlow, tcpFlow gopacket.Flow, tcp *layers.TCP, ac reasse
 		IsClient: true,
 		SrcPort:  tcpFlow.Src().String(),
 		DstPort:  tcpFlow.Dst().String(),
-		Handlers: map[string]ProtocolHandler{
-			"http": &protocols.HTTPHandler{},
-			"tls":  &protocols.TLSHandler{},
+		Handlers: map[protocols.ProtocolType]protocols.ProtocolHandler{
+			protocols.HTTP: &protocols.HTTPHandler{},
+			protocols.TLS:  &protocols.TLSHandler{},
 		},
 	}
 
@@ -52,9 +52,9 @@ func (f *Factory) New(netFlow, tcpFlow gopacket.Flow, tcp *layers.TCP, ac reasse
 		IsClient: false,
 		SrcPort:  tcpFlow.Reverse().Src().String(),
 		DstPort:  tcpFlow.Reverse().Dst().String(),
-		Handlers: map[string]ProtocolHandler{
-			"http": &protocols.HTTPHandler{},
-			"tls":  &protocols.TLSHandler{},
+		Handlers: map[protocols.ProtocolType]protocols.ProtocolHandler{
+			protocols.HTTP: &protocols.HTTPHandler{},
+			protocols.TLS:  &protocols.TLSHandler{},
 		},
 	}
 

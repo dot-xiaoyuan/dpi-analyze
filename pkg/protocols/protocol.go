@@ -15,6 +15,12 @@ type ApplicationProtocolData struct {
 
 type StreamReaderInterface interface {
 	GetIdentifier([]byte) ProtocolType
+	SetHostName(host string)
+	GetIdent() bool
+	SetUrls(urls []string)
+	GetUrls() []string
+	LockParent()
+	UnLockParent()
 }
 
 type ProtocolHandler interface {
