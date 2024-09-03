@@ -13,6 +13,7 @@ type ApplicationProtocolData struct {
 	Data     interface{} `bson:"data"`
 }
 
+// StreamReaderInterface 流Reader接口
 type StreamReaderInterface interface {
 	GetIdentifier([]byte) ProtocolType
 	SetHostName(host string)

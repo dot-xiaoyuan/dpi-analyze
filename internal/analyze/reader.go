@@ -80,18 +80,22 @@ func (sr *StreamReader) UnLockParent() {
 	sr.Parent.Unlock()
 }
 
+// GetIdentifier 获取协议标识
 func (sr *StreamReader) GetIdentifier(buffer []byte) protocols.ProtocolType {
 	return protocols.IdentifyProtocol(buffer, sr.SrcPort, sr.DstPort)
 }
 
+// SetHostName 设置hostname
 func (sr *StreamReader) SetHostName(host string) {
 	sr.Parent.Host = host
 }
 
+// GetIdent 获取流方向
 func (sr *StreamReader) GetIdent() bool {
 	return sr.IsClient
 }
 
+// SetUrls 设置Urls
 func (sr *StreamReader) SetUrls(urls []string) {
 	sr.Parent.Urls = urls
 }
