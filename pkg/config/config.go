@@ -20,22 +20,24 @@ const (
 )
 
 var (
-	Cfg         *Yaml
-	Language    string
-	LogLevel    string
-	Debug       bool
-	CaptureNic  string
-	CapturePcap string
-	UseMongo    bool
+	Cfg          *Yaml
+	Language     string
+	LogLevel     string
+	Debug        bool
+	CaptureNic   string
+	CapturePcap  string
+	UseMongo     bool
+	ParseFeature bool
 )
 
 type Yaml struct {
-	Language string  `mapstructure:"language"`
-	LogLevel string  `mapstructure:"log_level"`
-	Debug    bool    `mapstructure:"debug"`
-	UseMongo bool    `mapstructure:"use_mongo"`
-	Capture  Capture `mapstructure:"capture"`
-	Mongodb  Mongodb `mapstructure:"mongodb"`
+	Language     string  `mapstructure:"language"`
+	LogLevel     string  `mapstructure:"log_level"`
+	Debug        bool    `mapstructure:"debug"`
+	UseMongo     bool    `mapstructure:"use_mongo"`
+	ParseFeature bool    `mapstructure:"parse_app"`
+	Capture      Capture `mapstructure:"capture"`
+	Mongodb      Mongodb `mapstructure:"mongodb"`
 }
 
 type Capture struct {

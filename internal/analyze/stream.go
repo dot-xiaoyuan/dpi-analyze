@@ -30,6 +30,7 @@ type Collections struct {
 	BiggestChunkPackets int      `bson:"biggest_chunk_packets"`
 	OverlapBytes        int      `bson:"overlap_bytes"`
 	OverlapPackets      int      `bson:"overlap_packets"`
+	Application         string   `bson:"application"`
 }
 
 // Stream 流

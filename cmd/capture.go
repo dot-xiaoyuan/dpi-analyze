@@ -6,6 +6,7 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/analyze"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/features"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -28,6 +29,7 @@ func init() {
 	CaptureCmd.Flags().StringVar(&config.CaptureNic, "nic", config.Cfg.Capture.NIC, "capture nic")
 	CaptureCmd.Flags().StringVar(&config.CapturePcap, "pcap", config.Cfg.Capture.OfflineFile, "capture pcap file")
 	CaptureCmd.Flags().BoolVar(&config.UseMongo, "use-mongo", config.Cfg.UseMongo, "use mongo db")
+	CaptureCmd.Flags().BoolVar(&config.ParseFeature, "parse-feature", config.Cfg.ParseFeature, "parse application")
 }
 
 func CaptureRreFunc(c *cobra.Command, args []string) {
@@ -39,6 +41,10 @@ func CaptureRreFunc(c *cobra.Command, args []string) {
 	if len(args) == 0 && c.Flags().NFlag() == 0 {
 		_ = c.Help()
 		os.Exit(0)
+	}
+	// 是否加载特征库
+	if config.ParseFeature {
+		features.Setup()
 	}
 }
 

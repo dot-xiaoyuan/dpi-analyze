@@ -2,6 +2,7 @@ package analyze
 
 import (
 	"bufio"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/features"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
 	"go.uber.org/zap"
 	"io"
@@ -88,6 +89,7 @@ func (sr *StreamReader) GetIdentifier(buffer []byte) protocols.ProtocolType {
 // SetHostName 设置hostname
 func (sr *StreamReader) SetHostName(host string) {
 	sr.Parent.Host = host
+	sr.Parent.Application = features.DomainMatch(sr.Parent.Host)
 }
 
 // GetIdent 获取流方向
