@@ -3,7 +3,7 @@ package analyze
 import (
 	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/mongo"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/reassembly"
@@ -156,7 +156,7 @@ func (s *Stream) Save() {
 	if len(s.Host) == 0 {
 		return
 	}
-	err := db.InsertOne("stream", s.Collections)
+	err := mongo.InsertOne("stream", s.Collections)
 	if err != nil {
 		panic(err)
 	}

@@ -36,11 +36,11 @@ type Feature struct {
 
 func Setup() {
 	one.Do(func() {
-		NewFeature()
+		loadFeature()
 	})
 }
 
-func NewFeature() {
+func loadFeature() {
 	scanner := bufio.NewScanner(bytes.NewReader(FeatureCfg))
 	l := 0
 	for scanner.Scan() {

@@ -6,6 +6,7 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/analyze"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/features"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
 	"github.com/spf13/cobra"
@@ -41,6 +42,10 @@ func CaptureRreFunc(c *cobra.Command, args []string) {
 	if len(args) == 0 && c.Flags().NFlag() == 0 {
 		_ = c.Help()
 		os.Exit(0)
+	}
+	// 是否使用mongo
+	if config.UseMongo {
+		mongo.Setup()
 	}
 	// 是否加载特征库
 	if config.ParseFeature {
