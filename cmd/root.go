@@ -51,7 +51,7 @@ func RunFunc(c *cobra.Command, args []string) {
 func PreFunc(c *cobra.Command, args []string) {
 	// 初始化翻译
 	c.Flags().VisitAll(func(flag *pflag.Flag) {
-		flag.Usage = i18n.Translate.T(flag.Usage, nil)
+		flag.Usage = i18n.T(flag.Usage)
 	})
 	if len(args) == 0 || c.Flags().NFlag() == 0 {
 		_ = c.Help()

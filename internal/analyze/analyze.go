@@ -34,7 +34,7 @@ func NewAnalyzer() *Analyze {
 	streamPool := reassembly.NewStreamPool(streamFactory)
 	assembler := reassembly.NewAssembler(streamPool)
 
-	zap.L().Info(i18n.Translate.T("Analysis program initialization completed", nil))
+	zap.L().Info(i18n.T("Analysis program initialization completed"))
 
 	return &Analyze{
 		Assembler: assembler,

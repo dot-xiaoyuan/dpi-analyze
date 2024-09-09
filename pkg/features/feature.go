@@ -60,7 +60,7 @@ func loadFeature() {
 		}
 	}
 	spinners.Stop()
-	zap.L().Info(i18n.Translate.T("Feature component initialized!", nil), zap.Int("count", l))
+	zap.L().Info(i18n.T("Feature component initialized!"), zap.Int("count", l))
 }
 
 // 解析特征库

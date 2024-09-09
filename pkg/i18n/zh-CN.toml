@@ -6,6 +6,13 @@
 "debug mode" = "调试模式"
 "capture commands" = "捕获数据包"
 "help for dpi" = "帮助"
+
+# Capture Flags
+"parse application" = "是否解析应用"
+"capture nic" = "指定捕获网卡"
+"capture pcap file" = "指定离线数据包"
+"use mongo db" = "是否使用mongo存储"
+
 # Anaiyze
 "Analysis program initialization completed" = "分析程序初始化完成"
 "Starting capture" = "开始捕获数据包"
@@ -13,14 +20,17 @@
 "Analyze network card" = "分析网卡:{{.nic}}"
 "Flushed stream" = "刷新 {{.count}} 个流"
 "Received terminate signal, stop analyze..." = "收到终止信号，停止分析......"
+"No Protocol Handler" = "无协议处理程序"
+
 # Mongodb
 "Start Load Mongodb Component" = "开始加载Mongodb组件"
 "mongodb.host is empty" = "Mongodb Host 未配置"
 "mongodb.port is empty" = "Mongodb 端口 未配置"
 "Failed to connect to MongoDB" = "无法连接到 Mongodb"
 "Failed to ping MongoDB" = "无法 ping 通 MongoDB"
-"Connected to MongoDB!" = "已连接到 Mongodb!"
+"Connected to MongoDB!" = "已连接到 Mongodb! mongodb://{{.host}}:{{.port}}"
 "MongoDB client not initialized" = "MongoDB 客户端未初始化"
+
 # Feature
 "Start Load Feature Component" = "开始加载特征库组件"
 "Feature component initialized!" = "特征库加载完成"

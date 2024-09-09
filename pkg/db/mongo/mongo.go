@@ -36,10 +36,10 @@ func loadMongoClient() (err error) {
 		spinners.Stop()
 	}()
 	if config.Cfg.Mongodb.Host == "" {
-		return fmt.Errorf(i18n.Translate.T("mongodb.host is empty", nil))
+		return fmt.Errorf(i18n.T("mongodb.host is empty"))
 	}
 	if config.Cfg.Mongodb.Port == "" {
-		return fmt.Errorf(i18n.Translate.T("mongodb.port is empty", nil))
+		return fmt.Errorf(i18n.T("mongodb.port is empty"))
 	}
 	mongoURI = fmt.Sprintf("mongodb://%s:%s", config.Cfg.Mongodb.Host, config.Cfg.Mongodb.Port)
 
@@ -52,13 +52,16 @@ func loadMongoClient() (err error) {
 		opt,
 	)
 	if err != nil {
-		return fmt.Errorf(i18n.Translate.T("Failed to connect to MongoDB", nil))
+		return fmt.Errorf(i18n.T("Failed to connect to MongoDB"))
 	}
 	err = client.Ping(context.TODO(), nil)
 	if err != nil {
-		return fmt.Errorf(i18n.Translate.T("Failed to ping MongoDB", nil))
+		return fmt.Errorf(i18n.T("Failed to ping MongoDB"))
 	}
-	zap.L().Info(i18n.Translate.T("Connected to MongoDB!", nil))
+	zap.L().Info(i18n.TT("Connected to MongoDB!", map[string]interface{}{
+		"host": config.Cfg.Mongodb.Host,
+		"port": config.Cfg.Mongodb.Port,
+	}))
 	return
 }
 
@@ -77,7 +80,7 @@ func InsertOne(collectionName string, document interface{}) error {
 	c := GetMongoClient()
 
 	if client == nil {
-		zap.L().Error(i18n.Translate.T("MongoDB client not initialized", nil))
+		zap.L().Error(i18n.T("MongoDB client not initialized"))
 		os.Exit(1)
 	}
 

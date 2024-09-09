@@ -1,4 +1,11 @@
-# en.toml
-"Configure related commands" = "Configure related commands"
+# zh-CN.toml
+
 # Anaiyze
+"Open offline package file" = "Open offline package file:{{.offline}}"
+"Analyze network card" = "Analyze network card:{{.nic}}"
 "Flushed stream" = "Flushed {{.count}} stream"
+
+# Mongodb
+"Connected to MongoDB!" = "Connected to MongoDB! mongodb://{{.host}}:{{.port}}"
+
+# Feature
