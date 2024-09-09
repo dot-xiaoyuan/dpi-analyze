@@ -58,3 +58,11 @@ func (t *Translator) T(messageID string, templateData map[string]interface{}) st
 	}
 	return localizedMessage
 }
+
+func T(m string) string {
+	return Translate.T(m, nil)
+}
+
+func TT(m string, data map[string]interface{}) string {
+	return Translate.T(m, data)
+}

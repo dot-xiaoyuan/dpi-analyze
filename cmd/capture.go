@@ -87,11 +87,16 @@ func CaptureRun(c *cobra.Command, args []string) {
 		cancel()
 		closed := assembly.Assembler.FlushAll()
 		assembly.Factory.WaitGoRoutines()
-		log.Printf("Flushed %d stream\n", closed)
+		zap.L().Info(i18n.Translate.T("Flushed stream", map[string]interface{}{
+			"count": closed,
+		}))
+		//fmt.Println(closed)
 	case <-signalChan:
 		cancel()
-		log.Println("Received terminate signal, stop analyze...")
+		spinners.Start()
+		zap.L().Info(i18n.Translate.T("Received terminate signal, stop analyze...", nil))
 		time.Sleep(time.Second)
+		spinners.Stop()
 		os.Exit(0)
 	}
 }

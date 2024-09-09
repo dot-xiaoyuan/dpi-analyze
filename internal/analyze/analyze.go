@@ -2,6 +2,7 @@ package analyze
 
 import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/reassembly"
@@ -33,7 +34,7 @@ func NewAnalyzer() *Analyze {
 	streamPool := reassembly.NewStreamPool(streamFactory)
 	assembler := reassembly.NewAssembler(streamPool)
 
-	zap.L().Info("Analyze initialized")
+	zap.L().Info(i18n.Translate.T("Analysis program initialization completed", nil))
 
 	return &Analyze{
 		Assembler: assembler,

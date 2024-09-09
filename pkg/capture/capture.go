@@ -3,6 +3,7 @@ package capture
 import (
 	"context"
 	"fmt"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
 	"go.uber.org/zap"
@@ -32,13 +33,17 @@ type PacketHandler interface {
 
 // StartCapture 开始捕获数据包
 func StartCapture(ctx context.Context, c Config, handler PacketHandler, done chan<- struct{}) {
-	zap.L().Info("Starting capture")
+	zap.L().Info(i18n.T("Starting capture"))
 	if c.OffLine != "" {
 		Handle, Err = pcap.OpenOffline(c.OffLine)
-		zap.L().Info("pcap open offline", zap.String("OffLine", c.OffLine), zap.Error(Err))
+		zap.L().Info(i18n.TT("Open offline package file", map[string]interface{}{
+			"offline": c.OffLine,
+		}), zap.Error(Err))
 	} else {
 		Handle, Err = pcap.OpenLive(c.Nic, c.SnapLen, true, pcap.BlockForever)
-		zap.L().Info("pcap open live ", zap.String("Nic", c.Nic), zap.Error(Err))
+		zap.L().Info(i18n.TT("Analyze network card", map[string]interface{}{
+			"nic": c.Nic,
+		}), zap.Error(Err))
 	}
 
 	if Err != nil {

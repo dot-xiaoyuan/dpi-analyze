@@ -89,7 +89,10 @@ func (sr *StreamReader) GetIdentifier(buffer []byte) protocols.ProtocolType {
 // SetHostName 设置hostname
 func (sr *StreamReader) SetHostName(host string) {
 	sr.Parent.Host = host
-	sr.Parent.Application = features.DomainMatch(sr.Parent.Host)
+	// 如果特征库加载 进行域名分析
+	if features.DomainAc != nil {
+		sr.Parent.Application = features.DomainMatch(sr.Parent.Host)
+	}
 }
 
 // GetIdent 获取流方向

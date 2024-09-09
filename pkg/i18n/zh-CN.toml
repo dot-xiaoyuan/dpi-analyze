@@ -6,6 +6,13 @@
 "debug mode" = "调试模式"
 "capture commands" = "捕获数据包"
 "help for dpi" = "帮助"
+# Anaiyze
+"Analysis program initialization completed" = "分析程序初始化完成"
+"Starting capture" = "开始捕获数据包"
+"Open offline package file" = "分析离线数据包文件:{{.offline}}"
+"Analyze network card" = "分析网卡:{{.nic}}"
+"Flushed stream" = "刷新 {{.count}} 个流"
+"Received terminate signal, stop analyze..." = "收到终止信号，停止分析......"
 # Mongodb
 "Start Load Mongodb Component" = "开始加载Mongodb组件"
 "mongodb.host is empty" = "Mongodb Host 未配置"
