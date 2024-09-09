@@ -6,3 +6,14 @@
 "debug mode" = "调试模式"
 "capture commands" = "捕获数据包"
 "help for dpi" = "帮助"
+# Mongodb
+"Start Load Mongodb Component" = "开始加载Mongodb组件"
+"mongodb.host is empty" = "Mongodb Host 未配置"
+"mongodb.port is empty" = "Mongodb 端口 未配置"
+"Failed to connect to MongoDB" = "无法连接到 Mongodb"
+"Failed to ping MongoDB" = "无法 ping 通 MongoDB"
+"Connected to MongoDB!" = "已连接到 Mongodb!"
+"MongoDB client not initialized" = "MongoDB 客户端未初始化"
+# Feature
+"Start Load Feature Component" = "开始加载特征库组件"
+"Feature component initialized!" = "特征库加载完成"

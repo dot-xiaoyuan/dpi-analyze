@@ -9,8 +9,10 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/features"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/spinners"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"go.uber.org/zap"
 	"log"
 	"os"
 	"os/signal"
@@ -43,12 +45,15 @@ func CaptureRreFunc(c *cobra.Command, args []string) {
 		_ = c.Help()
 		os.Exit(0)
 	}
+	spinners.Setup()
 	// 是否使用mongo
 	if config.UseMongo {
+		zap.L().Info(i18n.Translate.T("Start Load Mongodb Component", nil))
 		mongo.Setup()
 	}
 	// 是否加载特征库
 	if config.ParseFeature {
+		zap.L().Info(i18n.Translate.T("Start Load Feature Component", nil))
 		features.Setup()
 	}
 }

@@ -53,7 +53,7 @@ func PreFunc(c *cobra.Command, args []string) {
 	c.Flags().VisitAll(func(flag *pflag.Flag) {
 		flag.Usage = i18n.Translate.T(flag.Usage, nil)
 	})
-	if len(args) == 0 && c.Flags().NFlag() == 0 {
+	if len(args) == 0 || c.Flags().NFlag() == 0 {
 		_ = c.Help()
 		os.Exit(0)
 	}
