@@ -9,6 +9,7 @@ import (
 	"github.com/google/gopacket/reassembly"
 	"go.uber.org/zap"
 	"sync"
+	"time"
 )
 
 // Collections 单向流
@@ -36,6 +37,9 @@ type Collections struct {
 // Stream 流
 type Stream struct {
 	sync.Mutex
+	SessionID      string `bson:"session_id"`
+	StartTime      string `bson:"start_time"`
+	EndTime        string `bson:"end_time"`
 	Client         StreamReader
 	Server         StreamReader
 	TcpState       *reassembly.TCPSimpleFSM
@@ -44,6 +48,8 @@ type Stream struct {
 	fsmErr         bool
 	Ident          string `bson:"ident"`
 	Collections
+	PacketCount int8  `bson:"packet_count"`
+	ByteCount   int16 `bson:"byte_count"`
 }
 
 func (s *Stream) Accept(tcp *layers.TCP, ci gopacket.CaptureInfo, dir reassembly.TCPFlowDirection, nextSeq reassembly.Sequence, start *bool, ac reassembly.AssemblerContext) bool {
@@ -144,7 +150,9 @@ func (s *Stream) ReassemblyComplete(ac reassembly.AssemblerContext) bool {
 	// 在重组结束时存储
 	if config.UseMongo {
 		// TODO save mongodb
+		s.Lock()
 		s.Save()
+		s.Unlock()
 	}
 	close(s.Client.Bytes)
 	close(s.Server.Bytes)
@@ -153,10 +161,30 @@ func (s *Stream) ReassemblyComplete(ac reassembly.AssemblerContext) bool {
 
 func (s *Stream) Save() {
 	// TODO ignore empty host
-	if len(s.Host) == 0 {
-		return
+	sessionData := Sessions{
+		SessionId:   s.SessionID,
+		SrcIp:       s.SrcIP,
+		DstIp:       s.DstIP,
+		SrcPort:     s.Client.SrcPort,
+		DstPort:     s.Client.DstPort,
+		Protocol:    "tcp",
+		StartTime:   time.DateTime,
+		EndTime:     time.DateTime,
+		PacketCount: s.PacketCount,
+		ByteCount:   s.ByteCount,
+		ProtocolFlags: ProtocolFlags{
+			TCP: TCPFlags{},
+			UDP: UDPFlags{},
+		},
+		ApplicationProtocol: "",
+		Metadata: Metadata{
+			HttpInfo: HttpInfo{},
+			DnsInfo:  DnsInfo{},
+			RtpInfo:  RtpInfo{},
+			TlsInfo:  TlsInfo{},
+		},
 	}
-	err := mongo.InsertOne("stream", s.Collections)
+	err := mongo.InsertOne("stream", sessionData)
 	if err != nil {
 		panic(err)
 	}

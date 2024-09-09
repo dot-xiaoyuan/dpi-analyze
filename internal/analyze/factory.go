@@ -21,6 +21,7 @@ func (f *Factory) New(netFlow, tcpFlow gopacket.Flow, tcp *layers.TCP, ac reasse
 	}
 
 	stream := &Stream{
+		SessionID:  protocols.GenerateSessionId(netFlow.Src().String(), netFlow.Dst().String(), tcpFlow.Src().String(), tcpFlow.Dst().String(), "tcp"),
 		Net:        netFlow,
 		Transport:  tcpFlow,
 		TcpState:   reassembly.NewTCPSimpleFSM(fsmOptions),
