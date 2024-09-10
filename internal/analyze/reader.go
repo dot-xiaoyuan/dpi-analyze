@@ -38,7 +38,6 @@ func (sr *StreamReader) Read(p []byte) (n int, err error) {
 
 func (sr *StreamReader) Run(wg *sync.WaitGroup) {
 	defer wg.Done()
-
 	b := bufio.NewReader(sr)
 	buffer := make([]byte, 0)
 	var protocolIdentified bool
@@ -81,12 +80,20 @@ func (sr *StreamReader) GetIdentifier(buffer []byte) protocols.ProtocolType {
 	return protocols.IdentifyProtocol(buffer, sr.SrcPort, sr.DstPort)
 }
 
-// SetHostName 设置hostname
-func (sr *StreamReader) SetHostName(host string) {
-	sr.Parent.Host = host
+// SetTlsInfo SetHostName
+func (sr *StreamReader) SetTlsInfo(sni, version, cipherSuite string) {
+	if sni != "" {
+		sr.Parent.Metadata.TlsInfo.Sni = sni
+	}
+	if version != "" {
+		sr.Parent.Metadata.TlsInfo.Version = version
+	}
+	if cipherSuite != "" {
+		sr.Parent.Metadata.TlsInfo.CipherSuite = cipherSuite
+	}
 	// 如果特征库加载 进行域名分析
 	if features.DomainAc != nil {
-		sr.Parent.Application = features.DomainMatch(sr.Parent.Host)
+		sr.Parent.Metadata.ApplicationInfo.AppName = features.DomainMatch(sni)
 	}
 }
 
@@ -97,9 +104,21 @@ func (sr *StreamReader) GetIdent() bool {
 
 // SetUrls 设置Urls
 func (sr *StreamReader) SetUrls(urls []string) {
-	sr.Parent.Urls = urls
+	sr.Parent.Metadata.HttpInfo.Urls = urls
 }
 
 func (sr *StreamReader) GetUrls() []string {
-	return sr.Parent.Urls
+	return sr.Parent.Metadata.HttpInfo.Urls
+}
+
+func (sr *StreamReader) SetHttpInfo(host, userAgent string) {
+	httpInfo := HttpInfo{
+		Host:      host,
+		UserAgent: userAgent,
+	}
+	sr.Parent.Metadata.HttpInfo = httpInfo
+}
+
+func (sr *StreamReader) SetApplicationProtocol(applicationProtocol string) {
+	sr.Parent.ApplicationProtocol = applicationProtocol
 }

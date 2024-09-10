@@ -12,44 +12,39 @@ import (
 	"time"
 )
 
-// Collections 单向流
-type Collections struct {
-	Urls                []string `bson:"urls"`
-	SrcIP               string   `bson:"src_ip"`
-	DstIP               string   `bson:"dst_ip"`
-	Host                string   `bson:"host"`
-	RejectFSM           int      `bson:"reject_fsm"` // FSM (Finite State Machine)有限状态机
-	RejectConnFsm       int      `bson:"reject_conn_fsm"`
-	RejectOpt           int      `bson:"reject_opt"`
-	MissBytes           int      `bson:"miss_bytes"`
-	Sz                  int      `bson:"sz"`
-	Pkt                 int      `bson:"pkt"`
-	Reassembled         int      `bson:"reassembled"`
-	OutOfOrderPackets   int      `bson:"out_of_order_packets"`
-	OutOfOrderBytes     int      `bson:"out_of_order_bytes"`
-	BiggestChunkBytes   int      `bson:"biggest_chunk_bytes"`
-	BiggestChunkPackets int      `bson:"biggest_chunk_packets"`
-	OverlapBytes        int      `bson:"overlap_bytes"`
-	OverlapPackets      int      `bson:"overlap_packets"`
-	Application         string   `bson:"application"`
-}
-
 // Stream 流
 type Stream struct {
 	sync.Mutex
-	SessionID      string `bson:"session_id"`
-	StartTime      string `bson:"start_time"`
-	EndTime        string `bson:"end_time"`
-	Client         StreamReader
-	Server         StreamReader
-	TcpState       *reassembly.TCPSimpleFSM
-	OptChecker     reassembly.TCPOptionCheck
-	Net, Transport gopacket.Flow
-	fsmErr         bool
-	Ident          string `bson:"ident"`
-	Collections
-	PacketCount int8  `bson:"packet_count"`
-	ByteCount   int16 `bson:"byte_count"`
+	SessionID           string    `bson:"session_id"`
+	StartTime           time.Time `bson:"start_time"`
+	EndTime             time.Time `bson:"end_time"`
+	Client              StreamReader
+	Server              StreamReader
+	TcpState            *reassembly.TCPSimpleFSM
+	OptChecker          reassembly.TCPOptionCheck
+	Net, Transport      gopacket.Flow
+	fsmErr              bool
+	Ident               string `bson:"ident"`
+	PacketCount         int8   `bson:"packet_count"`
+	ByteCount           int16  `bson:"byte_count"`
+	ProtocolFlags       ProtocolFlags
+	Metadata            Metadata
+	SrcIP               string `bson:"src_ip"`
+	DstIP               string `bson:"dst_ip"`
+	RejectFSM           int    `bson:"reject_fsm"` // FSM (Finite State Machine)有限状态机
+	RejectConnFsm       int    `bson:"reject_conn_fsm"`
+	RejectOpt           int    `bson:"reject_opt"`
+	MissBytes           int    `bson:"miss_bytes"`
+	BytesCount          int    `bson:"bytes_count"`
+	PacketsCount        int    `bson:"packets_count"`
+	Reassembled         int    `bson:"reassembled"`
+	OutOfOrderPackets   int    `bson:"out_of_order_packets"`
+	OutOfOrderBytes     int    `bson:"out_of_order_bytes"`
+	BiggestChunkBytes   int    `bson:"biggest_chunk_bytes"`
+	BiggestChunkPackets int    `bson:"biggest_chunk_packets"`
+	OverlapBytes        int    `bson:"overlap_bytes"`
+	OverlapPackets      int    `bson:"overlap_packets"`
+	ApplicationProtocol string `bson:"application_protocol"`
 }
 
 func (s *Stream) Accept(tcp *layers.TCP, ci gopacket.CaptureInfo, dir reassembly.TCPFlowDirection, nextSeq reassembly.Sequence, start *bool, ac reassembly.AssemblerContext) bool {
@@ -99,8 +94,8 @@ func (s *Stream) ReassembledSG(sg reassembly.ScatterGather, ac reassembly.Assemb
 	if skip > 0 {
 		s.MissBytes += skip // 丢失字节
 	}
-	s.Sz += length - saved
-	s.Pkt += sgStats.Packets
+	s.BytesCount += length - saved
+	s.PacketsCount += sgStats.Packets
 	if sgStats.Chunks > 1 {
 		s.Reassembled++ // 重组包数
 	}
@@ -151,6 +146,7 @@ func (s *Stream) ReassemblyComplete(ac reassembly.AssemblerContext) bool {
 	if config.UseMongo {
 		// TODO save mongodb
 		s.Lock()
+		s.EndTime = time.Now()
 		s.Save()
 		s.Unlock()
 	}
@@ -162,27 +158,19 @@ func (s *Stream) ReassemblyComplete(ac reassembly.AssemblerContext) bool {
 func (s *Stream) Save() {
 	// TODO ignore empty host
 	sessionData := Sessions{
-		SessionId:   s.SessionID,
-		SrcIp:       s.SrcIP,
-		DstIp:       s.DstIP,
-		SrcPort:     s.Client.SrcPort,
-		DstPort:     s.Client.DstPort,
-		Protocol:    "tcp",
-		StartTime:   time.DateTime,
-		EndTime:     time.DateTime,
-		PacketCount: s.PacketCount,
-		ByteCount:   s.ByteCount,
-		ProtocolFlags: ProtocolFlags{
-			TCP: TCPFlags{},
-			UDP: UDPFlags{},
-		},
-		ApplicationProtocol: "",
-		Metadata: Metadata{
-			HttpInfo: HttpInfo{},
-			DnsInfo:  DnsInfo{},
-			RtpInfo:  RtpInfo{},
-			TlsInfo:  TlsInfo{},
-		},
+		SessionId:           s.SessionID,
+		SrcIp:               s.SrcIP,
+		DstIp:               s.DstIP,
+		SrcPort:             s.Client.SrcPort,
+		DstPort:             s.Client.DstPort,
+		Protocol:            "tcp",
+		StartTime:           s.StartTime,
+		EndTime:             time.Now(),
+		PacketCount:         s.PacketCount,
+		ByteCount:           s.ByteCount,
+		ProtocolFlags:       s.ProtocolFlags,
+		ApplicationProtocol: s.ApplicationProtocol,
+		Metadata:            s.Metadata,
 	}
 	err := mongo.InsertOne("stream", sessionData)
 	if err != nil {
