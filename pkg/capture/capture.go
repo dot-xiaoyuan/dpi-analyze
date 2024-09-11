@@ -21,9 +21,10 @@ var (
 )
 
 type Config struct {
-	OffLine string
-	Nic     string
-	SnapLen int32
+	OffLine              string
+	Nic                  string
+	SnapLen              int32
+	BerkeleyPacketFilter string
 }
 
 // PacketHandler 处理数据包接口
@@ -46,6 +47,16 @@ func StartCapture(ctx context.Context, c Config, handler PacketHandler, done cha
 		}), zap.Error(Err))
 	}
 
+	if c.BerkeleyPacketFilter != "" {
+		Err = Handle.SetBPFFilter(c.BerkeleyPacketFilter)
+		if Err != nil {
+			zap.L().Error("berkeley packet filter panic", zap.Error(Err))
+			os.Exit(1)
+		}
+		zap.L().Info(i18n.TT("Berkeley packet filter set", map[string]interface{}{
+			"bpf": c.BerkeleyPacketFilter,
+		}))
+	}
 	if Err != nil {
 		zap.L().Error("pcap panic", zap.Error(Err))
 		os.Exit(1)
@@ -69,7 +80,7 @@ func StartCapture(ctx context.Context, c Config, handler PacketHandler, done cha
 			return
 		case packet, ok := <-packets:
 			if !ok {
-				zap.L().Debug("packets channel closed")
+				zap.L().Info(i18n.T("Packets Channel Closed"))
 				done <- struct{}{}
 				return
 			}

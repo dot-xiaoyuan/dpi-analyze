@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/features"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
+	"go.uber.org/zap"
 	"io"
 	"sync"
 )
@@ -37,6 +38,7 @@ func (sr *StreamReader) Read(p []byte) (n int, err error) {
 }
 
 func (sr *StreamReader) Run(wg *sync.WaitGroup) {
+	zap.L().Debug("Running stream", zap.String("Ident", sr.Ident))
 	defer wg.Done()
 	b := bufio.NewReader(sr)
 	buffer := make([]byte, 0)

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/mongo"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -11,6 +12,10 @@ import (
 	"go.uber.org/zap"
 	"sync"
 	"time"
+)
+
+var (
+	StreamClose sync.WaitGroup
 )
 
 // Stream 流
@@ -117,18 +122,22 @@ func (s *Stream) ReassembledSG(sg reassembly.ScatterGather, ac reassembly.Assemb
 
 	var ident string
 	if dir == reassembly.TCPDirClientToServer {
-		ident = fmt.Sprintf("%v %v(%s): ", s.Net, s.Transport, dir)
+		ident = fmt.Sprintf("%v %v(%s)", s.Net, s.Transport, dir)
 	} else {
-		ident = fmt.Sprintf("%v %v(%s): ", s.Net.Reverse(), s.Transport.Reverse(), dir)
+		ident = fmt.Sprintf("%v %v(%s)", s.Net.Reverse(), s.Transport.Reverse(), dir)
 	}
-	zap.L().Debug(fmt.Sprintf("%s: SG reassembled packet with %d bytes (start:%v,end:%v,skip:%d,saved:%d,nb:%d,%d,overlap:%d,%d)\n", ident, length, start, end, skip, saved, sgStats.Packets, sgStats.Chunks, sgStats.OverlapBytes, sgStats.OverlapPackets))
-	//if skip == -1 && *allowMissingInit {
-	//	// this is allowed
-	//} else if skip != 0 {
-	//	// Missing bytes in stream: do not even try to parse it
-	//	return
-	//}
-	if skip != 0 {
+	zap.L().Debug(i18n.TT("SG reassembled packet with bytes", map[string]interface{}{
+		"count": length,
+		"ident": ident,
+	}), zap.Bool("start", start),
+		zap.Bool("end", end),
+		zap.Int("skip", skip),
+		zap.Int("saved", saved),
+	)
+	if skip == -1 && config.IgnoreMissing {
+		// this is allowed
+	} else if skip != 0 {
+		// Missing bytes in stream: do not even try to parse it
 		return
 	}
 	data := sg.Fetch(length)
@@ -142,14 +151,21 @@ func (s *Stream) ReassembledSG(sg reassembly.ScatterGather, ac reassembly.Assemb
 }
 
 func (s *Stream) ReassemblyComplete(ac reassembly.AssemblerContext) bool {
-	zap.L().Debug("Connection Closed", zap.String("ident", s.Ident))
+	zap.L().Debug(i18n.TT("Connection Closed", map[string]interface{}{
+		"ident": s.Ident,
+	}))
 	// 在重组结束时存储
 	if config.UseMongo {
-		// TODO save mongodb
-		s.Lock()
-		s.EndTime = time.Now()
-		s.Save()
-		s.Unlock()
+		StreamClose.Add(1)
+		go func() {
+			defer StreamClose.Done()
+			// TODO save mongodb
+			s.Lock()
+			s.EndTime = time.Now()
+			s.Save()
+			s.Unlock()
+		}()
+		StreamClose.Wait()
 	}
 	close(s.Client.Bytes)
 	close(s.Server.Bytes)

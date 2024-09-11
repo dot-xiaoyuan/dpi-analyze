@@ -20,24 +20,28 @@ const (
 )
 
 var (
-	Cfg          *Yaml
-	Language     string
-	LogLevel     string
-	Debug        bool
-	CaptureNic   string
-	CapturePcap  string
-	UseMongo     bool
-	ParseFeature bool
+	Cfg                  *Yaml
+	Language             string
+	LogLevel             string
+	Debug                bool
+	CaptureNic           string
+	CapturePcap          string
+	UseMongo             bool
+	ParseFeature         bool
+	BerkeleyPacketFilter string
+	IgnoreMissing        bool
 )
 
 type Yaml struct {
-	Language     string  `mapstructure:"language"`
-	LogLevel     string  `mapstructure:"log_level"`
-	Debug        bool    `mapstructure:"debug"`
-	UseMongo     bool    `mapstructure:"use_mongo"`
-	ParseFeature bool    `mapstructure:"parse_app"`
-	Capture      Capture `mapstructure:"capture"`
-	Mongodb      Mongodb `mapstructure:"mongodb"`
+	Language             string  `mapstructure:"language"`
+	LogLevel             string  `mapstructure:"log_level"`
+	Debug                bool    `mapstructure:"debug"`
+	UseMongo             bool    `mapstructure:"use_mongo"`
+	ParseFeature         bool    `mapstructure:"parse_app"`
+	BerkeleyPacketFilter string  `mapstructure:"berkeley_packet_filter"`
+	IgnoreMissing        bool    `mapstructure:"ignore_missing"`
+	Capture              Capture `mapstructure:"capture"`
+	Mongodb              Mongodb `mapstructure:"mongodb"`
 }
 
 type Capture struct {

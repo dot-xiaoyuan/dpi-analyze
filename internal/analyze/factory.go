@@ -81,5 +81,6 @@ func (f *Factory) New(netFlow, tcpFlow gopacket.Flow, tcp *layers.TCP, ac reasse
 }
 
 func (f *Factory) WaitGoRoutines() {
+	//time.Sleep(time.Second * 3)
 	f.wg.Wait()
 }
