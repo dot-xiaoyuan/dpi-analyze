@@ -10,7 +10,7 @@ type StreamReaderInterface interface {
 	UnLockParent()
 	SetHttpInfo(host, userAgent string)
 	SetTlsInfo(sni, version, cipherSuite string)
-	SetApplicationProtocol(applicationProtocol string)
+	SetApplicationProtocol(applicationProtocol ProtocolType)
 }
 
 type ProtocolHandler interface {

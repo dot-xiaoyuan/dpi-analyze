@@ -40,6 +40,7 @@ func (HTTPHandler) HandleData(data []byte, reader StreamReaderInterface) {
 			reader.LockParent()
 			urls := append(reader.GetUrls(), req.URL.String())
 			reader.SetUrls(urls)
+			reader.SetHttpInfo(req.Host, req.UserAgent())
 			reader.UnLockParent()
 		} else {
 			res, err := http.ReadResponse(r, nil)
@@ -52,6 +53,7 @@ func (HTTPHandler) HandleData(data []byte, reader StreamReaderInterface) {
 				req = urls[0]
 				reader.SetUrls(urls[1:])
 			}
+			reader.SetHttpInfo(req, "")
 			reader.UnLockParent()
 			if err == io.EOF || errors.Is(err, io.ErrUnexpectedEOF) {
 				break

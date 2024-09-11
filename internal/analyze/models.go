@@ -1,6 +1,9 @@
 package analyze
 
-import "time"
+import (
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
+	"time"
+)
 
 // TCPFlags 结构体，用于保存 TCP 协议的标志
 type TCPFlags struct {
@@ -69,20 +72,20 @@ type CustomFields struct {
 
 // Sessions 用于存储每个网络会话的信息，包括源 IP、目标 IP、协议、传输层协议等。
 type Sessions struct {
-	SessionId           string        `bson:"session_id"`
-	SrcIp               string        `bson:"src_ip"`
-	DstIp               string        `bson:"dst_ip"`
-	SrcPort             string        `bson:"src_port"`
-	DstPort             string        `bson:"dst_port"`
-	Protocol            string        `bson:"protocol"`
-	StartTime           time.Time     `bson:"start_time"`
-	EndTime             time.Time     `bson:"end_time"`
-	PacketCount         int8          `bson:"packet_count"`
-	ByteCount           int16         `bson:"byte_count"`
-	ProtocolFlags       ProtocolFlags `bson:"protocol_flags"` // 协议标志
-	ApplicationProtocol string        `bson:"application_protocol"`
-	Metadata            Metadata      `bson:"metadata"`
-	CustomFields        CustomFields  `bson:"custom_fields"`
+	SessionId           string                 `bson:"session_id"`
+	SrcIp               string                 `bson:"src_ip"`
+	DstIp               string                 `bson:"dst_ip"`
+	SrcPort             string                 `bson:"src_port"`
+	DstPort             string                 `bson:"dst_port"`
+	Protocol            string                 `bson:"protocol"`
+	StartTime           time.Time              `bson:"start_time"`
+	EndTime             time.Time              `bson:"end_time"`
+	PacketCount         int8                   `bson:"packet_count"`
+	ByteCount           int16                  `bson:"byte_count"`
+	ProtocolFlags       ProtocolFlags          `bson:"protocol_flags"` // 协议标志
+	ApplicationProtocol protocols.ProtocolType `bson:"application_protocol"`
+	Metadata            Metadata               `bson:"metadata"`
+	CustomFields        CustomFields           `bson:"custom_fields"`
 }
 
 // Packet 用于记录特定会话中的数据包信息。

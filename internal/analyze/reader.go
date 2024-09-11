@@ -91,6 +91,7 @@ func (sr *StreamReader) SetTlsInfo(sni, version, cipherSuite string) {
 	if cipherSuite != "" {
 		sr.Parent.Metadata.TlsInfo.CipherSuite = cipherSuite
 	}
+	sr.Parent.ApplicationProtocol = protocols.TLS
 	// 如果特征库加载 进行域名分析
 	if features.DomainAc != nil {
 		sr.Parent.Metadata.ApplicationInfo.AppName = features.DomainMatch(sni)
@@ -116,9 +117,14 @@ func (sr *StreamReader) SetHttpInfo(host, userAgent string) {
 		Host:      host,
 		UserAgent: userAgent,
 	}
+	// 如果特征库加载 进行域名分析
+	if features.DomainAc != nil {
+		sr.Parent.Metadata.ApplicationInfo.AppName = features.DomainMatch(host)
+	}
 	sr.Parent.Metadata.HttpInfo = httpInfo
+	sr.Parent.ApplicationProtocol = protocols.HTTP
 }
 
-func (sr *StreamReader) SetApplicationProtocol(applicationProtocol string) {
+func (sr *StreamReader) SetApplicationProtocol(applicationProtocol protocols.ProtocolType) {
 	sr.Parent.ApplicationProtocol = applicationProtocol
 }

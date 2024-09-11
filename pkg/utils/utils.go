@@ -3,7 +3,6 @@ package utils
 import (
 	"encoding/binary"
 	"fmt"
-	"go.uber.org/zap"
 )
 
 // 工具包
@@ -125,7 +124,7 @@ func GetServerCipherSuite(data []byte) (cipherSuite string) {
 	}
 	//zap.L().Info("cipherSuite", zap.ByteString("cs", data[pos+2]))
 	cs := data[pos : pos+2]
-	zap.L().Info(fmt.Sprintf("0x%02x%02x", cs[0], cs[1]))
+	// zap.L().Info(fmt.Sprintf("0x%02x%02x", cs[0], cs[1]))
 	cipherSuite = fmt.Sprintf("0x%02x%02x", cs[0], cs[1])
 	return
 }
