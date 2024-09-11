@@ -50,6 +50,8 @@ func (sr *StreamReader) Run(wg *sync.WaitGroup) {
 		n, err := b.Read(data)
 		if err != nil {
 			if err == io.EOF {
+				// TODO 流关闭，记录数据
+				zap.L().Debug("Stream EOF", zap.String("Ident", sr.Ident))
 				break
 			}
 			continue

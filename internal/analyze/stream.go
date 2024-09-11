@@ -154,19 +154,6 @@ func (s *Stream) ReassemblyComplete(ac reassembly.AssemblerContext) bool {
 	zap.L().Debug(i18n.TT("Connection Closed", map[string]interface{}{
 		"ident": s.Ident,
 	}))
-	// 在重组结束时存储
-	if config.UseMongo {
-		StreamClose.Add(1)
-		go func() {
-			defer StreamClose.Done()
-			// TODO save mongodb
-			s.Lock()
-			s.EndTime = time.Now()
-			s.Save()
-			s.Unlock()
-		}()
-		StreamClose.Wait()
-	}
 	close(s.Client.Bytes)
 	close(s.Server.Bytes)
 	return false
