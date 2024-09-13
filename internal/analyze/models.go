@@ -26,9 +26,11 @@ type ProtocolFlags struct {
 
 // HttpInfo 存储 HTTP 相关信息
 type HttpInfo struct {
-	Host      string   `bson:"host"`
-	UserAgent string   `bson:"user_agent"`
-	Urls      []string `bson:"urls"`
+	Host        string   `bson:"host"`
+	UserAgent   string   `bson:"user_agent"`
+	Urls        []string `bson:"urls"`
+	ContentType string   `bson:"content_type"`
+	Upgrade     string   `bson:"upgrade"`
 }
 
 // DnsInfo 存储 DNS 相关信息

@@ -4,11 +4,11 @@ package protocols
 type StreamReaderInterface interface {
 	GetIdentifier([]byte) ProtocolType
 	GetIdent() bool
-	SetUrls(urls []string)
+	SetUrls(urls string)
 	GetUrls() []string
 	LockParent()
 	UnLockParent()
-	SetHttpInfo(host, userAgent string)
+	SetHttpInfo(host, userAgent, contentType, upgrade string)
 	SetTlsInfo(sni, version, cipherSuite string)
 	SetApplicationProtocol(applicationProtocol ProtocolType)
 }

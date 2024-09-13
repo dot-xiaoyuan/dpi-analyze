@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/features"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
-	"go.uber.org/zap"
 	"io"
 	"sync"
 )
@@ -38,7 +37,7 @@ func (sr *StreamReader) Read(p []byte) (n int, err error) {
 }
 
 func (sr *StreamReader) Run(wg *sync.WaitGroup) {
-	zap.L().Debug("Running stream", zap.String("Ident", sr.Ident))
+	sr.Parent.Wg.Add(1)
 	defer wg.Done()
 	b := bufio.NewReader(sr)
 	buffer := make([]byte, 0)
@@ -46,12 +45,15 @@ func (sr *StreamReader) Run(wg *sync.WaitGroup) {
 	var handler protocols.ProtocolHandler
 	for {
 		// read by Reader
-		data := make([]byte, 4096)
+		data := make([]byte, 1024)
 		n, err := b.Read(data)
 		if err != nil {
 			if err == io.EOF {
-				// TODO 流关闭，记录数据
-				zap.L().Debug("Stream EOF", zap.String("Ident", sr.Ident))
+				go func() {
+					defer sr.Parent.Wg.Done()
+					// zap.L().Debug("Stream EOF", zap.String("Ident", sr.Ident))
+					sr.Parent.Save()
+				}()
 				break
 			}
 			continue
@@ -108,18 +110,21 @@ func (sr *StreamReader) GetIdent() bool {
 }
 
 // SetUrls 设置Urls
-func (sr *StreamReader) SetUrls(urls []string) {
-	sr.Parent.Metadata.HttpInfo.Urls = urls
+func (sr *StreamReader) SetUrls(urls string) {
+	sr.Parent.Metadata.HttpInfo.Urls = append(sr.GetUrls(), urls)
 }
 
 func (sr *StreamReader) GetUrls() []string {
 	return sr.Parent.Metadata.HttpInfo.Urls
 }
 
-func (sr *StreamReader) SetHttpInfo(host, userAgent string) {
+func (sr *StreamReader) SetHttpInfo(host, userAgent, contentType, upgrade string) {
 	httpInfo := HttpInfo{
-		Host:      host,
-		UserAgent: userAgent,
+		Host:        host,
+		UserAgent:   userAgent,
+		ContentType: contentType,
+		Upgrade:     upgrade,
+		Urls:        sr.GetUrls(),
 	}
 	// 如果特征库加载 进行域名分析
 	if features.DomainAc != nil {

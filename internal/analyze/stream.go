@@ -1,7 +1,6 @@
 package analyze
 
 import (
-	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
@@ -20,6 +19,7 @@ var (
 
 // Stream 流
 type Stream struct {
+	Wg sync.WaitGroup
 	sync.Mutex
 	SessionID           string    `bson:"session_id"`
 	StartTime           time.Time `bson:"start_time"`
@@ -93,7 +93,8 @@ func (s *Stream) Accept(tcp *layers.TCP, ci gopacket.CaptureInfo, dir reassembly
 }
 
 func (s *Stream) ReassembledSG(sg reassembly.ScatterGather, ac reassembly.AssemblerContext) {
-	dir, start, end, skip := sg.Info()
+	//dir, start, end, skip := sg.Info()
+	dir, _, _, skip := sg.Info()
 	length, saved := sg.Lengths()
 	// update stats
 	sgStats := sg.Stats()
@@ -120,7 +121,7 @@ func (s *Stream) ReassembledSG(sg reassembly.ScatterGather, ac reassembly.Assemb
 	s.OverlapBytes += sgStats.OverlapBytes     // 重叠字节数
 	s.OverlapPackets += sgStats.OverlapPackets // 重叠包数
 
-	var ident string
+	/*var ident string
 	if dir == reassembly.TCPDirClientToServer {
 		ident = fmt.Sprintf("%v %v(%s)", s.Net, s.Transport, dir)
 	} else {
@@ -133,7 +134,7 @@ func (s *Stream) ReassembledSG(sg reassembly.ScatterGather, ac reassembly.Assemb
 		zap.Bool("end", end),
 		zap.Int("skip", skip),
 		zap.Int("saved", saved),
-	)
+	)*/
 	if skip == -1 && config.IgnoreMissing {
 		// this is allowed
 	} else if skip != 0 {
@@ -154,12 +155,18 @@ func (s *Stream) ReassemblyComplete(ac reassembly.AssemblerContext) bool {
 	zap.L().Debug(i18n.TT("Connection Closed", map[string]interface{}{
 		"ident": s.Ident,
 	}))
+
 	close(s.Client.Bytes)
 	close(s.Server.Bytes)
+	s.Wg.Wait()
+
 	return false
 }
 
 func (s *Stream) Save() {
+	if !config.UseMongo {
+		return
+	}
 	// TODO ignore empty host
 	sessionData := Sessions{
 		SessionId:           s.SessionID,

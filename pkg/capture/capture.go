@@ -77,6 +77,7 @@ func StartCapture(ctx context.Context, c Config, handler PacketHandler, done cha
 	for {
 		select {
 		case <-ctx.Done():
+			zap.L().Info("Capture stopped")
 			return
 		case packet, ok := <-packets:
 			if !ok {
