@@ -5,6 +5,7 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/features"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
 	"io"
+	"slices"
 	"sync"
 )
 
@@ -111,6 +112,10 @@ func (sr *StreamReader) GetIdent() bool {
 
 // SetUrls 设置Urls
 func (sr *StreamReader) SetUrls(urls string) {
+	_, existed := slices.BinarySearch(sr.Parent.Metadata.HttpInfo.Urls, urls)
+	if existed {
+		return
+	}
 	sr.Parent.Metadata.HttpInfo.Urls = append(sr.GetUrls(), urls)
 }
 
