@@ -42,6 +42,7 @@ func init() {
 	rootCmd.PersistentFlags().BoolVarP(&config.Debug, "debug", "d", config.Cfg.Debug, "debug mode")
 	// define sub command
 	rootCmd.AddCommand(CaptureCmd)
+	rootCmd.AddCommand(StatisticsCmd)
 }
 
 func RunFunc(c *cobra.Command, args []string) {

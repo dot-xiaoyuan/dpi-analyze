@@ -17,6 +17,11 @@
 "Packets Channel Closed" = "数据包通道已关闭"
 "ignore missing packet" = "是否允许忽略 乱序/丢包/重传数据包统计"
 
+# Statistics Flags
+"statistics port to listen on" = "统计监听端口"
+"Statistics Stopped" = "统计服务关闭"
+"Server exiting" = "服务退出"
+
 # Anaiyze
 "Analysis program initialization completed" = "分析程序初始化完成"
 "Starting capture" = "开始捕获数据包"

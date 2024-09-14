@@ -30,6 +30,7 @@ var (
 	ParseFeature         bool
 	BerkeleyPacketFilter string
 	IgnoreMissing        bool
+	StatisticsPort       uint
 )
 
 type Yaml struct {
@@ -42,12 +43,17 @@ type Yaml struct {
 	IgnoreMissing        bool    `mapstructure:"ignore_missing"`
 	Capture              Capture `mapstructure:"capture"`
 	Mongodb              Mongodb `mapstructure:"mongodb"`
+	Statistics           Statistics
 }
 
 type Capture struct {
 	OfflineFile string `mapstructure:"offline_file"`
 	NIC         string `mapstructure:"nic"`
 	SnapLen     int32  `mapstructure:"snap_len"`
+}
+
+type Statistics struct {
+	Port uint `mapstructure:"port"`
 }
 
 type Mongodb struct {
