@@ -12,15 +12,26 @@
 "capture nic" = "指定捕获网卡"
 "capture pcap file" = "指定离线数据包"
 "use mongo db" = "是否使用mongo存储"
+"Berkeley packet filter" = "Berkeley 数据包过滤器"
+"Berkeley packet filter set" = "数据包过滤设置:[ {{.bpf}} ]"
+"Packets Channel Closed" = "数据包通道已关闭"
+"ignore missing packet" = "是否允许忽略 乱序/丢包/重传数据包统计"
+
+# Statistics Flags
+"statistics port to listen on" = "统计监听端口"
+"Statistics Stopped" = "统计服务关闭"
+"Server exiting" = "服务退出"
 
 # Anaiyze
 "Analysis program initialization completed" = "分析程序初始化完成"
 "Starting capture" = "开始捕获数据包"
-"Open offline package file" = "分析离线数据包文件:{{.offline}}"
-"Analyze network card" = "分析网卡:{{.nic}}"
+"Open offline package file" = "分析离线数据包:[ {{.offline}} ]"
+"Analyze network card" = "分析网卡数据包:[ {{.nic}} ]"
 "Flushed stream" = "刷新 {{.count}} 个流"
 "Received terminate signal, stop analyze..." = "收到终止信号，停止分析......"
 "No Protocol Handler" = "无协议处理程序"
+"SG reassembled packet with bytes" = "重组数据包[{{.count}}]字节[ {{.ident}} ]"
+"Connection Closed" = "连接关闭 [ {{.ident}} ]"
 
 # Mongodb
 "Start Load Mongodb Component" = "开始加载Mongodb组件"
@@ -28,7 +39,7 @@
 "mongodb.port is empty" = "Mongodb 端口 未配置"
 "Failed to connect to MongoDB" = "无法连接到 Mongodb"
 "Failed to ping MongoDB" = "无法 ping 通 MongoDB"
-"Connected to MongoDB!" = "已连接到 Mongodb! mongodb://{{.host}}:{{.port}}"
+"Connected to MongoDB!" = "已连接到 Mongodb! [ mongodb://{{.host}}:{{.port}} ]"
 "MongoDB client not initialized" = "MongoDB 客户端未初始化"
 
 # Feature

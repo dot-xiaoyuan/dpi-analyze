@@ -5,6 +5,7 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/features"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
 	"io"
+	"slices"
 	"sync"
 )
 
@@ -37,18 +38,23 @@ func (sr *StreamReader) Read(p []byte) (n int, err error) {
 }
 
 func (sr *StreamReader) Run(wg *sync.WaitGroup) {
+	sr.Parent.Wg.Add(1)
 	defer wg.Done()
-
 	b := bufio.NewReader(sr)
 	buffer := make([]byte, 0)
 	var protocolIdentified bool
 	var handler protocols.ProtocolHandler
 	for {
 		// read by Reader
-		data := make([]byte, 4096)
+		data := make([]byte, 1024)
 		n, err := b.Read(data)
 		if err != nil {
 			if err == io.EOF {
+				go func() {
+					defer sr.Parent.Wg.Done()
+					// zap.L().Debug("Stream EOF", zap.String("Ident", sr.Ident))
+					sr.Parent.Save()
+				}()
 				break
 			}
 			continue
@@ -81,12 +87,21 @@ func (sr *StreamReader) GetIdentifier(buffer []byte) protocols.ProtocolType {
 	return protocols.IdentifyProtocol(buffer, sr.SrcPort, sr.DstPort)
 }
 
-// SetHostName 设置hostname
-func (sr *StreamReader) SetHostName(host string) {
-	sr.Parent.Host = host
+// SetTlsInfo SetHostName
+func (sr *StreamReader) SetTlsInfo(sni, version, cipherSuite string) {
+	if sni != "" {
+		sr.Parent.Metadata.TlsInfo.Sni = sni
+	}
+	if version != "" {
+		sr.Parent.Metadata.TlsInfo.Version = version
+	}
+	if cipherSuite != "" {
+		sr.Parent.Metadata.TlsInfo.CipherSuite = cipherSuite
+	}
+	sr.Parent.ApplicationProtocol = protocols.TLS
 	// 如果特征库加载 进行域名分析
 	if features.DomainAc != nil {
-		sr.Parent.Application = features.DomainMatch(sr.Parent.Host)
+		sr.Parent.Metadata.ApplicationInfo.AppName = features.DomainMatch(sni)
 	}
 }
 
@@ -96,10 +111,34 @@ func (sr *StreamReader) GetIdent() bool {
 }
 
 // SetUrls 设置Urls
-func (sr *StreamReader) SetUrls(urls []string) {
-	sr.Parent.Urls = urls
+func (sr *StreamReader) SetUrls(urls string) {
+	_, existed := slices.BinarySearch(sr.Parent.Metadata.HttpInfo.Urls, urls)
+	if existed {
+		return
+	}
+	sr.Parent.Metadata.HttpInfo.Urls = append(sr.GetUrls(), urls)
 }
 
 func (sr *StreamReader) GetUrls() []string {
-	return sr.Parent.Urls
+	return sr.Parent.Metadata.HttpInfo.Urls
+}
+
+func (sr *StreamReader) SetHttpInfo(host, userAgent, contentType, upgrade string) {
+	httpInfo := HttpInfo{
+		Host:        host,
+		UserAgent:   userAgent,
+		ContentType: contentType,
+		Upgrade:     upgrade,
+		Urls:        sr.GetUrls(),
+	}
+	// 如果特征库加载 进行域名分析
+	if features.DomainAc != nil {
+		sr.Parent.Metadata.ApplicationInfo.AppName = features.DomainMatch(host)
+	}
+	sr.Parent.Metadata.HttpInfo = httpInfo
+	sr.Parent.ApplicationProtocol = protocols.HTTP
+}
+
+func (sr *StreamReader) SetApplicationProtocol(applicationProtocol protocols.ProtocolType) {
+	sr.Parent.ApplicationProtocol = applicationProtocol
 }

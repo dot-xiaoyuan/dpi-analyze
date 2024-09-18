@@ -5,6 +5,8 @@ use_mongo: false
 capture:
   offline_file:
   nic: en0
+statistics:
+  port: 8088
 mongodb:
   host: 127.0.0.1
   port: 27017

@@ -1,49 +1,56 @@
 package analyze
 
 import (
-	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/mongo"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/reassembly"
 	"go.uber.org/zap"
 	"sync"
+	"time"
 )
 
-// Collections 单向流
-type Collections struct {
-	Urls                []string `bson:"urls"`
-	SrcIP               string   `bson:"src_ip"`
-	DstIP               string   `bson:"dst_ip"`
-	Host                string   `bson:"host"`
-	RejectFSM           int      `bson:"reject_fsm"` // FSM (Finite State Machine)有限状态机
-	RejectConnFsm       int      `bson:"reject_conn_fsm"`
-	RejectOpt           int      `bson:"reject_opt"`
-	MissBytes           int      `bson:"miss_bytes"`
-	Sz                  int      `bson:"sz"`
-	Pkt                 int      `bson:"pkt"`
-	Reassembled         int      `bson:"reassembled"`
-	OutOfOrderPackets   int      `bson:"out_of_order_packets"`
-	OutOfOrderBytes     int      `bson:"out_of_order_bytes"`
-	BiggestChunkBytes   int      `bson:"biggest_chunk_bytes"`
-	BiggestChunkPackets int      `bson:"biggest_chunk_packets"`
-	OverlapBytes        int      `bson:"overlap_bytes"`
-	OverlapPackets      int      `bson:"overlap_packets"`
-	Application         string   `bson:"application"`
-}
+var (
+	StreamClose sync.WaitGroup
+)
 
 // Stream 流
 type Stream struct {
+	Wg sync.WaitGroup
 	sync.Mutex
-	Client         StreamReader
-	Server         StreamReader
-	TcpState       *reassembly.TCPSimpleFSM
-	OptChecker     reassembly.TCPOptionCheck
-	Net, Transport gopacket.Flow
-	fsmErr         bool
-	Ident          string `bson:"ident"`
-	Collections
+	SessionID           string    `bson:"session_id"`
+	StartTime           time.Time `bson:"start_time"`
+	EndTime             time.Time `bson:"end_time"`
+	Client              StreamReader
+	Server              StreamReader
+	TcpState            *reassembly.TCPSimpleFSM
+	OptChecker          reassembly.TCPOptionCheck
+	Net, Transport      gopacket.Flow
+	fsmErr              bool
+	Ident               string `bson:"ident"`
+	PacketCount         int8   `bson:"packet_count"`
+	ByteCount           int16  `bson:"byte_count"`
+	ProtocolFlags       ProtocolFlags
+	Metadata            Metadata
+	SrcIP               string                 `bson:"src_ip"`
+	DstIP               string                 `bson:"dst_ip"`
+	RejectFSM           int                    `bson:"reject_fsm"` // FSM (Finite State Machine)有限状态机
+	RejectConnFsm       int                    `bson:"reject_conn_fsm"`
+	RejectOpt           int                    `bson:"reject_opt"`
+	MissBytes           int                    `bson:"miss_bytes"`
+	BytesCount          int                    `bson:"bytes_count"`
+	PacketsCount        int                    `bson:"packets_count"`
+	Reassembled         int                    `bson:"reassembled"`
+	OutOfOrderPackets   int                    `bson:"out_of_order_packets"`
+	OutOfOrderBytes     int                    `bson:"out_of_order_bytes"`
+	BiggestChunkBytes   int                    `bson:"biggest_chunk_bytes"`
+	BiggestChunkPackets int                    `bson:"biggest_chunk_packets"`
+	OverlapBytes        int                    `bson:"overlap_bytes"`
+	OverlapPackets      int                    `bson:"overlap_packets"`
+	ApplicationProtocol protocols.ProtocolType `bson:"application_protocol"`
 }
 
 func (s *Stream) Accept(tcp *layers.TCP, ci gopacket.CaptureInfo, dir reassembly.TCPFlowDirection, nextSeq reassembly.Sequence, start *bool, ac reassembly.AssemblerContext) bool {
@@ -86,15 +93,16 @@ func (s *Stream) Accept(tcp *layers.TCP, ci gopacket.CaptureInfo, dir reassembly
 }
 
 func (s *Stream) ReassembledSG(sg reassembly.ScatterGather, ac reassembly.AssemblerContext) {
-	dir, start, end, skip := sg.Info()
+	//dir, start, end, skip := sg.Info()
+	dir, _, _, skip := sg.Info()
 	length, saved := sg.Lengths()
 	// update stats
 	sgStats := sg.Stats()
 	if skip > 0 {
 		s.MissBytes += skip // 丢失字节
 	}
-	s.Sz += length - saved
-	s.Pkt += sgStats.Packets
+	s.BytesCount += length - saved
+	s.PacketsCount += sgStats.Packets
 	if sgStats.Chunks > 1 {
 		s.Reassembled++ // 重组包数
 	}
@@ -113,20 +121,24 @@ func (s *Stream) ReassembledSG(sg reassembly.ScatterGather, ac reassembly.Assemb
 	s.OverlapBytes += sgStats.OverlapBytes     // 重叠字节数
 	s.OverlapPackets += sgStats.OverlapPackets // 重叠包数
 
-	var ident string
+	/*var ident string
 	if dir == reassembly.TCPDirClientToServer {
-		ident = fmt.Sprintf("%v %v(%s): ", s.Net, s.Transport, dir)
+		ident = fmt.Sprintf("%v %v(%s)", s.Net, s.Transport, dir)
 	} else {
-		ident = fmt.Sprintf("%v %v(%s): ", s.Net.Reverse(), s.Transport.Reverse(), dir)
+		ident = fmt.Sprintf("%v %v(%s)", s.Net.Reverse(), s.Transport.Reverse(), dir)
 	}
-	zap.L().Debug(fmt.Sprintf("%s: SG reassembled packet with %d bytes (start:%v,end:%v,skip:%d,saved:%d,nb:%d,%d,overlap:%d,%d)\n", ident, length, start, end, skip, saved, sgStats.Packets, sgStats.Chunks, sgStats.OverlapBytes, sgStats.OverlapPackets))
-	//if skip == -1 && *allowMissingInit {
-	//	// this is allowed
-	//} else if skip != 0 {
-	//	// Missing bytes in stream: do not even try to parse it
-	//	return
-	//}
-	if skip != 0 {
+	zap.L().Debug(i18n.TT("SG reassembled packet with bytes", map[string]interface{}{
+		"count": length,
+		"ident": ident,
+	}), zap.Bool("start", start),
+		zap.Bool("end", end),
+		zap.Int("skip", skip),
+		zap.Int("saved", saved),
+	)*/
+	if skip == -1 && config.IgnoreMissing {
+		// this is allowed
+	} else if skip != 0 {
+		// Missing bytes in stream: do not even try to parse it
 		return
 	}
 	data := sg.Fetch(length)
@@ -140,23 +152,38 @@ func (s *Stream) ReassembledSG(sg reassembly.ScatterGather, ac reassembly.Assemb
 }
 
 func (s *Stream) ReassemblyComplete(ac reassembly.AssemblerContext) bool {
-	zap.L().Debug("Connection Closed", zap.String("ident", s.Ident))
-	// 在重组结束时存储
-	if config.UseMongo {
-		// TODO save mongodb
-		s.Save()
-	}
+	zap.L().Debug(i18n.TT("Connection Closed", map[string]interface{}{
+		"ident": s.Ident,
+	}))
+
 	close(s.Client.Bytes)
 	close(s.Server.Bytes)
+	s.Wg.Wait()
+
 	return false
 }
 
 func (s *Stream) Save() {
-	// TODO ignore empty host
-	if len(s.Host) == 0 {
+	if !config.UseMongo {
 		return
 	}
-	err := mongo.InsertOne("stream", s.Collections)
+	// TODO ignore empty host
+	sessionData := Sessions{
+		SessionId:           s.SessionID,
+		SrcIp:               s.SrcIP,
+		DstIp:               s.DstIP,
+		SrcPort:             s.Client.SrcPort,
+		DstPort:             s.Client.DstPort,
+		Protocol:            "tcp",
+		StartTime:           s.StartTime,
+		EndTime:             time.Now(),
+		PacketCount:         s.PacketCount,
+		ByteCount:           s.ByteCount,
+		ProtocolFlags:       s.ProtocolFlags,
+		ApplicationProtocol: s.ApplicationProtocol,
+		Metadata:            s.Metadata,
+	}
+	err := mongo.InsertOne("stream", sessionData)
 	if err != nil {
 		panic(err)
 	}

@@ -33,6 +33,8 @@ func init() {
 	CaptureCmd.Flags().StringVar(&config.CapturePcap, "pcap", config.Cfg.Capture.OfflineFile, "capture pcap file")
 	CaptureCmd.Flags().BoolVar(&config.UseMongo, "use-mongo", config.Cfg.UseMongo, "use mongo db")
 	CaptureCmd.Flags().BoolVar(&config.ParseFeature, "feature", config.Cfg.ParseFeature, "parse application")
+	CaptureCmd.Flags().StringVar(&config.BerkeleyPacketFilter, "bpf", config.Cfg.BerkeleyPacketFilter, "Berkeley packet filter")
+	CaptureCmd.Flags().BoolVar(&config.IgnoreMissing, "ignore-missing", config.Cfg.IgnoreMissing, "ignore missing packet")
 }
 
 func CaptureRreFunc(c *cobra.Command, args []string) {
@@ -74,9 +76,10 @@ func CaptureRun(c *cobra.Command, args []string) {
 	assembly := analyze.NewAnalyzer()
 	done := make(chan struct{})
 	go capture.StartCapture(ctx, capture.Config{
-		OffLine: config.CapturePcap,
-		Nic:     config.CaptureNic,
-		SnapLen: 16 << 10,
+		OffLine:              config.CapturePcap,
+		Nic:                  config.CaptureNic,
+		SnapLen:              16 << 10,
+		BerkeleyPacketFilter: config.BerkeleyPacketFilter,
 	}, assembly, done)
 
 	signalChan := make(chan os.Signal, 1)

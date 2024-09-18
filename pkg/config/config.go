@@ -20,30 +20,40 @@ const (
 )
 
 var (
-	Cfg          *Yaml
-	Language     string
-	LogLevel     string
-	Debug        bool
-	CaptureNic   string
-	CapturePcap  string
-	UseMongo     bool
-	ParseFeature bool
+	Cfg                  *Yaml
+	Language             string
+	LogLevel             string
+	Debug                bool
+	CaptureNic           string
+	CapturePcap          string
+	UseMongo             bool
+	ParseFeature         bool
+	BerkeleyPacketFilter string
+	IgnoreMissing        bool
+	StatisticsPort       uint
 )
 
 type Yaml struct {
-	Language     string  `mapstructure:"language"`
-	LogLevel     string  `mapstructure:"log_level"`
-	Debug        bool    `mapstructure:"debug"`
-	UseMongo     bool    `mapstructure:"use_mongo"`
-	ParseFeature bool    `mapstructure:"parse_app"`
-	Capture      Capture `mapstructure:"capture"`
-	Mongodb      Mongodb `mapstructure:"mongodb"`
+	Language             string  `mapstructure:"language"`
+	LogLevel             string  `mapstructure:"log_level"`
+	Debug                bool    `mapstructure:"debug"`
+	UseMongo             bool    `mapstructure:"use_mongo"`
+	ParseFeature         bool    `mapstructure:"parse_app"`
+	BerkeleyPacketFilter string  `mapstructure:"berkeley_packet_filter"`
+	IgnoreMissing        bool    `mapstructure:"ignore_missing"`
+	Capture              Capture `mapstructure:"capture"`
+	Mongodb              Mongodb `mapstructure:"mongodb"`
+	Statistics           Statistics
 }
 
 type Capture struct {
 	OfflineFile string `mapstructure:"offline_file"`
 	NIC         string `mapstructure:"nic"`
 	SnapLen     int32  `mapstructure:"snap_len"`
+}
+
+type Statistics struct {
+	Port uint `mapstructure:"port"`
 }
 
 type Mongodb struct {

@@ -2,6 +2,7 @@ package utils
 
 import (
 	"encoding/binary"
+	"fmt"
 )
 
 // 工具包
@@ -97,4 +98,33 @@ func GetServerExtensionName(data []byte) string {
 		}
 	}
 	return ""
+}
+
+func GetServerCipherSuite(data []byte) (cipherSuite string) {
+	// length = Length(3) + Version(2) + Random(32) + Session ID (1)
+	// Skip past fixed-length records:
+	// 1  Handshake Type
+	// 3  Length
+	// 2  Version (again)
+	// 32 Random
+	// next Session ID Length
+	pos := 38
+	dataLen := len(data)
+
+	/* session id */
+	if dataLen < pos+1 {
+		return
+	}
+	l := int(data[pos])
+	pos += l + 1
+
+	/* Cipher Suites */
+	if dataLen < (pos + 2) {
+		return
+	}
+	//zap.L().Info("cipherSuite", zap.ByteString("cs", data[pos+2]))
+	cs := data[pos : pos+2]
+	// zap.L().Info(fmt.Sprintf("0x%02x%02x", cs[0], cs[1]))
+	cipherSuite = fmt.Sprintf("0x%02x%02x", cs[0], cs[1])
+	return
 }
