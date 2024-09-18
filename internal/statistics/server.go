@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/dot-xiaoyuan/dpi-analyze/internal/statistics/handlers"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/logger"
 	"github.com/gin-gonic/gin"
@@ -57,4 +58,5 @@ func StartStatistics(c Config) {
 func setupRoutes(r *gin.Engine) {
 	v1 := r.Group("/v1")
 	v1.GET("/index", Index)
+	v1.GET("/ttl", handlers.TTL())
 }

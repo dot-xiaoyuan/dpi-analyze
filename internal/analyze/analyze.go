@@ -48,7 +48,32 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 	if packet.NetworkLayer() == nil || packet.TransportLayer() == nil {
 		return
 	}
-
+	// 链路层
+	ethernet := Ethernet{}
+	if packet.LinkLayer() != nil {
+		ethernet.SrcMac = packet.LinkLayer().LinkFlow().Dst().String()
+		ethernet.DstMac = packet.LinkLayer().LinkFlow().Src().String()
+	}
+	// 网络层
+	internet := Internet{}
+	var ip string
+	if packet.NetworkLayer().LayerType() == layers.LayerTypeIPv4 {
+		ipv4 := packet.Layer(layers.LayerTypeIPv4).(*layers.IPv4)
+		// 设置网络层信息 IPv4
+		internet.TTL = ipv4.TTL
+		internet.DstIP = ipv4.DstIP.String()
+		// 设置源IP
+		ip = ipv4.SrcIP.String()
+	} else if packet.NetworkLayer().LayerType() == layers.LayerTypeIPv6 {
+		ipv6 := packet.Layer(layers.LayerTypeIPv6).(*layers.IPv6)
+		// 设置网络层信息 IPv6
+		internet.TTL = ipv6.HopLimit
+		internet.DstIP = ipv6.DstIP.String()
+		// 设置源IP
+		ip = ipv6.SrcIP.String()
+	}
+	// 插入缓存
+	update(ip, internet)
 	// analyze TCP
 	if tcpLayer := packet.Layer(layers.LayerTypeTCP); tcpLayer != nil {
 		tcp := tcpLayer.(*layers.TCP)

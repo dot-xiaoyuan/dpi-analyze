@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 	"log"
+	"net"
 	"os"
 	"os/signal"
 	"syscall"
@@ -32,9 +33,10 @@ func init() {
 	CaptureCmd.Flags().StringVar(&config.CaptureNic, "nic", config.Cfg.Capture.NIC, "capture nic")
 	CaptureCmd.Flags().StringVar(&config.CapturePcap, "pcap", config.Cfg.Capture.OfflineFile, "capture pcap file")
 	CaptureCmd.Flags().BoolVar(&config.UseMongo, "use-mongo", config.Cfg.UseMongo, "use mongo db")
-	CaptureCmd.Flags().BoolVar(&config.ParseFeature, "feature", config.Cfg.ParseFeature, "parse application")
+	CaptureCmd.Flags().BoolVar(&config.ParseFeature, "feature", config.Cfg.ParseFeature, "use parse application")
 	CaptureCmd.Flags().StringVar(&config.BerkeleyPacketFilter, "bpf", config.Cfg.BerkeleyPacketFilter, "Berkeley packet filter")
 	CaptureCmd.Flags().BoolVar(&config.IgnoreMissing, "ignore-missing", config.Cfg.IgnoreMissing, "ignore missing packet")
+	CaptureCmd.Flags().BoolVar(&config.UseTTL, "use-ttl", config.Cfg.UseTTL, "save TTL for IP")
 }
 
 func CaptureRreFunc(c *cobra.Command, args []string) {
@@ -58,6 +60,8 @@ func CaptureRreFunc(c *cobra.Command, args []string) {
 		zap.L().Info(i18n.T("Start Load Feature Component"))
 		features.Setup()
 	}
+	// 启动 Unix Socket Server
+	go startUnixSocketServer()
 }
 
 func CaptureRun(c *cobra.Command, args []string) {
@@ -102,4 +106,40 @@ func CaptureRun(c *cobra.Command, args []string) {
 		spinners.Stop()
 		os.Exit(0)
 	}
+}
+
+func startUnixSocketServer() {
+	// 删除旧的socket
+	_ = os.Remove("/tmp/capture.sock")
+	// 创建 socket
+	ln, err := net.Listen("unix", "/tmp/capture.sock")
+	if err != nil {
+		zap.L().Error("Failed create Unix Socket", zap.Error(err))
+		return
+	}
+	defer ln.Close()
+
+	zap.L().Info("Unix Socket Server listening on /tmp/capture.sock")
+
+	for {
+		conn, err := ln.Accept()
+		if err != nil {
+			zap.L().Error("Failed accept connection", zap.Error(err))
+			continue
+		}
+
+		go handleConnection(conn)
+	}
+}
+
+func handleConnection(conn net.Conn) {
+	defer conn.Close()
+
+	// 获取 TTL
+	json, err := analyze.QueryAll()
+	if err != nil {
+		_, _ = conn.Write([]byte(err.Error()))
+		return
+	}
+	conn.Write(json)
 }
