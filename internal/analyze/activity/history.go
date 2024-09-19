@@ -6,4 +6,6 @@ import (
 
 // IP 活动记录
 
-var IPActivityLogs sync.Map
+var IPTables sync.Map
+
+// 新增/更新 IP表
