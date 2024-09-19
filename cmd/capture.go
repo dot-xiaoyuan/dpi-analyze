@@ -150,9 +150,9 @@ func handleConnection(conn net.Conn) {
 	var c capture.LayerMap
 	switch params {
 	case "internet":
-		c = cache.Internet{}
+		c = &cache.Internet{}
 	case "ethernet":
-		c = cache.Ethernet{}
+		c = &cache.Ethernet{}
 	}
 	all, err := c.QueryAll()
 	if err != nil {
