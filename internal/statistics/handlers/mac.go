@@ -18,7 +18,18 @@ func Mac() gin.HandlerFunc {
 		}
 		defer conn.Close()
 
-		conn.Write([]byte("ethernet"))
+		p := capture.Params{
+			Action: "ethernet",
+			Offset: 0,
+			Limit:  20,
+		}
+		params, err := json.Marshal(p)
+		if err != nil {
+			c.JSON(400, gin.H{
+				"message": err.Error(),
+			})
+		}
+		conn.Write(params)
 		buf := make([]byte, 4096)
 		n, err := conn.Read(buf)
 		if err != nil {

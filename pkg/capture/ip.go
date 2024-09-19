@@ -19,7 +19,7 @@ type MacHistory struct {
 
 type IPActivityLogs struct {
 	IP               string       `bson:"ip"`
-	CurrentTTL       string       `bson:"current_ttl"`
+	CurrentTTL       uint8        `bson:"current_ttl"`
 	TTLHistory       []TTLHistory `bson:"ttl_history"`
 	CurrentUserAgent string       `bson:"current_user_agent"`
 	UAHistory        []UAHistory  `bson:"ua_history"`

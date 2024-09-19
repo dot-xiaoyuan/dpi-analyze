@@ -3,11 +3,12 @@ package handlers
 import (
 	"encoding/json"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/utils"
 	"github.com/gin-gonic/gin"
 	"net"
 )
 
-func TTL() gin.HandlerFunc {
+func IpTables() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		conn, err := net.Dial("unix", "/tmp/capture.sock")
 		if err != nil {
@@ -19,7 +20,7 @@ func TTL() gin.HandlerFunc {
 		defer conn.Close()
 
 		p := capture.Params{
-			Action: "internet",
+			Action: "iptables",
 			Offset: 0,
 			Limit:  20,
 		}
@@ -30,8 +31,8 @@ func TTL() gin.HandlerFunc {
 			})
 		}
 		conn.Write(params)
-		buf := make([]byte, 4096)
-		n, err := conn.Read(buf)
+		// 读取所有数据
+		data, err := utils.ReadByConn(conn, 4096)
 		if err != nil {
 			c.JSON(400, gin.H{
 				"message": err.Error(),
@@ -39,24 +40,24 @@ func TTL() gin.HandlerFunc {
 			return
 		}
 
-		var ttlMap map[string][]capture.Internet
-		if err := json.Unmarshal(buf[:n], &ttlMap); err != nil {
+		var macMap map[string]capture.IPActivityLogs
+		if err := json.Unmarshal(data, &macMap); err != nil {
 			c.JSON(400, gin.H{
 				"message": err.Error(),
 			})
 			return
 		}
 
-		if len(ttlMap) == 0 {
+		if len(macMap) == 0 {
 			c.JSON(400, gin.H{
-				"message": "TTL Map is empty",
+				"message": "IP Map is empty",
 			})
 			return
 		}
 
 		c.JSON(200, gin.H{
 			"message": "OK",
-			"data":    ttlMap,
+			"data":    macMap,
 		})
 		return
 	}

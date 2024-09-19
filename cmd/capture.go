@@ -2,9 +2,11 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/analyze"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/analyze/cache"
+	"github.com/dot-xiaoyuan/dpi-analyze/internal/analyze/iptables"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/mongo"
@@ -18,7 +20,6 @@ import (
 	"net"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 )
@@ -144,17 +145,29 @@ func handleConnection(conn net.Conn) {
 		zap.L().Error("Failed read connection", zap.Error(err))
 		return
 	}
-	params := strings.TrimSpace(string(buf[:n]))
-	zap.L().Debug("Read connection", zap.String("params", params))
+	params := capture.Params{}
+	err = json.Unmarshal(buf[:n], &params)
+	if err != nil {
+		zap.L().Error("Failed unmarshal params", zap.Error(err))
+		conn.Write([]byte(err.Error()))
+	}
+	zap.L().Debug("Read connection", zap.Any("params", params))
 
 	var c capture.LayerMap
-	switch params {
+	switch params.Action {
 	case "internet":
 		c = &cache.Internet{}
 	case "ethernet":
 		c = &cache.Ethernet{}
+	case "iptables":
+		c = &iptables.Detail{}
 	}
-	all, err := c.QueryAll()
+	if c == nil {
+		zap.L().Error("Failed read connection", zap.Error(err))
+		return
+		conn.Write([]byte("Miss params"))
+	}
+	all, err := c.QueryAll(params)
 	if err != nil {
 		zap.L().Error("Failed read connection", zap.Error(err))
 		return
