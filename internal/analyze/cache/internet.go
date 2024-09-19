@@ -13,11 +13,13 @@ var (
 
 const TTLChangeThreshold = 1
 
-type Internet struct{}
+type Internet struct {
+	IP string
+}
 
-func (Internet) Update(ip string, internet interface{}) {
+func (l *Internet) Update(internet interface{}) {
 	i := internet.(capture.Internet)
-	value, ok := TTLTables.Load(ip)
+	value, ok := TTLTables.Load(l.IP)
 	if ok {
 		// 如果 TTL 存在，检查差异
 		record := value.([]capture.Internet)
@@ -30,16 +32,16 @@ func (Internet) Update(ip string, internet interface{}) {
 				break
 			}
 		}
-		TTLTables.Store(ip, record)
-		zap.L().Debug("Update TTL Cache", zap.String("ip", ip), zap.Any("Internet", i))
+		TTLTables.Store(l.IP, record)
+		zap.L().Debug("Update TTL Cache", zap.String("ip", l.IP), zap.Any("Internet", i))
 	} else {
 		record := []capture.Internet{i}
-		TTLTables.Store(ip, record)
-		zap.L().Debug("Insert TTL Cache", zap.String("ip", ip), zap.Any("Internet", i))
+		TTLTables.Store(l.IP, record)
+		zap.L().Debug("Insert TTL Cache", zap.String("ip", l.IP), zap.Any("Internet", i))
 	}
 }
 
-func (Internet) QueryAll() ([]byte, error) {
+func (l *Internet) QueryAll() ([]byte, error) {
 	ttlMap := make(map[string][]capture.Internet)
 	TTLTables.Range(func(key, value interface{}) bool {
 		ttlMap[key.(string)] = value.([]capture.Internet)

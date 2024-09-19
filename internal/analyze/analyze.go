@@ -74,11 +74,11 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 		ip = ipv6.SrcIP.String()
 	}
 	// 插入 TTL 缓存
-	internetMap := cache.Internet{}
-	internetMap.Update(ip, internet)
+	internetMap := cache.Internet{IP: ip}
+	internetMap.Update(internet)
 	// 插入 Mac 缓存
-	ethernetMap := cache.Ethernet{}
-	ethernetMap.Update(ip, ethernet)
+	ethernetMap := cache.Ethernet{IP: ip}
+	ethernetMap.Update(ethernet)
 	// analyze TCP
 	if tcpLayer := packet.Layer(layers.LayerTypeTCP); tcpLayer != nil {
 		tcp := tcpLayer.(*layers.TCP)

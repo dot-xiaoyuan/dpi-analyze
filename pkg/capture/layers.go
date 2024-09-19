@@ -13,6 +13,6 @@ type Internet struct {
 }
 
 type LayerMap interface {
-	Update(ip string, i interface{})
+	Update(i interface{})
 	QueryAll() ([]byte, error)
 }

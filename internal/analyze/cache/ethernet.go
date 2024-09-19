@@ -11,11 +11,13 @@ var (
 	MacTables sync.Map
 )
 
-type Ethernet struct{}
+type Ethernet struct {
+	IP string
+}
 
-func (Ethernet) Update(ip string, ethernet interface{}) {
+func (l *Ethernet) Update(ethernet interface{}) {
 	i := ethernet.(capture.Ethernet)
-	value, ok := MacTables.Load(ip)
+	value, ok := MacTables.Load(l.IP)
 	if ok {
 		record := value.([]capture.Ethernet)
 		for _, item := range record {
@@ -24,17 +26,17 @@ func (Ethernet) Update(ip string, ethernet interface{}) {
 			}
 			record = append(record, i)
 		}
-		MacTables.Store(ip, record)
-		zap.L().Debug("Update Mac Cache", zap.String("ip", ip), zap.Any("Ethernet", i))
+		MacTables.Store(l.IP, record)
+		zap.L().Debug("Update Mac Cache", zap.String("ip", l.IP), zap.Any("Ethernet", i))
 	} else {
 		record := []capture.Ethernet{i}
-		MacTables.Store(ip, record)
-		zap.L().Debug("Insert Mac Cache", zap.String("ip", ip), zap.Any("Ethernet", i))
+		MacTables.Store(l.IP, record)
+		zap.L().Debug("Insert Mac Cache", zap.String("ip", l.IP), zap.Any("Ethernet", i))
 	}
 
 }
 
-func (Ethernet) QueryAll() ([]byte, error) {
+func (l *Ethernet) QueryAll() ([]byte, error) {
 	macMap := make(map[string][]capture.Ethernet)
 	MacTables.Range(func(key, value interface{}) bool {
 		macMap[key.(string)] = value.([]capture.Ethernet)
