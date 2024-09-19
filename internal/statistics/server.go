@@ -59,4 +59,5 @@ func setupRoutes(r *gin.Engine) {
 	v1 := r.Group("/v1")
 	v1.GET("/index", Index)
 	v1.GET("/ttl", handlers.TTL())
+	v1.GET("/mac", handlers.Mac())
 }

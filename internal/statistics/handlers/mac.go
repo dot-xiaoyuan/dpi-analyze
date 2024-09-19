@@ -7,7 +7,7 @@ import (
 	"net"
 )
 
-func TTL() gin.HandlerFunc {
+func Mac() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		conn, err := net.Dial("unix", "/tmp/capture.sock")
 		if err != nil {
@@ -18,6 +18,7 @@ func TTL() gin.HandlerFunc {
 		}
 		defer conn.Close()
 
+		conn.Write([]byte("ethernet"))
 		buf := make([]byte, 4096)
 		n, err := conn.Read(buf)
 		if err != nil {
@@ -27,15 +28,15 @@ func TTL() gin.HandlerFunc {
 			return
 		}
 
-		var ttlMap map[string][]capture.Internet
-		if err := json.Unmarshal(buf[:n], &ttlMap); err != nil {
+		var macMap map[string][]capture.Ethernet
+		if err := json.Unmarshal(buf[:n], &macMap); err != nil {
 			c.JSON(400, gin.H{
 				"message": err.Error(),
 			})
 			return
 		}
 
-		if len(ttlMap) == 0 {
+		if len(macMap) == 0 {
 			c.JSON(400, gin.H{
 				"message": "TTL Map is empty",
 			})
@@ -44,7 +45,7 @@ func TTL() gin.HandlerFunc {
 
 		c.JSON(200, gin.H{
 			"message": "OK",
-			"data":    ttlMap,
+			"data":    macMap,
 		})
 		return
 	}

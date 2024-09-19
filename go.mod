@@ -3,7 +3,9 @@ module github.com/dot-xiaoyuan/dpi-analyze
 go 1.22.5
 
 require (
+	github.com/briandowns/spinner v1.23.1
 	github.com/cloudflare/ahocorasick v0.0.0-20210425175752-730270c3e184
+	github.com/gin-gonic/gin v1.10.0
 	github.com/google/gopacket v1.1.19
 	github.com/nicksnyder/go-i18n/v2 v2.4.0
 	github.com/pelletier/go-toml/v2 v2.2.3
@@ -17,7 +19,6 @@ require (
 )
 
 require (
-	github.com/briandowns/spinner v1.23.1 // indirect
 	github.com/bytedance/sonic v1.12.2 // indirect
 	github.com/bytedance/sonic/loader v0.2.0 // indirect
 	github.com/cloudwego/base64x v0.1.4 // indirect
@@ -26,7 +27,6 @@ require (
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.5 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
-	github.com/gin-gonic/gin v1.10.0 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.22.1 // indirect

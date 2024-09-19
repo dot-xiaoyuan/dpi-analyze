@@ -1,6 +1,7 @@
 package analyze
 
 import (
+	"github.com/dot-xiaoyuan/dpi-analyze/internal/analyze/cache"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
 	"github.com/google/gopacket"
@@ -49,13 +50,13 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 		return
 	}
 	// 链路层
-	ethernet := Ethernet{}
+	ethernet := capture.Ethernet{}
 	if packet.LinkLayer() != nil {
 		ethernet.SrcMac = packet.LinkLayer().LinkFlow().Dst().String()
 		ethernet.DstMac = packet.LinkLayer().LinkFlow().Src().String()
 	}
 	// 网络层
-	internet := Internet{}
+	internet := capture.Internet{}
 	var ip string
 	if packet.NetworkLayer().LayerType() == layers.LayerTypeIPv4 {
 		ipv4 := packet.Layer(layers.LayerTypeIPv4).(*layers.IPv4)
@@ -72,8 +73,12 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 		// 设置源IP
 		ip = ipv6.SrcIP.String()
 	}
-	// 插入缓存
-	update(ip, internet)
+	// 插入 TTL 缓存
+	internetMap := cache.Internet{IP: ip}
+	internetMap.Update(internet)
+	// 插入 Mac 缓存
+	ethernetMap := cache.Ethernet{IP: ip}
+	ethernetMap.Update(ethernet)
 	// analyze TCP
 	if tcpLayer := packet.Layer(layers.LayerTypeTCP); tcpLayer != nil {
 		tcp := tcpLayer.(*layers.TCP)

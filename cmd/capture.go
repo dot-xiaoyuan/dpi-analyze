@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/analyze"
+	"github.com/dot-xiaoyuan/dpi-analyze/internal/analyze/cache"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/mongo"
@@ -17,6 +18,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -135,11 +137,27 @@ func startUnixSocketServer() {
 func handleConnection(conn net.Conn) {
 	defer conn.Close()
 
-	// 获取 TTL
-	json, err := analyze.QueryAll()
+	buf := make([]byte, 1024)
+
+	n, err := conn.Read(buf)
 	if err != nil {
-		_, _ = conn.Write([]byte(err.Error()))
+		zap.L().Error("Failed read connection", zap.Error(err))
 		return
 	}
-	conn.Write(json)
+	params := strings.TrimSpace(string(buf[:n]))
+	zap.L().Debug("Read connection", zap.String("params", params))
+
+	var c capture.LayerMap
+	switch params {
+	case "internet":
+		c = &cache.Internet{}
+	case "ethernet":
+		c = &cache.Ethernet{}
+	}
+	all, err := c.QueryAll()
+	if err != nil {
+		zap.L().Error("Failed read connection", zap.Error(err))
+		return
+	}
+	_, _ = conn.Write(all)
 }
