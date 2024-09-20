@@ -31,6 +31,11 @@ var CaptureCmd = &cobra.Command{
 	Run:    CaptureRun,
 }
 
+// TODO 流量总览 总流量、总会话数、TCP/UDP会话比列、每秒请求量(RPS)
+// TODO IP活动监控 访问量最多的IP、异常TTL改变监控、UA变化趋势、Mac地址变化趋势
+// TODO 协议统计 应用层协议分布、TLS版本与加密套件分布
+// TODO 流量来源与目的地 源IP和目标IP热图（MaxMind GeoIP）、最频繁访问目标IP
+// 初始化Flag
 func init() {
 	// define flag
 	CaptureCmd.Flags().StringVar(&config.CaptureNic, "nic", config.Cfg.Capture.NIC, "capture nic")
@@ -42,6 +47,7 @@ func init() {
 	CaptureCmd.Flags().BoolVar(&config.UseTTL, "use-ttl", config.Cfg.UseTTL, "save TTL for IP")
 }
 
+// CaptureRreFunc 捕获前置方法
 func CaptureRreFunc(c *cobra.Command, args []string) {
 	c.Short = i18n.T(c.Short)
 	c.Flags().VisitAll(func(flag *pflag.Flag) {
@@ -67,6 +73,7 @@ func CaptureRreFunc(c *cobra.Command, args []string) {
 	go startUnixSocketServer()
 }
 
+// CaptureRun 捕获子命令入口
 func CaptureRun(c *cobra.Command, args []string) {
 	defer func() {
 		if err := recover(); err != nil {
