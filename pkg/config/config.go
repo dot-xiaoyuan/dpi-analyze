@@ -24,6 +24,7 @@ var (
 	Language             string
 	LogLevel             string
 	Debug                bool
+	Geo2IP               string
 	CaptureNic           string
 	CapturePcap          string
 	UseMongo             bool
@@ -38,6 +39,7 @@ type Yaml struct {
 	Language             string  `mapstructure:"language"`
 	LogLevel             string  `mapstructure:"log_level"`
 	Debug                bool    `mapstructure:"debug"`
+	Geo2IP               string  `mapstructure:"geo2ip"`
 	UseMongo             bool    `mapstructure:"use_mongo"`
 	ParseFeature         bool    `mapstructure:"parse_app"`
 	BerkeleyPacketFilter string  `mapstructure:"berkeley_packet_filter"`

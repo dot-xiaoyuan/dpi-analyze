@@ -1,6 +1,7 @@
 language: zh-CN
 log_level: info
 debug: false
+geo2ip: /Users/yuantong/Documents/GeoIP2-City.mmdb
 use_mongo: false
 capture:
   offline_file:

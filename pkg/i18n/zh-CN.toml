@@ -45,3 +45,6 @@
 # Feature
 "Start Load Feature Component" = "开始加载特征库组件"
 "Feature component initialized!" = "特征库加载完成"
+
+# Geo2IP
+"Start Load Geo2IP Component" = "开始加载geo2ip组件"

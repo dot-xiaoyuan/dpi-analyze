@@ -12,6 +12,7 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/features"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/maxmind"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/spinners"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -68,6 +69,11 @@ func CaptureRreFunc(c *cobra.Command, args []string) {
 	if config.ParseFeature {
 		zap.L().Info(i18n.T("Start Load Feature Component"))
 		features.Setup()
+	}
+	// 是否加载geo2ip
+	if config.Geo2IP != "" {
+		zap.L().Info(i18n.T("Start Load Geo2IP Component"))
+		maxmind.Setup(config.Geo2IP)
 	}
 	// 启动 Unix Socket Server
 	go startUnixSocketServer()
