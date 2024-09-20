@@ -1,7 +1,6 @@
 package iptables
 
 import (
-	"encoding/json"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
 	"sync"
 	"time"
@@ -17,33 +16,6 @@ type Detail struct {
 
 func (d Detail) Update(i interface{}) {
 
-}
-
-func (d Detail) QueryAll(params capture.Params) ([]byte, error) {
-	ipMap := make(map[string]capture.IPActivityLogs)
-	if params.Limit == 0 {
-		params.Limit = 10
-	}
-	var i int
-	IPTables.Range(func(key, value interface{}) bool {
-		i++
-		// limit
-		if len(ipMap) >= params.Limit {
-			return false
-		}
-		// TODO offset
-		//if i < params.Offset && params.Offset != 0 {
-		//	return false
-		//}
-		ipMap[key.(string)] = value.(capture.IPActivityLogs)
-		return true
-	})
-	// 2json
-	jsonData, err := json.Marshal(ipMap)
-	if err != nil {
-		return nil, err
-	}
-	return jsonData, nil
 }
 
 // 新增/更新 IP表

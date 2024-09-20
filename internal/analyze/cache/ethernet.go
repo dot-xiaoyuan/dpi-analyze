@@ -1,7 +1,6 @@
 package cache
 
 import (
-	"encoding/json"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
 	"go.uber.org/zap"
 	"sync"
@@ -34,18 +33,4 @@ func (l *Ethernet) Update(ethernet interface{}) {
 		zap.L().Debug("Insert Mac Cache", zap.String("ip", l.IP), zap.Any("Ethernet", i))
 	}
 
-}
-
-func (l *Ethernet) QueryAll(params capture.Params) ([]byte, error) {
-	macMap := make(map[string][]capture.Ethernet)
-	MacTables.Range(func(key, value interface{}) bool {
-		macMap[key.(string)] = value.([]capture.Ethernet)
-		return true
-	})
-	// 2json
-	jsonData, err := json.Marshal(macMap)
-	if err != nil {
-		return nil, err
-	}
-	return jsonData, nil
 }

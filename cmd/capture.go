@@ -2,11 +2,9 @@ package cmd
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/analyze"
-	"github.com/dot-xiaoyuan/dpi-analyze/internal/analyze/cache"
-	"github.com/dot-xiaoyuan/dpi-analyze/internal/analyze/iptables"
+	"github.com/dot-xiaoyuan/dpi-analyze/internal/sockets"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/mongo"
@@ -18,7 +16,6 @@ import (
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 	"log"
-	"net"
 	"os"
 	"os/signal"
 	"syscall"
@@ -76,7 +73,7 @@ func CaptureRreFunc(c *cobra.Command, args []string) {
 		maxmind.Setup(config.Geo2IP)
 	}
 	// 启动 Unix Socket Server
-	go startUnixSocketServer()
+	go sockets.StartUnixSocketServer()
 }
 
 // CaptureRun 捕获子命令入口
@@ -122,68 +119,4 @@ func CaptureRun(c *cobra.Command, args []string) {
 		spinners.Stop()
 		os.Exit(0)
 	}
-}
-
-func startUnixSocketServer() {
-	// 删除旧的socket
-	_ = os.Remove("/tmp/capture.sock")
-	// 创建 socket
-	ln, err := net.Listen("unix", "/tmp/capture.sock")
-	if err != nil {
-		zap.L().Error("Failed create Unix Socket", zap.Error(err))
-		return
-	}
-	defer ln.Close()
-
-	zap.L().Info("Unix Socket Server listening on /tmp/capture.sock")
-
-	for {
-		conn, err := ln.Accept()
-		if err != nil {
-			zap.L().Error("Failed accept connection", zap.Error(err))
-			continue
-		}
-
-		go handleConnection(conn)
-	}
-}
-
-func handleConnection(conn net.Conn) {
-	defer conn.Close()
-
-	buf := make([]byte, 1024)
-
-	n, err := conn.Read(buf)
-	if err != nil {
-		zap.L().Error("Failed read connection", zap.Error(err))
-		return
-	}
-	params := capture.Params{}
-	err = json.Unmarshal(buf[:n], &params)
-	if err != nil {
-		zap.L().Error("Failed unmarshal params", zap.Error(err))
-		conn.Write([]byte(err.Error()))
-	}
-	zap.L().Debug("Read connection", zap.Any("params", params))
-
-	var c capture.LayerMap
-	switch params.Action {
-	case "internet":
-		c = &cache.Internet{}
-	case "ethernet":
-		c = &cache.Ethernet{}
-	case "iptables":
-		c = &iptables.Detail{}
-	}
-	if c == nil {
-		zap.L().Error("Failed read connection", zap.Error(err))
-		return
-		conn.Write([]byte("Miss params"))
-	}
-	all, err := c.QueryAll(params)
-	if err != nil {
-		zap.L().Error("Failed read connection", zap.Error(err))
-		return
-	}
-	_, _ = conn.Write(all)
 }

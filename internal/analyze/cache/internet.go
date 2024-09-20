@@ -1,7 +1,6 @@
 package cache
 
 import (
-	"encoding/json"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
 	"go.uber.org/zap"
 	"sync"
@@ -39,20 +38,6 @@ func (l *Internet) Update(internet interface{}) {
 		TTLTables.Store(l.IP, record)
 		zap.L().Debug("Insert TTL Cache", zap.String("ip", l.IP), zap.Any("Internet", i))
 	}
-}
-
-func (l *Internet) QueryAll(params capture.Params) ([]byte, error) {
-	ttlMap := make(map[string][]capture.Internet)
-	TTLTables.Range(func(key, value interface{}) bool {
-		ttlMap[key.(string)] = value.([]capture.Internet)
-		return true
-	})
-	// 2json
-	jsonData, err := json.Marshal(ttlMap)
-	if err != nil {
-		return nil, err
-	}
-	return jsonData, nil
 }
 
 func absDiff(new, old uint8) uint8 {

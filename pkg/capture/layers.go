@@ -12,13 +12,6 @@ type Internet struct {
 	TTL   uint8  `json:"ttl"`
 }
 
-type Params struct {
-	Action string `json:"action"`
-	Offset int    `json:"offset"`
-	Limit  int    `json:"limit"`
-}
-
 type LayerMap interface {
 	Update(i interface{})
-	QueryAll(params Params) ([]byte, error)
 }

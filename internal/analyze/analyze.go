@@ -50,6 +50,8 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 	if packet.NetworkLayer() == nil || packet.TransportLayer() == nil {
 		return
 	}
+	// 累加总流量
+	capture.FlowCount += len(packet.Data())
 	// 链路层
 	ethernet := capture.Ethernet{}
 	if packet.LinkLayer() != nil {
@@ -101,7 +103,7 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 		a.Assembler.AssembleWithContext(packet.NetworkLayer().NetworkFlow(), tcp, ac)
 	}
 
-	if capture.Count%1000 == 0 {
+	if capture.PacketsCount%1000 == 0 {
 		ref := packet.Metadata().Timestamp
 		_, _ = a.Assembler.FlushWithOptions(reassembly.FlushOptions{
 			T:  ref.Add(-timeout),

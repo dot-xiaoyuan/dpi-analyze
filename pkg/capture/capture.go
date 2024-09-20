@@ -13,11 +13,13 @@ import (
 // 数据包捕获和抓取
 
 var (
-	Handle  *pcap.Handle
-	Err     error
-	Decoder gopacket.Decoder
-	Count   int
-	OK      bool
+	Handle       *pcap.Handle
+	Err          error
+	Decoder      gopacket.Decoder
+	PacketsCount int // 总包数
+	FlowCount    int // 总流量
+	SessionCount int // 总会话
+	OK           bool
 )
 
 type Config struct {
@@ -85,7 +87,7 @@ func StartCapture(ctx context.Context, c Config, handler PacketHandler, done cha
 				done <- struct{}{}
 				return
 			}
-			Count++
+			PacketsCount++
 			handler.HandlePacket(packet)
 		}
 	}

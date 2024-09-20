@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/provider"
 	"github.com/gin-gonic/gin"
 	"net"
 )
@@ -18,10 +19,9 @@ func TTL() gin.HandlerFunc {
 		}
 		defer conn.Close()
 
-		p := capture.Params{
+		p := provider.Request{
 			Action: "internet",
-			Offset: 0,
-			Limit:  20,
+			Data:   []byte(`{"offset":0,"limit":20}`),
 		}
 		params, err := json.Marshal(p)
 		if err != nil {

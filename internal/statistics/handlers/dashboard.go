@@ -2,14 +2,15 @@ package handlers
 
 import (
 	"encoding/json"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/provider"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/utils"
 	"github.com/gin-gonic/gin"
 	"net"
 )
 
-func IpTables() gin.HandlerFunc {
+// 仪表盘
+
+func Dashboard() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		conn, err := net.Dial("unix", "/tmp/capture.sock")
 		if err != nil {
@@ -21,7 +22,7 @@ func IpTables() gin.HandlerFunc {
 		defer conn.Close()
 
 		p := provider.Request{
-			Action: "iptables",
+			Action: "dashboard",
 			Data:   []byte(`{"offset":0,"limit":20}`),
 		}
 		params, err := json.Marshal(p)
@@ -40,24 +41,24 @@ func IpTables() gin.HandlerFunc {
 			return
 		}
 
-		var macMap map[string]capture.IPActivityLogs
-		if err := json.Unmarshal(data, &macMap); err != nil {
+		var res any
+		if err := json.Unmarshal(data, &res); err != nil {
 			c.JSON(400, gin.H{
 				"message": err.Error(),
 			})
 			return
 		}
 
-		if len(macMap) == 0 {
+		if res == nil {
 			c.JSON(400, gin.H{
-				"message": "IP Map is empty",
+				"message": "dashboard is empty",
 			})
 			return
 		}
 
 		c.JSON(200, gin.H{
 			"message": "OK",
-			"data":    macMap,
+			"data":    res,
 		})
 		return
 	}
