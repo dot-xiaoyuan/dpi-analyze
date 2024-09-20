@@ -36,7 +36,7 @@ func (l *Ethernet) Update(ethernet interface{}) {
 
 }
 
-func (l *Ethernet) QueryAll() ([]byte, error) {
+func (l *Ethernet) QueryAll(params capture.Params) ([]byte, error) {
 	macMap := make(map[string][]capture.Ethernet)
 	MacTables.Range(func(key, value interface{}) bool {
 		macMap[key.(string)] = value.([]capture.Ethernet)

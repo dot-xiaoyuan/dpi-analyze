@@ -2,6 +2,7 @@ package analyze
 
 import (
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/analyze/cache"
+	"github.com/dot-xiaoyuan/dpi-analyze/internal/analyze/iptables"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
 	"github.com/google/gopacket"
@@ -73,12 +74,24 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 		// 设置源IP
 		ip = ipv6.SrcIP.String()
 	}
+
 	// 插入 TTL 缓存
 	internetMap := cache.Internet{IP: ip}
 	internetMap.Update(internet)
+
 	// 插入 Mac 缓存
 	ethernetMap := cache.Ethernet{IP: ip}
 	ethernetMap.Update(ethernet)
+
+	// 插入 IP hash 表
+	detail := capture.IPActivityLogs{
+		IP:         ip,
+		CurrentTTL: internet.TTL,
+		CurrentMac: ethernet.SrcMac,
+		LastSeen:   time.Now(),
+	}
+	iptables.Load(ip, detail)
+
 	// analyze TCP
 	if tcpLayer := packet.Layer(layers.LayerTypeTCP); tcpLayer != nil {
 		tcp := tcpLayer.(*layers.TCP)

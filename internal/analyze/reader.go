@@ -2,6 +2,8 @@ package analyze
 
 import (
 	"bufio"
+	"github.com/dot-xiaoyuan/dpi-analyze/internal/analyze/iptables"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/features"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
 	"io"
@@ -131,6 +133,10 @@ func (sr *StreamReader) SetHttpInfo(host, userAgent, contentType, upgrade string
 		Upgrade:     upgrade,
 		Urls:        sr.GetUrls(),
 	}
+	// 如果ua有效
+	iptables.Load(sr.Parent.SrcIP, capture.IPActivityLogs{
+		CurrentUserAgent: userAgent,
+	})
 	// 如果特征库加载 进行域名分析
 	if features.DomainAc != nil {
 		sr.Parent.Metadata.ApplicationInfo.AppName = features.DomainMatch(host)

@@ -41,7 +41,7 @@ func (l *Internet) Update(internet interface{}) {
 	}
 }
 
-func (l *Internet) QueryAll() ([]byte, error) {
+func (l *Internet) QueryAll(params capture.Params) ([]byte, error) {
 	ttlMap := make(map[string][]capture.Internet)
 	TTLTables.Range(func(key, value interface{}) bool {
 		ttlMap[key.(string)] = value.([]capture.Internet)

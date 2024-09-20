@@ -3,6 +3,8 @@ package utils
 import (
 	"encoding/binary"
 	"fmt"
+	"io"
+	"net"
 )
 
 // 工具包
@@ -127,4 +129,24 @@ func GetServerCipherSuite(data []byte) (cipherSuite string) {
 	// zap.L().Info(fmt.Sprintf("0x%02x%02x", cs[0], cs[1]))
 	cipherSuite = fmt.Sprintf("0x%02x%02x", cs[0], cs[1])
 	return
+}
+
+func ReadByConn(conn net.Conn, bufSize int) (data []byte, err error) {
+	buffer := make([]byte, 0)        // 用于存放所有数据
+	tempBuf := make([]byte, bufSize) // 临时缓冲区
+
+	for {
+		n, err := conn.Read(tempBuf)
+		if n > 0 {
+			buffer = append(buffer, tempBuf[:n]...) // 将读取到的数据追加到总缓冲区中
+		}
+		if err != nil {
+			if err == io.EOF {
+				fmt.Println("Connection closed, all data read")
+				break // 读取结束
+			}
+			return nil, fmt.Errorf("error reading: %v", err)
+		}
+	}
+	return buffer, nil
 }
