@@ -16,6 +16,8 @@ import (
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 	"log"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"syscall"
@@ -47,6 +49,10 @@ func init() {
 
 // CaptureRreFunc 捕获前置方法
 func CaptureRreFunc(c *cobra.Command, args []string) {
+	go func() {
+		log.Println(http.ListenAndServe(":6060", nil))
+	}()
+
 	c.Short = i18n.T(c.Short)
 	c.Flags().VisitAll(func(flag *pflag.Flag) {
 		flag.Usage = i18n.T(flag.Usage)

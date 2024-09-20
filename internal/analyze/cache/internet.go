@@ -2,7 +2,6 @@ package cache
 
 import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
-	"go.uber.org/zap"
 	"sync"
 )
 
@@ -32,11 +31,11 @@ func (l *Internet) Update(internet interface{}) {
 			}
 		}
 		TTLTables.Store(l.IP, record)
-		zap.L().Debug("Update TTL Cache", zap.String("ip", l.IP), zap.Any("Internet", i))
+		// zap.L().Debug("Update TTL Cache", zap.String("ip", l.IP), zap.Any("Internet", i))
 	} else {
 		record := []capture.Internet{i}
 		TTLTables.Store(l.IP, record)
-		zap.L().Debug("Insert TTL Cache", zap.String("ip", l.IP), zap.Any("Internet", i))
+		// zap.L().Debug("Insert TTL Cache", zap.String("ip", l.IP), zap.Any("Internet", i))
 	}
 }
 

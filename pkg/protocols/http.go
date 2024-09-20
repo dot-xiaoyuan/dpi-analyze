@@ -22,7 +22,7 @@ type HTTPHandler struct {
 func (HTTPHandler) HandleData(data []byte, sr StreamReaderInterface) {
 	r := bufio.NewReader(bytes.NewReader(data))
 	//for {
-	if CheckHttpByRequest(string(data)) {
+	if CheckHttpByRequest(data[:50]) {
 		req, err := http.ReadRequest(r)
 		if err == io.EOF || errors.Is(err, io.ErrUnexpectedEOF) {
 			return
@@ -41,7 +41,7 @@ func (HTTPHandler) HandleData(data []byte, sr StreamReaderInterface) {
 		sr.SetUrls(req.RequestURI)
 		sr.SetHttpInfo(req.Host, req.UserAgent(), req.Header.Get("Content-Type"), req.Header.Get("Upgrade"))
 		sr.UnLockParent()
-	} else if CheckHttpByRequest(string(data)) {
+	} else if CheckHttpByResponse(data[:50]) {
 		res, err := http.ReadResponse(r, nil)
 		if res != nil {
 			contentType := res.Header.Get("Content-Type")

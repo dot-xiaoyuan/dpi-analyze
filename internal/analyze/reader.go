@@ -43,12 +43,16 @@ func (sr *StreamReader) Run(wg *sync.WaitGroup) {
 	sr.Parent.Wg.Add(1)
 	defer wg.Done()
 	b := bufio.NewReader(sr)
-	buffer := make([]byte, 0)
+
+	buffer := make([]byte, 0, 4096)
+	data := make([]byte, 1024)
+
 	var protocolIdentified bool
 	var handler protocols.ProtocolHandler
+	var headerBytesLimit = 512
+
 	for {
 		// read by Reader
-		data := make([]byte, 1024)
 		n, err := b.Read(data)
 		if err != nil {
 			if err == io.EOF {
@@ -61,17 +65,21 @@ func (sr *StreamReader) Run(wg *sync.WaitGroup) {
 			}
 			continue
 		}
+		// push读取的数据
 		buffer = append(buffer, data[:n]...)
-		if !protocolIdentified {
-			sr.Protocol = sr.GetIdentifier(buffer)
+
+		// 只使用 buffer 的前512字节进行协议判断
+		if !protocolIdentified && len(buffer) > headerBytesLimit {
+			sr.Protocol = sr.GetIdentifier(buffer[:headerBytesLimit])
 			if sr.Protocol != "unknown" {
 				handler = sr.Handlers[sr.Protocol]
 				protocolIdentified = true
 			}
 		}
 
-		if handler != nil {
+		if protocolIdentified && handler != nil {
 			handler.HandleData(buffer, sr)
+			buffer = buffer[:0] // 清空缓冲区
 		}
 	}
 }

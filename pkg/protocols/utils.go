@@ -3,8 +3,12 @@ package protocols
 import (
 	"crypto/md5"
 	"fmt"
-	"net/http"
-	"strings"
+	"regexp"
+)
+
+var (
+	httpRequestPattern  = regexp.MustCompile(`^(GET|POST|PUT|DELETE|HEAD|OPTIONS)`)
+	httpResponsePattern = regexp.MustCompile(`^HTTP/1.`)
 )
 
 // IdentifyProtocol 识别协议
@@ -26,31 +30,18 @@ func GenerateSessionId(srcIP, dstIP, srcPort, dstPort, protocol string) string {
 
 func checkHttp(buffer []byte) bool {
 	//fmt.Printf("%s", hex.Dump(buffer))
-	payload := string(buffer)
-
-	if CheckHttpByRequest(payload) || CheckHttpByResponse(payload) {
+	if CheckHttpByRequest(buffer) || CheckHttpByResponse(buffer) {
 		return true
 	}
 	return false
 }
 
 // CheckHttpByRequest check 是否是http请求
-func CheckHttpByRequest(payload string) bool {
-	if strings.HasPrefix(payload, http.MethodGet) ||
-		strings.HasPrefix(payload, http.MethodPost) ||
-		strings.HasPrefix(payload, http.MethodPut) ||
-		strings.HasPrefix(payload, http.MethodDelete) ||
-		strings.HasPrefix(payload, http.MethodOptions) ||
-		strings.HasPrefix(payload, http.MethodHead) {
-		return true
-	}
-	return false
+func CheckHttpByRequest(data []byte) bool {
+	return httpRequestPattern.Match(data)
 }
 
 // CheckHttpByResponse check 是否是http响应
-func CheckHttpByResponse(payload string) bool {
-	if strings.HasPrefix(payload, "HTTP/1.") {
-		return true
-	}
-	return false
+func CheckHttpByResponse(data []byte) bool {
+	return httpResponsePattern.Match(data)
 }

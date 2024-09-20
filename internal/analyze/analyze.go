@@ -82,8 +82,8 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 	internetMap.Update(internet)
 
 	// 插入 Mac 缓存
-	ethernetMap := cache.Ethernet{IP: ip}
-	ethernetMap.Update(ethernet)
+	//ethernetMap := cache.Ethernet{IP: ip}
+	//ethernetMap.Update(ethernet)
 
 	// 插入 IP hash 表
 	detail := capture.IPActivityLogs{
