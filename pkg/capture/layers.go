@@ -12,6 +12,11 @@ type Internet struct {
 	TTL   uint8  `json:"ttl"`
 }
 
+type Transmission struct {
+	UpStream   int64 `json:"up_stream"`
+	DownStream int64 `json:"down_stream"`
+}
+
 type LayerMap interface {
 	Update(i interface{})
 }

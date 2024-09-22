@@ -1,8 +1,8 @@
 package analyze
 
 import (
-	"github.com/dot-xiaoyuan/dpi-analyze/internal/analyze/cache"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/analyze/iptables"
+	"github.com/dot-xiaoyuan/dpi-analyze/internal/analyze/memory"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
 	"github.com/google/gopacket"
@@ -77,8 +77,18 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 		ip = ipv6.SrcIP.String()
 	}
 
+	// 传输层
+	transmission := capture.Transmission{}
+	trafficMap := memory.Traffic{Date: time.Now().Format("0102/15/04")}
+	if len(packet.TransportLayer().TransportFlow().Src().String()) > len("1024") {
+		transmission.UpStream = int64(len(packet.Data()))
+	} else {
+		transmission.DownStream = int64(len(packet.Data()))
+	}
+	trafficMap.Update(transmission)
+
 	// 插入 TTL 缓存
-	internetMap := cache.Internet{IP: ip}
+	internetMap := memory.Internet{IP: ip}
 	internetMap.Update(internet)
 
 	// 插入 Mac 缓存

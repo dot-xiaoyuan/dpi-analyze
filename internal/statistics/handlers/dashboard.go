@@ -56,10 +56,7 @@ func Dashboard() gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(200, gin.H{
-			"message": "OK",
-			"data":    res,
-		})
+		c.JSON(200, res)
 		return
 	}
 }

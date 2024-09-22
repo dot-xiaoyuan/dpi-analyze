@@ -1,5 +1,8 @@
 package features
 
+type SNI interface {
+}
+
 // DomainMatch 域名匹配
 func DomainMatch(h string) string {
 	hits := DomainAc.MatchThreadSafe([]byte(h))

@@ -7,6 +7,7 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/statistics/handlers"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/logger"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"net/http"
@@ -23,6 +24,17 @@ type Config struct {
 func StartStatistics(c Config) {
 	zap.L().Info(i18n.T("Starting Statistics"))
 	r := gin.Default()
+	r.Use(cors.Default())
+	// 自定义CORS配置
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"*"}, // 允许React前端所在的域名
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
+
 	setupRoutes(r)
 
 	r.Use(logger.GinLogger())
