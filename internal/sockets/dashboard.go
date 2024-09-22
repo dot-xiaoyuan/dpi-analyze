@@ -13,10 +13,10 @@ func (ActionDashboard) Handle(data json.RawMessage) []byte {
 	res := Res{
 		Code: 200,
 		Data: map[string]any{
-			"packets":  capture.PacketsCount,
-			"flows":    capture.FlowCount,
-			"sessions": capture.SessionCount,
-			"traffic":  memory.GenerateChartData(),
+			"totalPackets":  capture.PacketsCount,
+			"totalTraffics": capture.TrafficCount,
+			"totalSessions": capture.SessionCount,
+			"trafficCharts": memory.GenerateChartData(),
 		},
 	}
 	result, _ := json.Marshal(res)

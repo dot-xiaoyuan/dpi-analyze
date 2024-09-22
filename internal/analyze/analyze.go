@@ -51,7 +51,7 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 		return
 	}
 	// 累加总流量
-	capture.FlowCount += len(packet.Data())
+	capture.TrafficCount += len(packet.Data())
 	// 链路层
 	ethernet := capture.Ethernet{}
 	if packet.LinkLayer() != nil {

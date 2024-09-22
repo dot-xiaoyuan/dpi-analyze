@@ -17,7 +17,7 @@ var (
 	Err          error
 	Decoder      gopacket.Decoder
 	PacketsCount int // 总包数
-	FlowCount    int // 总流量
+	TrafficCount int // 总流量
 	SessionCount int // 总会话
 	OK           bool
 )
