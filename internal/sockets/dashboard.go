@@ -17,6 +17,7 @@ func (ActionDashboard) Handle(data json.RawMessage) []byte {
 			"totalTraffics": capture.TrafficCount,
 			"totalSessions": capture.SessionCount,
 			"trafficCharts": memory.GenerateChartData(),
+			"appCharts":     memory.GenerateList(),
 		},
 	}
 	result, _ := json.Marshal(res)

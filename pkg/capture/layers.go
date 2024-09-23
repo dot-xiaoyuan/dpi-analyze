@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/redis"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
-	redis2 "github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"os"
 	"time"
@@ -121,7 +120,6 @@ type LayerMap interface {
 
 type Application interface {
 	AddUp()
-	GenerateList()
 }
 
 // AddUp 累加应用数
@@ -136,23 +134,10 @@ func (a *ApplicationInfo) AddUp() {
 		}
 	}()
 	rdb := redis.GetRedisClient()
-	score := rdb.ZScore(context.Background(), ZetApplicationMap, a.AppName).Val()
-	if score >= 0 {
-		score++
-	} else {
-		score = 1
-	}
-	err := rdb.ZAdd(context.Background(), ZetApplicationMap, redis2.Z{
-		Score:  score,
-		Member: a.AppName,
-	}).Err()
+	err := rdb.ZIncrBy(context.Background(), ZetApplicationMap, 1, a.AppName).Err()
 	// 累加全局应用计数
 	ApplicationCount++
 	if err != nil {
 		panic(err)
 	}
-}
-
-func (a *ApplicationInfo) GenerateList() {
-
 }

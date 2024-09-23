@@ -43,10 +43,11 @@ func (HTTPHandler) HandleData(data []byte, sr StreamReaderInterface) {
 		sr.UnLockParent()
 	} else if CheckHttpByResponse(data[:50]) {
 		res, err := http.ReadResponse(r, nil)
-		if res != nil {
-			contentType := res.Header.Get("Content-Type")
-			zap.L().Debug("res", zap.Any("res", contentType))
-		}
+		//if res != nil {
+		// contentType := res.Header.Get("Content-Type")
+		// zap.L().Debug("res", zap.Any("res", contentType))
+		//}
+		zap.L().Debug("res", zap.Any("res", res))
 		var req string
 		sr.LockParent()
 		urls := sr.GetUrls()

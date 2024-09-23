@@ -6,6 +6,7 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/features"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
+	"go.uber.org/zap"
 	"io"
 	"slices"
 	"sync"
@@ -79,7 +80,7 @@ func (sr *StreamReader) Run(wg *sync.WaitGroup) {
 
 		if protocolIdentified && handler != nil {
 			handler.HandleData(buffer, sr)
-			buffer = buffer[:0] // 清空缓冲区
+			// buffer = buffer[:0] // 清空缓冲区
 		}
 	}
 }
@@ -110,8 +111,9 @@ func (sr *StreamReader) SetTlsInfo(sni, version, cipherSuite string) {
 	}
 	sr.Parent.ApplicationProtocol = protocols.TLS
 	// 如果特征库加载 进行域名分析
-	if features.DomainAc != nil {
+	if features.DomainAc != nil && sni != "" {
 		sr.Parent.Metadata.ApplicationInfo.AppName = features.DomainMatch(sni)
+		zap.L().Debug("sni", zap.String("sni", sni))
 		sr.Parent.Metadata.ApplicationInfo.AddUp()
 	}
 }
@@ -147,7 +149,7 @@ func (sr *StreamReader) SetHttpInfo(host, userAgent, contentType, upgrade string
 		CurrentUserAgent: userAgent,
 	})
 	// 如果特征库加载 进行域名分析
-	if features.DomainAc != nil {
+	if features.DomainAc != nil && host != "" {
 		sr.Parent.Metadata.ApplicationInfo.AppName = features.DomainMatch(host)
 		sr.Parent.Metadata.ApplicationInfo.AddUp()
 	}
