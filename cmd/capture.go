@@ -8,6 +8,7 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/mongo"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/redis"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/features"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/maxmind"
@@ -62,7 +63,10 @@ func CaptureRreFunc(c *cobra.Command, args []string) {
 		_ = c.Help()
 		os.Exit(0)
 	}
+	// 加载效果组件
 	spinners.Setup()
+	// 加载redis组件
+	redis.Setup()
 	// 是否使用mongo
 	if config.UseMongo {
 		zap.L().Info(i18n.T("Start Load Mongodb Component"))

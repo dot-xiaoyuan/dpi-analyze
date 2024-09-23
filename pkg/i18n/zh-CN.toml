@@ -42,6 +42,14 @@
 "Connected to MongoDB!" = "已连接到 Mongodb! [ mongodb://{{.host}}:{{.port}} ]"
 "MongoDB client not initialized" = "MongoDB 客户端未初始化"
 
+# Redis
+"Start Load Redis Component" = "开始加载Redis组件"
+"redis.host is empty" = "Redis Host 未配置"
+"redis.port is empty" = "Redis 端口 未配置"
+"Failed to connect to redis" = "无法连接到 Redis"
+"Failed to ping Redis" = "无法 ping 通 Redis"
+"Connected to Redis!" = "已连接到 Redis! [ redis://{{.host}}:{{.port}} ]"
+
 # Feature
 "Start Load Feature Component" = "开始加载特征库组件"
 "Feature component initialized!" = "特征库加载完成"

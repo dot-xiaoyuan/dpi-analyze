@@ -1,7 +1,7 @@
 language: zh-CN
 log_level: info
 debug: false
-geo2ip: /Users/eros/Documents/GeoIP2-City.mmdb
+geo2ip: /Users/yuantong/Documents/GeoIP2-City.mmdb
 use_mongo: false
 capture:
   offline_file:
@@ -11,3 +11,8 @@ statistics:
 mongodb:
   host: 127.0.0.1
   port: 27017
+redis:
+  host: 127.0.0.1
+  port: 6379
+  password: ""
+  db: 0

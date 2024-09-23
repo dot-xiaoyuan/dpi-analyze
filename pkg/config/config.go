@@ -47,6 +47,7 @@ type Yaml struct {
 	UseTTL               bool    `mapstructure:"use_ttl"`
 	Capture              Capture `mapstructure:"capture"`
 	Mongodb              Mongodb `mapstructure:"mongodb"`
+	Redis                Redis   `mapstructure:"redis"`
 	Statistics           Statistics
 }
 
@@ -63,6 +64,13 @@ type Statistics struct {
 type Mongodb struct {
 	Host string `mapstructure:"host"`
 	Port string `mapstructure:"port"`
+}
+
+type Redis struct {
+	Host     string `mapstructure:"host"`
+	Port     string `mapstructure:"port"`
+	Password string `mapstructure:"password"`
+	DB       int    `mapstructure:"db"`
 }
 
 func init() {

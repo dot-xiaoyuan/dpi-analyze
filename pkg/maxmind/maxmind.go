@@ -36,7 +36,7 @@ func NewGeoIP(file string) {
 	if err != nil {
 		panic(err)
 	}
-	zap.L().Info(i18n.T(""))
+	zap.L().Info(i18n.T("Geo2IP component initialized!"))
 	spinners.Start()
 }
 

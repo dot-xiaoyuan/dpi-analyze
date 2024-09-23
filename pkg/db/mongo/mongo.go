@@ -30,6 +30,9 @@ func Setup() {
 	})
 }
 
+/**
+ * 加载mongodb客户端
+ */
 func loadMongoClient() (err error) {
 	spinners.Start()
 	defer func() {
@@ -65,6 +68,7 @@ func loadMongoClient() (err error) {
 	return
 }
 
+// GetMongoClient 获取mongo实例
 func GetMongoClient() *mongo.Client {
 	if client == nil {
 		err := loadMongoClient()
@@ -76,6 +80,7 @@ func GetMongoClient() *mongo.Client {
 	return client
 }
 
+// InsertOne 插入集合
 func InsertOne(collectionName string, document interface{}) error {
 	c := GetMongoClient()
 
