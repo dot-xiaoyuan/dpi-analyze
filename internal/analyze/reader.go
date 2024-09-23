@@ -6,7 +6,6 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/features"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
-	"go.uber.org/zap"
 	"io"
 	"slices"
 	"sync"
@@ -79,8 +78,10 @@ func (sr *StreamReader) Run(wg *sync.WaitGroup) {
 		}
 
 		if protocolIdentified && handler != nil {
-			handler.HandleData(buffer, sr)
-			// buffer = buffer[:0] // 清空缓冲区
+			processedBytes, needsMoreData := handler.HandleData(buffer, sr)
+			if !needsMoreData {
+				buffer = buffer[processedBytes:] // 清除已处理的数据
+			}
 		}
 	}
 }
@@ -113,7 +114,7 @@ func (sr *StreamReader) SetTlsInfo(sni, version, cipherSuite string) {
 	// 如果特征库加载 进行域名分析
 	if features.DomainAc != nil && sni != "" {
 		sr.Parent.Metadata.ApplicationInfo.AppName = features.DomainMatch(sni)
-		zap.L().Debug("sni", zap.String("sni", sni))
+		// zap.L().Debug("sni", zap.String("sni", sni), zap.String("packet", sr.Parent.SessionID))
 		sr.Parent.Metadata.ApplicationInfo.AddUp()
 	}
 }

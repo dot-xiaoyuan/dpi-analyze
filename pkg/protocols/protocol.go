@@ -14,5 +14,5 @@ type StreamReaderInterface interface {
 }
 
 type ProtocolHandler interface {
-	HandleData(data []byte, reader StreamReaderInterface)
+	HandleData(data []byte, reader StreamReaderInterface) (int, bool)
 }

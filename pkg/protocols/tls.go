@@ -8,40 +8,43 @@ import (
 
 type TLSHandler struct{}
 
-func (TLSHandler) HandleData(data []byte, reader StreamReaderInterface) {
+func (TLSHandler) HandleData(data []byte, reader StreamReaderInterface) (int, bool) {
 	tls := &layers.TLS{}
 	parser := gopacket.NewDecodingLayerParser(layers.LayerTypeTLS, tls)
 	var decodedLayers []gopacket.LayerType
 
 	err := parser.DecodeLayers(data, &decodedLayers)
 	if err != nil {
-		return
+		return 0, true
 	}
 
 	for _, layerType := range decodedLayers {
 		if layerType == layers.LayerTypeTLS {
 			for _, hs := range tls.Handshake {
 				if len(data) < 6 {
-					continue
+					return 0, true
 				}
+
 				handShakeType := data[5]
 				var sni, version, cipherSuite string
 				version = hs.Version.String()
+
 				switch handShakeType {
 				case 0x01:
 					sni = getSNI(data)
-					break
+					//break
 				case 0x02:
 					cipherSuite = getCipher(data)
-					break
+					//break
 				}
+
 				reader.LockParent()
 				reader.SetTlsInfo(sni, version, cipherSuite)
 				reader.UnLockParent()
 			}
-
 		}
 	}
+	return len(data), false
 }
 
 func getSNI(data []byte) string {
