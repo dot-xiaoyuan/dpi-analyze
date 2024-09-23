@@ -13,13 +13,14 @@ import (
 // 数据包捕获和抓取
 
 var (
-	Handle       *pcap.Handle
-	Err          error
-	Decoder      gopacket.Decoder
-	PacketsCount int // 总包数
-	TrafficCount int // 总流量
-	SessionCount int // 总会话
-	OK           bool
+	Handle           *pcap.Handle
+	Err              error
+	Decoder          gopacket.Decoder
+	PacketsCount     int // 总包数
+	TrafficCount     int // 总流量
+	SessionCount     int // 总会话
+	ApplicationCount int // 应用总数
+	OK               bool
 )
 
 type Config struct {

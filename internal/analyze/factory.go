@@ -35,20 +35,20 @@ func (f *Factory) New(netFlow, tcpFlow gopacket.Flow, tcp *layers.TCP, ac reasse
 		OptChecker:  reassembly.NewTCPOptionCheck(),
 		SrcIP:       netFlow.Src().String(),
 		DstIP:       netFlow.Dst().String(),
-		ProtocolFlags: ProtocolFlags{
-			TCP: TCPFlags{
+		ProtocolFlags: capture.ProtocolFlags{
+			TCP: capture.TCPFlags{
 				SYN: tcp.SYN,
 				ACK: tcp.ACK,
 				FIN: tcp.FIN,
 				RST: tcp.RST,
 			},
-			UDP: UDPFlags{
+			UDP: capture.UDPFlags{
 				IsDNS: false,
 			},
 		},
-		Metadata: Metadata{
-			HttpInfo: HttpInfo{},
-			TlsInfo:  TlsInfo{},
+		Metadata: capture.Metadata{
+			HttpInfo: capture.HttpInfo{},
+			TlsInfo:  capture.TlsInfo{},
 		},
 	}
 

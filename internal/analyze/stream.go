@@ -1,14 +1,13 @@
 package analyze
 
 import (
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/mongo"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/reassembly"
-	"go.uber.org/zap"
 	"sync"
 	"time"
 )
@@ -33,8 +32,8 @@ type Stream struct {
 	Ident               string `bson:"ident"`
 	PacketCount         int8   `bson:"packet_count"`
 	ByteCount           int16  `bson:"byte_count"`
-	ProtocolFlags       ProtocolFlags
-	Metadata            Metadata
+	ProtocolFlags       capture.ProtocolFlags
+	Metadata            capture.Metadata
 	SrcIP               string                 `bson:"src_ip"`
 	DstIP               string                 `bson:"dst_ip"`
 	RejectFSM           int                    `bson:"reject_fsm"` // FSM (Finite State Machine)有限状态机
@@ -152,9 +151,9 @@ func (s *Stream) ReassembledSG(sg reassembly.ScatterGather, ac reassembly.Assemb
 }
 
 func (s *Stream) ReassemblyComplete(ac reassembly.AssemblerContext) bool {
-	zap.L().Debug(i18n.TT("Connection Closed", map[string]interface{}{
-		"ident": s.Ident,
-	}))
+	//zap.L().Debug(i18n.TT("Connection Closed", map[string]interface{}{
+	//	"ident": s.Ident,
+	//}))
 
 	close(s.Client.Bytes)
 	close(s.Server.Bytes)
@@ -168,7 +167,7 @@ func (s *Stream) Save() {
 		return
 	}
 	// TODO ignore empty host
-	sessionData := Sessions{
+	sessionData := capture.Sessions{
 		SessionId:           s.SessionID,
 		SrcIp:               s.SrcIP,
 		DstIp:               s.DstIP,
