@@ -69,9 +69,10 @@ func StartStatistics(c Config) {
 
 func setupRoutes(r *gin.Engine) {
 	v1 := r.Group("/v1")
+	v1.GET("/dashboard", handlers.Dashboard())
 	v1.GET("/stream-logs", handlers.StreamLogs())
+	v1.GET("/ip-tables", handlers.IpTables())
 	v1.GET("/ttl", handlers.TTL())
 	v1.GET("/mac", handlers.Mac())
-	v1.GET("/ip-tables", handlers.IpTables())
-	v1.GET("/dashboard", handlers.Dashboard())
+
 }

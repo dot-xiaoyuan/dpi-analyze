@@ -10,7 +10,11 @@ import (
 	"time"
 )
 
-const ZetApplicationMap = "z_set:application_map"
+const (
+	ZSetApplicationMap = "z_set:application_map"
+	ZSetIPTable        = "z_set:ip_table"
+	HashAnalyzeIP      = "hash:analyze:ip:%s"
+)
 
 // Ethernet 以太网
 type Ethernet struct {
@@ -136,7 +140,7 @@ func (a *ApplicationInfo) AddUp() {
 		}
 	}()
 	rdb := redis.GetRedisClient()
-	err := rdb.ZIncrBy(context.Background(), ZetApplicationMap, 1, a.AppName).Err()
+	err := rdb.ZIncrBy(context.Background(), ZSetApplicationMap, 1, a.AppName).Err()
 	// 累加全局应用计数
 	ApplicationCount++
 	if err != nil {

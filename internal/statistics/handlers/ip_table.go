@@ -1,64 +1,28 @@
 package handlers
 
 import (
-	"encoding/json"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/provider"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/utils"
 	"github.com/gin-gonic/gin"
-	"net"
+	"go.uber.org/zap"
+	"net/http"
+	"strconv"
 )
 
 func IpTables() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		conn, err := net.Dial("unix", "/tmp/capture.sock")
-		if err != nil {
-			c.JSON(400, gin.H{
-				"message": err.Error(),
-			})
-			return
-		}
-		defer conn.Close()
+		queryStart := c.DefaultQuery("page", "0")
+		//queryEnd := c.DefaultQuery("end", "10")
+		querySize := c.DefaultQuery("pageSize", "20")
 
-		p := provider.Request{
-			Action: "iptables",
-			Data:   []byte(`{"offset":0,"limit":20}`),
-		}
-		params, err := json.Marshal(p)
-		if err != nil {
-			c.JSON(400, gin.H{
-				"message": err.Error(),
-			})
-		}
-		conn.Write(params)
-		// 读取所有数据
-		data, err := utils.ReadByConn(conn, 4096)
-		if err != nil {
-			c.JSON(400, gin.H{
-				"message": err.Error(),
-			})
-			return
-		}
+		s, _ := strconv.ParseInt(queryStart, 10, 64)
+		//e, _ := strconv.ParseInt(queryEnd, 10, 64)
+		pageSize, _ := strconv.ParseInt(querySize, 10, 64)
 
-		var macMap map[string]capture.IPActivityLogs
-		if err := json.Unmarshal(data, &macMap); err != nil {
-			c.JSON(400, gin.H{
-				"message": err.Error(),
-			})
-			return
-		}
+		start := (s - 1) * pageSize
+		end := start + pageSize - 1
+		zap.L().Info("query", zap.Int64("start", start), zap.Int64("end", end))
 
-		if len(macMap) == 0 {
-			c.JSON(400, gin.H{
-				"message": "IP Map is empty",
-			})
-			return
-		}
-
-		c.JSON(200, gin.H{
-			"message": "OK",
-			"data":    macMap,
-		})
-		return
+		result := capture.TraversalIP(start, end)
+		c.JSON(http.StatusOK, result)
 	}
 }

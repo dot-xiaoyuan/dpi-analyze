@@ -1,7 +1,6 @@
 package analyze
 
 import (
-	"github.com/dot-xiaoyuan/dpi-analyze/internal/analyze/iptables"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/analyze/memory"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
@@ -96,13 +95,9 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 	//ethernetMap.Update(ethernet)
 
 	// 插入 IP hash 表
-	detail := capture.IPActivityLogs{
-		IP:         ip,
-		CurrentTTL: internet.TTL,
-		CurrentMac: ethernet.SrcMac,
-		LastSeen:   time.Now(),
-	}
-	iptables.Load(ip, detail)
+	capture.StoreIPInZSet(ip, time.Now().Unix())
+	capture.StoreIPInfoHash(ip, "ttl", internet.TTL)
+	capture.StoreIPInfoHash(ip, "mac", ethernet.SrcMac)
 
 	// analyze TCP
 	if tcpLayer := packet.Layer(layers.LayerTypeTCP); tcpLayer != nil {
