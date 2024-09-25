@@ -87,11 +87,11 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 	trafficMap.Update(transmission)
 
 	// 插入 TTL 缓存
-	internetMap := memory.Internet{IP: ip}
-	internetMap.Update(internet)
+	//internetMap := memory.Internet{IP: ip}
+	//internetMap.Update(internet)
 
 	// 插入 Mac 缓存
-	//ethernetMap := cache.Ethernet{IP: ip}
+	//ethernetMap := memory.Ethernet{IP: ip}
 	//ethernetMap.Update(ethernet)
 
 	// 插入 IP hash 表

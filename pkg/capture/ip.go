@@ -21,6 +21,7 @@ type IPDetail struct {
 	TTL      string `json:"ttl"`
 	UA       string `json:"ua"`
 	LastSeen string `json:"last_seen"`
+	TTLList  any    `json:"ttl_list"`
 }
 
 type TTLHistory struct {
@@ -65,15 +66,18 @@ func StoreIPInfoHash(ip, field string, value any) {
 	ctx := context.TODO()
 	key := fmt.Sprintf(HashAnalyzeIP, ip)
 
+	var newVal any
 	if field == "ttl" {
-		newTTL := value.(uint8)
-		oldTTL := rdb.HMGet(ctx, key, field).Val()
-		if len(oldTTL) > 1 {
-			for _, t := range oldTTL {
-				if t != newTTL {
-					value = append(oldTTL, newTTL)
-					break
-				}
+		newVal = value.(uint8)
+	} else {
+		newVal = value.(string)
+	}
+	oldTTL := rdb.HMGet(ctx, key, field).Val()
+	if len(oldTTL) > 1 {
+		for _, t := range oldTTL {
+			if t != newVal {
+				value = append(oldTTL, newVal)
+				break
 			}
 		}
 	}

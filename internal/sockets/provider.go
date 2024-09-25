@@ -29,8 +29,6 @@ func NewActionHandler(action string) provider.Handler {
 		return &ActionInternet{}
 	case "ethernet":
 		return &ActionEthernet{}
-	case "iptables":
-		return &ActionIPTables{}
 	case "dashboard":
 		return &ActionDashboard{}
 	}
