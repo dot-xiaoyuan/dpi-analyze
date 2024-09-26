@@ -21,6 +21,7 @@ var (
 	SessionCount     int // 总会话
 	ApplicationCount int // 应用总数
 	OK               bool
+	IPEvents         chan IPFieldChangeEvent
 )
 
 type Config struct {
@@ -38,6 +39,13 @@ type PacketHandler interface {
 // StartCapture 开始捕获数据包
 func StartCapture(ctx context.Context, c Config, handler PacketHandler, done chan<- struct{}) {
 	zap.L().Info(i18n.T("Starting capture"))
+	IPEvents = make(chan IPFieldChangeEvent, 1000)
+	for i := 0; i < 10; i++ {
+		go ProcessChangeEvent(IPEvents)
+	}
+	zap.L().Debug(i18n.TT("Make Events by Listen IP Change", map[string]interface{}{
+		"count": 1000,
+	}))
 	if c.OffLine != "" {
 		Handle, Err = pcap.OpenOffline(c.OffLine)
 		zap.L().Info(i18n.TT("Open offline package file", map[string]interface{}{

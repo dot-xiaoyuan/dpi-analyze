@@ -95,9 +95,9 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 	//ethernetMap.Update(ethernet)
 
 	// 插入 IP hash 表
-	capture.StoreIPInZSet(ip, time.Now().Unix())
-	capture.StoreIPInfoHash(ip, "ttl", internet.TTL)
-	capture.StoreIPInfoHash(ip, "mac", ethernet.SrcMac)
+
+	capture.StoreIP(ip, capture.TTL, internet.TTL)
+	capture.StoreIP(ip, capture.Mac, ethernet.SrcMac)
 
 	// analyze TCP
 	if tcpLayer := packet.Layer(layers.LayerTypeTCP); tcpLayer != nil {

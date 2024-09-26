@@ -11,53 +11,55 @@ import (
 )
 
 type IPTables struct {
-	Results    []IPDetail `json:"results"`
-	TotalCount int64      `json:"totalCount"`
+	Results    []IPInfoOld `json:"results"`
+	TotalCount int64       `json:"totalCount"`
 }
 
-type IPDetail struct {
+type IPInfoOld struct {
 	IP       string `json:"ip"`
 	Mac      string `json:"mac"`
 	TTL      string `json:"ttl"`
 	UA       string `json:"ua"`
 	LastSeen string `json:"last_seen"`
-	TTLList  any    `json:"ttl_list"`
 }
 
-type TTLHistory struct {
-	TTL       uint8     `bson:"ttl"`
-	Timestamp time.Time `bson:"timestamp"`
-}
-
-type UAHistory struct {
-	UserAgent string    `bson:"user_agent"`
-	Timestamp time.Time `bson:"timestamp"`
-}
-
-type MacHistory struct {
-	MacAddress string    `bson:"mac_address"`
-	Timestamp  time.Time `bson:"timestamp"`
-}
-
-type IPActivityLogs struct {
-	IP               string       `bson:"ip"`
-	CurrentTTL       uint8        `bson:"current_ttl"`
-	TTLHistory       []TTLHistory `bson:"ttl_history"`
-	CurrentUserAgent string       `bson:"current_user_agent"`
-	UAHistory        []UAHistory  `bson:"ua_history"`
-	CurrentMac       string       `bson:"current_mac"`
-	MacHistory       []MacHistory `bson:"mac_history"`
-	LastSeen         time.Time    `bson:"last_seen"`
-}
-
-func StoreIPInZSet(ip string, timeStamp int64) {
-	rdb := redis.GetRedisClient()
-	rdb.ZAdd(context.TODO(), ZSetIPTable, redis2.Z{
-		Score:  float64(timeStamp),
-		Member: ip,
-	})
-}
-
+//	type TTLHistory struct {
+//		TTL       uint8     `bson:"ttl"`
+//		Timestamp time.Time `bson:"timestamp"`
+//	}
+//
+//	type UAHistory struct {
+//		UserAgent string    `bson:"user_agent"`
+//		Timestamp time.Time `bson:"timestamp"`
+//	}
+//
+//	type MacHistory struct {
+//		MacAddress string    `bson:"mac_address"`
+//		Timestamp  time.Time `bson:"timestamp"`
+//	}
+//
+//	type IPActivityLogs struct {
+//		IP               string       `bson:"ip"`
+//		CurrentTTL       uint8        `bson:"current_ttl"`
+//		TTLHistory       []TTLHistory `bson:"ttl_history"`
+//		CurrentUserAgent string       `bson:"current_user_agent"`
+//		UAHistory        []UAHistory  `bson:"ua_history"`
+//		CurrentMac       string       `bson:"current_mac"`
+//		MacHistory       []MacHistory `bson:"mac_history"`
+//		LastSeen         time.Time    `bson:"last_seen"`
+//	}
+//
+// // StoreIPInZSet 加载IP至有序集合
+//
+//	func StoreIPInZSet(ip string, timeStamp int64) {
+//		rdb := redis.GetRedisClient()
+//		rdb.ZAdd(context.TODO(), ZSetIPTable, redis2.Z{
+//			Score:  float64(timeStamp),
+//			Member: ip,
+//		})
+//	}
+//
+// // StoreIPInfoHash 加载IP详情hash
 func StoreIPInfoHash(ip, field string, value any) {
 	if value == nil {
 		return
@@ -85,44 +87,62 @@ func StoreIPInfoHash(ip, field string, value any) {
 	rdb.Expire(ctx, key, 24*time.Hour)
 }
 
-func TraversalIP(start, stop int64) IPTables {
+// TraversalIP 遍历IP表
+func TraversalIP(startTime, endTime int64, page, pageSize int64) ([]IPInfoOld, error) {
 	rdb := redis.GetRedisClient()
 	ctx := context.TODO()
 
-	result := IPTables{
-		Results:    []IPDetail{},
-		TotalCount: 0,
+	// 分页的起止索引
+	start := (page - 1) * pageSize
+
+	// Pipeline 批量查询
+	pipe := rdb.Pipeline()
+
+	// step1. 分页查询集合
+	zRangCmd := rdb.ZRevRangeByScoreWithScores(ctx, ZSetIPTable, &redis2.ZRangeBy{
+		Min:    strconv.FormatInt(startTime, 10), // 查询范围的最小时间戳
+		Max:    strconv.FormatInt(endTime, 10),   // 查询范围的最大时间戳
+		Offset: start,                            // 分页起始位置
+		Count:  pageSize,                         // 每页大小
+	})
+
+	_, err := pipe.Exec(ctx)
+	if err != nil {
+		zap.L().Error("ZRange pipe.Exec", zap.Error(err))
+		return nil, err
 	}
 
-	minScore := strconv.FormatInt(time.Now().Add(-24*time.Hour).Unix(), 10)
-	maxScore := strconv.FormatInt(time.Now().Add(time.Hour).Unix(), 10)
-	result.TotalCount = rdb.ZCount(ctx, ZSetIPTable, minScore, maxScore).Val()
-
-	zap.L().Info("condition", zap.String("minScore", minScore), zap.String("maxScore", maxScore), zap.Int64("start", start), zap.Int64("stop", stop))
-	ips := rdb.ZRevRangeWithScores(ctx, ZSetIPTable, start, stop).Val()
-
-	zap.L().Info("ips", zap.Any("ips", ips))
-	for _, i := range ips {
-		detail := getIPDetail(i.Member.(string))
-		result.Results = append(result.Results, detail)
+	ips := zRangCmd.Val()
+	// step2. 批量获取每个IP详细信息
+	pipe = rdb.Pipeline()
+	ipCommands := make([]*redis2.MapStringStringCmd, 0, len(ips))
+	for _, ip := range ips {
+		key := fmt.Sprintf(HashAnalyzeIP, ip.Member.(string))
+		cmd := pipe.HGetAll(ctx, key)
+		ipCommands = append(ipCommands, cmd)
 	}
 
-	return result
-}
-
-func getIPDetail(ip string) IPDetail {
-	rdb := redis.GetRedisClient()
-	ctx := context.TODO()
-
-	detail := rdb.HGetAll(ctx, fmt.Sprintf(HashAnalyzeIP, ip)).Val()
-	t, _ := strconv.ParseInt(detail["last_seen"], 10, 64)
-	return IPDetail{
-		IP:       ip,
-		Mac:      detail["mac"],
-		TTL:      detail["ttl"],
-		UA:       detail["ua"],
-		LastSeen: time.Unix(t, 0).Format("2006/01/02 15:04:05"),
+	_, err = pipe.Exec(ctx)
+	if err != nil {
+		zap.L().Error("HGetAll pipe.Exec", zap.Error(err))
+		return nil, err
 	}
+
+	// step3. 处理查询结果
+	ipDetails := make([]IPInfoOld, 0, len(ips))
+	for i, cmd := range ipCommands {
+		info := cmd.Val()
+		detail := IPInfoOld{
+			IP:       ips[i].Member.(string),
+			TTL:      info["ttl"],
+			UA:       info["ua"],
+			Mac:      info["mac"],
+			LastSeen: time.Unix(int64(ips[i].Score), 0).Format("2006/01/02 15:04:05"),
+		}
+		ipDetails = append(ipDetails, detail)
+	}
+
+	return ipDetails, nil
 }
 
 func persistToMongo() {

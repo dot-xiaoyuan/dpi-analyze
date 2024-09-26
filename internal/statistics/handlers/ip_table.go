@@ -6,23 +6,26 @@ import (
 	"go.uber.org/zap"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 func IpTables() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		queryStart := c.DefaultQuery("page", "0")
-		//queryEnd := c.DefaultQuery("end", "10")
+		queryPage := c.DefaultQuery("page", "1")
 		querySize := c.DefaultQuery("pageSize", "20")
 
-		s, _ := strconv.ParseInt(queryStart, 10, 64)
-		//e, _ := strconv.ParseInt(queryEnd, 10, 64)
+		page, _ := strconv.ParseInt(queryPage, 10, 64)
 		pageSize, _ := strconv.ParseInt(querySize, 10, 64)
 
-		start := (s - 1) * pageSize
-		end := start + pageSize - 1
-		zap.L().Info("query", zap.Int64("start", start), zap.Int64("end", end))
+		zap.L().Info("query", zap.Int64("page", page), zap.Int64("pageSize", pageSize))
 
-		result := capture.TraversalIP(start, end)
+		now := time.Now()
+		result, err := capture.TraversalIP(now.Add(-24*time.Hour).Unix(), now.Add(time.Hour).Unix(), page, pageSize)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"message": err.Error(),
+			})
+		}
 		c.JSON(http.StatusOK, result)
 	}
 }

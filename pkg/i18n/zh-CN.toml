@@ -16,6 +16,10 @@
 "Berkeley packet filter set" = "数据包过滤设置:[ {{.bpf}} ]"
 "Packets Channel Closed" = "数据包通道已关闭"
 "ignore missing packet" = "是否允许忽略 乱序/丢包/重传数据包统计"
+"Make Events by Listen IP Change" = "通过监听IP属性变化来创建Channel"
+"TTLChange" = "TTL变化"
+"MacChange" = "Mac地址变化"
+"UAChange" = "UA变化"
 
 # Statistics Flags
 "statistics port to listen on" = "统计监听端口"
