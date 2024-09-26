@@ -146,7 +146,7 @@ func (sr *StreamReader) SetHttpInfo(host, userAgent, contentType, upgrade string
 	}
 	// 如果ua有效
 	if userAgent != "" {
-		capture.StoreIPInfoHash(sr.Parent.SrcIP, "ua", userAgent)
+		capture.StoreIP(sr.Parent.SrcIP, capture.UserAgent, userAgent)
 	}
 	// 如果特征库加载 进行域名分析
 	if features.DomainAc != nil && host != "" {
