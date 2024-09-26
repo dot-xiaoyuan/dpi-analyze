@@ -15,7 +15,8 @@ func (ActionIP) Handle(data json.RawMessage) []byte {
 	res := Res{
 		Code: 200,
 		Data: map[string]any{
-			"ip": capture.GetTTLHistory(c.IP),
+			"ttlHistory": capture.GetTTLHistory(c.IP),
+			"detail":     capture.GetIPInfoFromRedis(c.IP),
 		},
 	}
 	result, _ := json.Marshal(res)

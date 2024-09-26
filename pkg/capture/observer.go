@@ -26,6 +26,7 @@ var (
 	cacheMutex      sync.Mutex
 )
 
+// RecordTTLChange 记录ttl变化
 func RecordTTLChange(ip string, ttl uint8) {
 	cacheMutex.Lock()
 	defer cacheMutex.Unlock()
@@ -45,6 +46,7 @@ func RecordTTLChange(ip string, ttl uint8) {
 	})
 }
 
+// GetTTLHistory 获取ttl历史记录
 func GetTTLHistory(ip string) []TTLChange {
 	cacheMutex.Lock()
 	defer cacheMutex.Unlock()
@@ -55,6 +57,7 @@ func GetTTLHistory(ip string) []TTLChange {
 	return nil
 }
 
+// WatchTTLChange 观察ttl变化
 func WatchTTLChange(events <-chan TTLChangeObserverEvent) {
 	for e := range events {
 		RecordTTLChange(e.IP, e.Curr.(uint8))

@@ -74,7 +74,7 @@ func StoreIP(ip, field string, val any) {
 		// memory 缓存不存在，添加至缓存
 		UpdateIPInfoFromMemory(ip, m, val)
 		// 查询 redis
-		oldVal, ok = GetIPInfoFromRedis(ip, field)
+		oldVal, ok = GetIPFieldFromRedis(ip, field)
 		if !ok {
 			// redis 也不存在
 			StoreIPInfoInRedis(ip, field, val)
@@ -109,17 +109,30 @@ func UpdateIPInfoFromMemory(ip string, memory *sync.Map, val any) {
 	memory.Store(ip, val)
 }
 
-// GetIPInfoFromRedis 获取IP属性 redis
-func GetIPInfoFromRedis(ip string, t string) (any, bool) {
+// GetIPFieldFromRedis 获取IP属性 redis
+func GetIPFieldFromRedis(ip string, field string) (any, bool) {
 	rdb := redis.GetRedisClient()
 	ctx := context.TODO()
 	key := fmt.Sprintf(HashAnalyzeIP, ip)
 
-	val, err := rdb.HMGet(ctx, key, t).Result()
+	val, err := rdb.HMGet(ctx, key, field).Result()
 	if errors.Is(err, redis2.Nil) || len(val) == 1 {
 		return nil, false
 	}
 	return val[1], true
+}
+
+// GetIPInfoFromRedis 获取IP info
+func GetIPInfoFromRedis(ip string) map[string]string {
+	rdb := redis.GetRedisClient()
+	ctx := context.TODO()
+	key := fmt.Sprintf(HashAnalyzeIP, ip)
+
+	val, err := rdb.HGetAll(ctx, key).Result()
+	if errors.Is(err, redis2.Nil) || len(val) == 1 {
+		return nil
+	}
+	return val
 }
 
 // StoreIPInfoInRedis 存储IP属性 redis

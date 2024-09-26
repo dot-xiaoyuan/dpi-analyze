@@ -31,7 +31,7 @@ func NewActionHandler(action string) provider.Handler {
 		return &ActionEthernet{}
 	case "dashboard":
 		return &ActionDashboard{}
-	case "ip":
+	case "ip-detail":
 		return &ActionIP{}
 	}
 	return nil
