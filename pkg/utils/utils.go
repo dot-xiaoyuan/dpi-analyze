@@ -150,3 +150,10 @@ func ReadByConn(conn net.Conn, bufSize int) (data []byte, err error) {
 	}
 	return buffer, nil
 }
+
+func AbsDiff(new, old uint8) uint8 {
+	if new > old {
+		return new - old
+	}
+	return old - new
+}

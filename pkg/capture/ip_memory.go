@@ -2,6 +2,7 @@ package capture
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/redis"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
@@ -15,6 +16,7 @@ var (
 	TTLCache sync.Map
 	MacCache sync.Map
 	UACache  sync.Map
+	ipLocks  sync.Map
 )
 
 type EventType int
@@ -40,12 +42,19 @@ type IPInfo struct {
 	Mac string
 }
 
+func getIPMutex(ip string) *sync.Mutex {
+	val, _ := ipLocks.LoadOrStore(ip, &sync.Mutex{})
+	return val.(*sync.Mutex)
+}
+
 // StoreIP 加载IP TTL
 func StoreIP(ip, field string, val any) {
+	// zap.L().Debug("store ip", zap.String("ip", ip), zap.Any("val", val))
 	var m *sync.Map
 	switch field {
 	case TTL:
 		m = &TTLCache
+		val = val.(uint8)
 		break
 	case UserAgent:
 		m = &UACache
@@ -55,19 +64,29 @@ func StoreIP(ip, field string, val any) {
 		break
 	}
 
+	// 获取IP锁
+	mutex := getIPMutex(ip)
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	oldVal, ok := GetIPInfoFromMemory(ip, m)
 	if !ok {
-		oldVal = GetIPInfoFromRedis(ip, field)
-	}
-	if oldVal == "" || oldVal == nil {
-		// memory 和 redis都不存在，进行缓存
+		// memory 缓存不存在，添加至缓存
 		UpdateIPInfoFromMemory(ip, m, val)
-		StoreIPInfoInRedis(ip, field, val)
-		return
+		// 查询 redis
+		oldVal, ok = GetIPInfoFromRedis(ip, field)
+		if !ok {
+			// redis 也不存在
+			StoreIPInfoInRedis(ip, field, val)
+			return
+		}
 	}
+	// zap.L().Debug("old", zap.String("ip", ip), zap.Any("oldVal", oldVal))
 	if oldVal == val {
 		return
 	}
+	UpdateIPInfoFromMemory(ip, m, val)
+	// 不一致，进行更新
 	IPEvents <- IPFieldChangeEvent{
 		IP:       ip,
 		OldValue: oldVal,
@@ -91,12 +110,16 @@ func UpdateIPInfoFromMemory(ip string, memory *sync.Map, val any) {
 }
 
 // GetIPInfoFromRedis 获取IP属性 redis
-func GetIPInfoFromRedis(ip string, t string) any {
+func GetIPInfoFromRedis(ip string, t string) (any, bool) {
 	rdb := redis.GetRedisClient()
 	ctx := context.TODO()
 	key := fmt.Sprintf(HashAnalyzeIP, ip)
 
-	return rdb.HMGet(ctx, key, t).Val()[0]
+	val, err := rdb.HMGet(ctx, key, t).Result()
+	if errors.Is(err, redis2.Nil) || len(val) == 1 {
+		return nil, false
+	}
+	return val[1], true
 }
 
 // StoreIPInfoInRedis 存储IP属性 redis
@@ -119,11 +142,19 @@ func StoreIPInfoInRedis(ip, field string, value any) {
 func ProcessChangeEvent(events <-chan IPFieldChangeEvent) {
 	for e := range events {
 		//zap.L().Debug("ProcessChangeEvent", zap.Any("event", e))
+		mutex := getIPMutex(e.IP)
+		mutex.Lock()
+
 		switch e.Field {
 		case TTL:
 			// 处理TTL变化
 			zap.L().Debug(i18n.T("TTLChange"), zap.String("ip", e.IP), zap.Any("old", e.OldValue), zap.Any("new", e.NewValue))
-			UpdateIPInfoFromMemory(e.IP, &TTLCache, e.NewValue)
+			// push observer
+			ObserverEvents <- TTLChangeObserverEvent{
+				IP:   e.IP,
+				Prev: e.OldValue,
+				Curr: e.NewValue,
+			}
 			break
 		case Mac:
 			// 处理Mac地址变化
@@ -138,5 +169,7 @@ func ProcessChangeEvent(events <-chan IPFieldChangeEvent) {
 		}
 		// 更新至redis
 		StoreIPInfoInRedis(e.IP, e.Field, e.NewValue)
+		// 解锁
+		mutex.Unlock()
 	}
 }

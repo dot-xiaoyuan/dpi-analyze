@@ -20,6 +20,8 @@
 "TTLChange" = "TTL变化"
 "MacChange" = "Mac地址变化"
 "UAChange" = "UA变化"
+"Starting WatchTTLChange" = "开始监听TTL变化"
+"Starting ProcessChangeEvent" = "注册处理事件程序"
 
 # Statistics Flags
 "statistics port to listen on" = "统计监听端口"

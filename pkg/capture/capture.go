@@ -21,7 +21,8 @@ var (
 	SessionCount     int // 总会话
 	ApplicationCount int // 应用总数
 	OK               bool
-	IPEvents         chan IPFieldChangeEvent
+	IPEvents         = make(chan IPFieldChangeEvent, 1000)
+	ObserverEvents   = make(chan TTLChangeObserverEvent, 100)
 )
 
 type Config struct {
@@ -39,10 +40,15 @@ type PacketHandler interface {
 // StartCapture 开始捕获数据包
 func StartCapture(ctx context.Context, c Config, handler PacketHandler, done chan<- struct{}) {
 	zap.L().Info(i18n.T("Starting capture"))
-	IPEvents = make(chan IPFieldChangeEvent, 1000)
-	for i := 0; i < 10; i++ {
-		go ProcessChangeEvent(IPEvents)
-	}
+	// 启动观察者 goroutine
+	zap.L().Info(i18n.T("Starting WatchTTLChange"))
+	go WatchTTLChange(ObserverEvents)
+
+	// 启动ip属性事件监听 goroutine
+	zap.L().Info(i18n.T("Starting ProcessChangeEvent"))
+	//for i := 0; i < 10; i++ {
+	go ProcessChangeEvent(IPEvents)
+	//}
 	zap.L().Debug(i18n.TT("Make Events by Listen IP Change", map[string]interface{}{
 		"count": 1000,
 	}))

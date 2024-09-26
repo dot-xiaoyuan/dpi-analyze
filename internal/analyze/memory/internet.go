@@ -2,6 +2,7 @@ package memory
 
 import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/utils"
 	"sync"
 )
 
@@ -25,7 +26,7 @@ func (l *Internet) Update(internet interface{}) {
 			if item.DstIP == i.DstIP {
 				continue
 			}
-			if absDiff(i.TTL, item.TTL) >= TTLChangeThreshold {
+			if utils.AbsDiff(i.TTL, item.TTL) >= TTLChangeThreshold {
 				record = append(record, i)
 				break
 			}
@@ -37,11 +38,4 @@ func (l *Internet) Update(internet interface{}) {
 		TTLTables.Store(l.IP, record)
 		// zap.L().Debug("Insert TTL Cache", zap.String("ip", l.IP), zap.Any("Internet", i))
 	}
-}
-
-func absDiff(new, old uint8) uint8 {
-	if new > old {
-		return new - old
-	}
-	return old - new
 }
