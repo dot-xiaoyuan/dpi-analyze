@@ -4,16 +4,14 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/mongo"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/reassembly"
+	"go.uber.org/zap"
 	"sync"
 	"time"
-)
-
-var (
-	StreamClose sync.WaitGroup
 )
 
 // Stream 流
@@ -30,8 +28,6 @@ type Stream struct {
 	Net, Transport      gopacket.Flow
 	fsmErr              bool
 	Ident               string `bson:"ident"`
-	PacketCount         int8   `bson:"packet_count"`
-	ByteCount           int16  `bson:"byte_count"`
 	ProtocolFlags       capture.ProtocolFlags
 	Metadata            capture.Metadata
 	SrcIP               string                 `bson:"src_ip"`
@@ -151,9 +147,9 @@ func (s *Stream) ReassembledSG(sg reassembly.ScatterGather, ac reassembly.Assemb
 }
 
 func (s *Stream) ReassemblyComplete(ac reassembly.AssemblerContext) bool {
-	//zap.L().Debug(i18n.TT("Connection Closed", map[string]interface{}{
-	//	"ident": s.Ident,
-	//}))
+	zap.L().Debug(i18n.TT("Connection Closed", map[string]interface{}{
+		"ident": s.Ident,
+	}))
 
 	close(s.Client.Bytes)
 	close(s.Server.Bytes)
@@ -173,11 +169,16 @@ func (s *Stream) Save() {
 		DstIp:               s.DstIP,
 		SrcPort:             s.Client.SrcPort,
 		DstPort:             s.Client.DstPort,
+		PacketCount:         s.PacketsCount,
+		ByteCount:           s.BytesCount,
 		Protocol:            "tcp",
+		MissBytes:           s.MissBytes,
+		OutOfOrderPackets:   s.OutOfOrderPackets,
+		OutOfOrderBytes:     s.OutOfOrderBytes,
+		OverlapBytes:        s.OverlapBytes,
+		OverlapPackets:      s.OverlapPackets,
 		StartTime:           s.StartTime,
 		EndTime:             time.Now(),
-		PacketCount:         s.PacketCount,
-		ByteCount:           s.ByteCount,
 		ProtocolFlags:       s.ProtocolFlags,
 		ApplicationProtocol: s.ApplicationProtocol,
 		Metadata:            s.Metadata,

@@ -103,17 +103,25 @@ type CustomFields struct {
 
 // Sessions 用于存储每个网络会话的信息，包括源 IP、目标 IP、协议、传输层协议等。
 type Sessions struct {
-	ID                  primitive.ObjectID     `bson:"_id,omitempty" json:"_id"`
-	SessionId           string                 `bson:"session_id" json:"session_id"`
-	SrcIp               string                 `bson:"src_ip" json:"src_ip"`
-	DstIp               string                 `bson:"dst_ip" json:"dst_ip"`
-	SrcPort             string                 `bson:"src_port" json:"src_port"`
-	DstPort             string                 `bson:"dst_port" json:"dst_port"`
-	Protocol            string                 `bson:"protocol" json:"protocol"`
+	ID          primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
+	SessionId   string             `bson:"session_id" json:"session_id"`
+	SrcIp       string             `bson:"src_ip" json:"src_ip"`
+	DstIp       string             `bson:"dst_ip" json:"dst_ip"`
+	SrcPort     string             `bson:"src_port" json:"src_port"`
+	DstPort     string             `bson:"dst_port" json:"dst_port"`
+	Protocol    string             `bson:"protocol" json:"protocol"`
+	PacketCount int                `bson:"packet_count" json:"packet_count"`
+	ByteCount   int                `bson:"byte_count" json:"byte_count"`
+	MissBytes   int                `bson:"miss_bytes" json:"miss_bytes"`
+	//Reassembled         int                    `bson:"reassembled" json:"reassembled"`
+	OutOfOrderPackets int `bson:"out_of_order_packets" json:"out_of_order_packets"`
+	OutOfOrderBytes   int `bson:"out_of_order_bytes" json:"out_of_order_bytes"`
+	//BiggestChunkBytes   int                    `bson:"biggest_chunk_bytes" json:"biggest_chunk_bytes"`
+	//BiggestChunkPackets int                    `bson:"biggest_chunk_packets" json:"biggest_chunk_packets"`
+	OverlapBytes        int                    `bson:"overlap_bytes" json:"overlap_bytes"`
+	OverlapPackets      int                    `bson:"overlap_packets" json:"overlap_packets"`
 	StartTime           time.Time              `bson:"start_time" json:"start_time"`
 	EndTime             time.Time              `bson:"end_time" json:"end_time"`
-	PacketCount         int8                   `bson:"packet_count" json:"packet_count"`
-	ByteCount           int16                  `bson:"byte_count" json:"byte_count"`
 	ProtocolFlags       ProtocolFlags          `bson:"protocol_flags" json:"protocol_flags"` // 协议标志
 	ApplicationProtocol protocols.ProtocolType `bson:"application_protocol" json:"application_protocol"`
 	Metadata            Metadata               `bson:"metadata" json:"metadata"`

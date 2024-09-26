@@ -25,16 +25,16 @@ func (f *Factory) New(netFlow, tcpFlow gopacket.Flow, tcp *layers.TCP, ac reasse
 	capture.SessionCount++
 
 	stream := &Stream{
-		SessionID:   protocols.GenerateSessionId(netFlow.Src().String(), netFlow.Dst().String(), tcpFlow.Src().String(), tcpFlow.Dst().String(), "tcp"),
-		StartTime:   ac.GetCaptureInfo().Timestamp,
-		Net:         netFlow,
-		Transport:   tcpFlow,
-		TcpState:    reassembly.NewTCPSimpleFSM(fsmOptions),
-		Ident:       fmt.Sprintf("%s:%s", netFlow, tcpFlow),
-		PacketCount: 1,
-		OptChecker:  reassembly.NewTCPOptionCheck(),
-		SrcIP:       netFlow.Src().String(),
-		DstIP:       netFlow.Dst().String(),
+		SessionID:    protocols.GenerateSessionId(netFlow.Src().String(), netFlow.Dst().String(), tcpFlow.Src().String(), tcpFlow.Dst().String(), "tcp"),
+		StartTime:    ac.GetCaptureInfo().Timestamp,
+		Net:          netFlow,
+		Transport:    tcpFlow,
+		TcpState:     reassembly.NewTCPSimpleFSM(fsmOptions),
+		Ident:        fmt.Sprintf("%s:%s", netFlow, tcpFlow),
+		PacketsCount: 1,
+		OptChecker:   reassembly.NewTCPOptionCheck(),
+		SrcIP:        netFlow.Src().String(),
+		DstIP:        netFlow.Dst().String(),
 		ProtocolFlags: capture.ProtocolFlags{
 			TCP: capture.TCPFlags{
 				SYN: tcp.SYN,
