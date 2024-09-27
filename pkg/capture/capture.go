@@ -8,7 +8,6 @@ import (
 	"github.com/google/gopacket/pcap"
 	"go.uber.org/zap"
 	"os"
-	"sync"
 )
 
 // 数据包捕获和抓取
@@ -21,12 +20,11 @@ var (
 	TrafficCount     int // 总流量
 	SessionCount     int // 总会话
 	ApplicationCount int // 应用总数
+	TCPCount         int64
+	UDPCount         int64
 	OK               bool
-	TransProtocol    sync.Map // 传输层协议分布
-
-	TLSCipherSuites sync.Map // 加密套件分布
-	IPEvents        = make(chan IPFieldChangeEvent, 1000)
-	ObserverEvents  = make(chan TTLChangeObserverEvent, 100)
+	IPEvents         = make(chan IPFieldChangeEvent, 1000)
+	ObserverEvents   = make(chan TTLChangeObserverEvent, 100)
 )
 
 type Config struct {

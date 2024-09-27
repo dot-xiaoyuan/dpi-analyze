@@ -8,6 +8,7 @@ import (
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/reassembly"
 	"go.uber.org/zap"
+	"sync/atomic"
 	"time"
 )
 
@@ -76,6 +77,13 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 		ip = ipv6.SrcIP.String()
 	}
 
+	if transportType := packet.TransportLayer().LayerType().String(); transportType != "" {
+		if transportType == "TCP" {
+			atomic.AddInt64(&capture.TCPCount, 1)
+		} else if transportType == "UDP" {
+			atomic.AddInt64(&capture.UDPCount, 1)
+		}
+	}
 	// 传输层
 	transmission := capture.Transmission{}
 	trafficMap := memory.Traffic{Date: time.Now().Format("0102/15/04")}
