@@ -34,11 +34,14 @@ func RecordTTLChange(ip string, ttl uint8) {
 	history, exists := TTLHistoryCache[ip]
 	if !exists {
 		history = &TTLChangeHistory{
-			Changes: make([]TTLChange, 0),
+			Changes: make([]TTLChange, 0, 30),
 		}
 		TTLHistoryCache[ip] = history
 	}
 
+	if len(history.Changes) == 30 {
+		history.Changes = history.Changes[1:]
+	}
 	// 记录变化
 	history.Changes = append(history.Changes, TTLChange{
 		Time: time.Now(),
