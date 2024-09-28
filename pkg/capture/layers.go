@@ -36,15 +36,15 @@ type Transmission struct {
 
 // TCPFlags 结构体，用于保存 TCP 协议的标志
 type TCPFlags struct {
-	SYN bool `bson:"syn"`
-	ACK bool `bson:"ack"`
-	FIN bool `bson:"fin"`
-	RST bool `bson:"rst"`
+	SYN bool `bson:"syn" json:"syn"`
+	ACK bool `bson:"ack" json:"ack"`
+	FIN bool `bson:"fin" json:"fin"`
+	RST bool `bson:"rst" json:"rst"`
 }
 
 // UDPFlags 结构体，用于保存 UDP 协议的标志
 type UDPFlags struct {
-	IsDNS bool `bson:"is_dns"`
+	IsDNS bool `bson:"is_dns" json:"is_dns"`
 }
 
 // ProtocolFlags 结构体，用于保存不同协议的标志

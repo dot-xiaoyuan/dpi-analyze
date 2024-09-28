@@ -58,7 +58,7 @@ func StreamLogs() gin.HandlerFunc {
 			{"$sort", bson.D{{sortField, orderBy}}},
 		}
 		limitStage := bson.D{
-			{"$limit", 10},
+			{"$limit", pageSize},
 		}
 		skipStage := bson.D{
 			{"$skip", skip},

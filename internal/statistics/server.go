@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/statistics/handlers"
+	"github.com/dot-xiaoyuan/dpi-analyze/internal/statistics/handlers/obserber"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/logger"
 	"github.com/gin-contrib/cors"
@@ -73,7 +74,7 @@ func setupRoutes(r *gin.Engine) {
 	v1.GET("/stream-logs", handlers.StreamLogs())
 	v1.GET("/ip-tables", handlers.IpTables())
 	v1.GET("/ip-detail", handlers.IPInfo())
-	v1.GET("/ttl", handlers.TTL())
+	v1.GET("/ttl", obserber.ObserverTTL())
 	v1.GET("/mac", handlers.Mac())
 
 }

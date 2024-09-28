@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// TTLChangeObserverEvent TTL变化观察事件
 type TTLChangeObserverEvent struct {
 	IP   string
 	Prev any
@@ -17,6 +18,7 @@ type TTLChange struct {
 	TTL  uint8
 }
 
+// TTLChangeHistory TTL变化历史记录
 type TTLChangeHistory struct {
 	Changes []TTLChange
 }
@@ -64,7 +66,5 @@ func GetTTLHistory(ip string) []TTLChange {
 func WatchTTLChange(events <-chan TTLChangeObserverEvent) {
 	for e := range events {
 		RecordTTLChange(e.IP, e.Curr.(uint8))
-		//diff := utils.AbsDiff(e.Curr.(uint8), e.Prev.(uint8))
-		//zap.L().Debug("diff", zap.Uint8("diff", diff))
 	}
 }
