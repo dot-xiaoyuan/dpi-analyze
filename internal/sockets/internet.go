@@ -9,7 +9,7 @@ import (
 type ActionInternet struct {
 }
 
-func (a *ActionInternet) Handle(data json.RawMessage) []byte {
+func (a *ActionInternet) Handle(data any) []byte {
 	// FIXME 偏移量和分页
 	ttlMap := make(map[string][]capture.Internet)
 	memory.TTLTables.Range(func(key, value interface{}) bool {

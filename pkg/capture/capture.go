@@ -44,6 +44,7 @@ func StartCapture(ctx context.Context, c Config, handler PacketHandler, done cha
 	zap.L().Info(i18n.T("Starting capture"))
 	// 启动观察者 goroutine
 	zap.L().Info(i18n.T("Starting WatchTTLChange"))
+	CleanUp()
 	go WatchTTLChange(ObserverEvents)
 
 	// 启动ip属性事件监听 goroutine

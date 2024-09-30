@@ -2,62 +2,64 @@ package obserber
 
 import (
 	"encoding/json"
+	"github.com/dot-xiaoyuan/dpi-analyze/internal/statistics/common"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/provider"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/utils"
 	"github.com/gin-gonic/gin"
 	"net"
+	"strconv"
+	"time"
 )
 
 func ObserverTTL() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		var condition capture.Condition
+		condition.Table = capture.ZSetObserverIPTable
+		condition.Min = strconv.FormatInt(time.Now().Add(-24*time.Hour).Unix(), 10)
+		condition.Max = strconv.FormatInt(time.Now().Add(time.Hour).Unix(), 10)
+
+		condition.Page, _ = strconv.ParseInt(c.DefaultQuery("page", "1"), 10, 64)
+		condition.PageSize, _ = strconv.ParseInt(c.DefaultQuery("limit", "10"), 10, 64)
+
+		// proxy socket
 		conn, err := net.Dial("unix", "/tmp/capture.sock")
 		if err != nil {
-			c.JSON(400, gin.H{
-				"message": err.Error(),
-			})
+			common.Error(err, c)
 			return
 		}
 		defer conn.Close()
 
+		jsonParams, _ := json.Marshal(condition)
 		p := provider.Request{
-			Action: "internet",
-			Data:   []byte(`{"offset":0,"limit":20}`),
+			Action: "observer",
+			Data:   jsonParams,
 		}
 		params, err := json.Marshal(p)
 		if err != nil {
-			c.JSON(400, gin.H{
-				"message": err.Error(),
-			})
+			common.Error(err, c)
+			return
 		}
 		conn.Write(params)
-		buf := make([]byte, 4096)
-		n, err := conn.Read(buf)
+		// 读取所有数据
+		data, err := utils.ReadByConn(conn, 4096)
 		if err != nil {
-			c.JSON(400, gin.H{
-				"message": err.Error(),
-			})
+			common.Error(err, c)
 			return
 		}
 
-		var ttlMap map[string][]capture.Internet
-		if err := json.Unmarshal(buf[:n], &ttlMap); err != nil {
-			c.JSON(400, gin.H{
-				"message": err.Error(),
-			})
+		var res any
+		if err = json.Unmarshal(data, &res); err != nil {
+			common.Error(err, c)
 			return
 		}
 
-		if len(ttlMap) == 0 {
-			c.JSON(400, gin.H{
-				"message": "TTL Map is empty",
-			})
+		if res == nil {
+			common.Error(err, c)
 			return
 		}
 
-		c.JSON(200, gin.H{
-			"message": "OK",
-			"data":    ttlMap,
-		})
+		c.JSON(200, res)
 		return
 	}
 }

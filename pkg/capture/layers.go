@@ -11,9 +11,10 @@ import (
 )
 
 const (
-	ZSetApplicationMap = "z_set:application_map"
-	ZSetIPTable        = "z_set:ip_table"
-	HashAnalyzeIP      = "hash:analyze:ip:%s"
+	ZSetApplicationMap  = "z_set:application_map"
+	ZSetIPTable         = "z_set:ip_table"
+	ZSetObserverIPTable = "z_set:observer_ip_table"
+	HashAnalyzeIP       = "hash:analyze:ip:%s"
 )
 
 // Ethernet 以太网
