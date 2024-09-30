@@ -20,6 +20,8 @@ var (
 	TrafficCount     int // 总流量
 	SessionCount     int // 总会话
 	ApplicationCount int // 应用总数
+	TCPCount         int64
+	UDPCount         int64
 	OK               bool
 	IPEvents         = make(chan IPFieldChangeEvent, 1000)
 	ObserverEvents   = make(chan TTLChangeObserverEvent, 100)
@@ -42,6 +44,7 @@ func StartCapture(ctx context.Context, c Config, handler PacketHandler, done cha
 	zap.L().Info(i18n.T("Starting capture"))
 	// 启动观察者 goroutine
 	zap.L().Info(i18n.T("Starting WatchTTLChange"))
+	CleanUp()
 	go WatchTTLChange(ObserverEvents)
 
 	// 启动ip属性事件监听 goroutine

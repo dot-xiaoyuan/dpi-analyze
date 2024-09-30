@@ -8,7 +8,7 @@ import (
 
 type ActionEthernet struct{}
 
-func (ActionEthernet) Handle(data json.RawMessage) []byte {
+func (ActionEthernet) Handle(data any) []byte {
 	// FIXME 偏移量与分页
 	macMap := make(map[string][]capture.Ethernet)
 	memory.MacTables.Range(func(key, value interface{}) bool {

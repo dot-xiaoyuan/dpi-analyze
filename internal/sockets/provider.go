@@ -25,14 +25,12 @@ func (r *Res) toJson() []byte {
 
 func NewActionHandler(action string) provider.Handler {
 	switch action {
-	case "internet":
-		return &ActionInternet{}
-	case "ethernet":
-		return &ActionEthernet{}
 	case "dashboard":
 		return &ActionDashboard{}
 	case "ip-detail":
 		return &ActionIP{}
+	case "observer":
+		return &ActionObserver{}
 	}
 	return nil
 }
@@ -99,11 +97,5 @@ func handleConnection(conn net.Conn) {
 
 	handler := NewActionHandler(params.Action)
 	result := handler.Handle(params.Data)
-	//if err != nil {
-	//	zap.L().Error(i18n.T("Failed read connection"), zap.Error(err))
-	//	res.Message = i18n.T("Failed read connection")
-	//	conn.Write(res.toJson())
-	//	return
-	//}
 	_, _ = conn.Write(result)
 }

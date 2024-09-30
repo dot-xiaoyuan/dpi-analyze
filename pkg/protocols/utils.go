@@ -13,10 +13,16 @@ var (
 
 // IdentifyProtocol 识别协议
 func IdentifyProtocol(buffer []byte, srcPort, dstPort string) ProtocolType {
+	// 统计应用层数
+	IncrementCount(&ApplicationCount)
 	if srcPort == "80" || dstPort == "80" || checkHttp(buffer) {
+		// 统计http数
+		IncrementCount(&HTTPCount)
 		return HTTP
 	}
 	if srcPort == "443" || dstPort == "443" {
+		// 统计
+		IncrementCount(&TLSCount)
 		return TLS
 	}
 	return UNKNOWN

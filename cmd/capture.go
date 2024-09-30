@@ -50,9 +50,11 @@ func init() {
 
 // CaptureRreFunc 捕获前置方法
 func CaptureRreFunc(c *cobra.Command, args []string) {
-	go func() {
-		log.Println(http.ListenAndServe(":6060", nil))
-	}()
+	if config.Debug {
+		go func() {
+			log.Println(http.ListenAndServe(":6060", nil))
+		}()
+	}
 
 	c.Short = i18n.T(c.Short)
 	c.Flags().VisitAll(func(flag *pflag.Flag) {
