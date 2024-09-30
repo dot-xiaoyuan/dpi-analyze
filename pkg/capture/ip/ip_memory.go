@@ -1,9 +1,12 @@
-package capture
+package ip
 
 import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/layers"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/observer"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/redis"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
 	redis2 "github.com/redis/go-redis/v9"
@@ -87,7 +90,7 @@ func StoreIP(ip, field string, val any) {
 	}
 	UpdateIPInfoFromMemory(ip, m, val)
 	// 不一致，进行更新
-	IPEvents <- IPFieldChangeEvent{
+	capture.IPEvents <- IPFieldChangeEvent{
 		IP:       ip,
 		OldValue: oldVal,
 		NewValue: val,
@@ -113,7 +116,7 @@ func UpdateIPInfoFromMemory(ip string, memory *sync.Map, val any) {
 func GetIPFieldFromRedis(ip string, field string) (any, bool) {
 	rdb := redis.GetRedisClient()
 	ctx := context.TODO()
-	key := fmt.Sprintf(HashAnalyzeIP, ip)
+	key := fmt.Sprintf(layers.HashAnalyzeIP, ip)
 
 	val, err := rdb.HMGet(ctx, key, field).Result()
 	if errors.Is(err, redis2.Nil) || len(val) == 1 {
@@ -126,7 +129,7 @@ func GetIPFieldFromRedis(ip string, field string) (any, bool) {
 func GetIPInfoFromRedis(ip string) map[string]string {
 	rdb := redis.GetRedisClient()
 	ctx := context.TODO()
-	key := fmt.Sprintf(HashAnalyzeIP, ip)
+	key := fmt.Sprintf(layers.HashAnalyzeIP, ip)
 
 	val, err := rdb.HGetAll(ctx, key).Result()
 	if errors.Is(err, redis2.Nil) || len(val) == 1 {
@@ -139,10 +142,10 @@ func GetIPInfoFromRedis(ip string) map[string]string {
 func StoreIPInfoInRedis(ip, field string, value any) {
 	rdb := redis.GetRedisClient()
 	ctx := context.TODO()
-	key := fmt.Sprintf(HashAnalyzeIP, ip)
+	key := fmt.Sprintf(layers.HashAnalyzeIP, ip)
 
 	// z_set 有序集合
-	rdb.ZAdd(ctx, ZSetIPTable, redis2.Z{
+	rdb.ZAdd(ctx, layers.ZSetIPTable, redis2.Z{
 		Score:  float64(time.Now().Unix()),
 		Member: ip,
 	})
@@ -163,7 +166,7 @@ func ProcessChangeEvent(events <-chan IPFieldChangeEvent) {
 			// 处理TTL变化
 			zap.L().Debug(i18n.T("TTLChange"), zap.String("ip", e.IP), zap.Any("old", e.OldValue), zap.Any("new", e.NewValue))
 			// push observer
-			ObserverEvents <- TTLChangeObserverEvent{
+			capture.ObserverEvents <- observer.TTLChangeObserverEvent{
 				IP:   e.IP,
 				Prev: e.OldValue,
 				Curr: e.NewValue,

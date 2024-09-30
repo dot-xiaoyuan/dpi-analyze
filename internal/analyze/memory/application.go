@@ -2,7 +2,7 @@ package memory
 
 import (
 	"context"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/layers"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/redis"
 	"go.uber.org/zap"
 )
@@ -16,7 +16,7 @@ type Application struct {
 
 func GenerateList() []Application {
 	rdb := redis.GetRedisClient()
-	result := rdb.ZRevRangeWithScores(context.Background(), capture.ZSetApplicationMap, 0, -1).Val()
+	result := rdb.ZRevRangeWithScores(context.Background(), layers.ZSetApplicationMap, 0, -1).Val()
 	zap.L().Info("result", zap.Any("result", result))
 	var charts []Application
 	for _, v := range result {

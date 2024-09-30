@@ -2,7 +2,8 @@ package sockets
 
 import (
 	"encoding/json"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/ip"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/observer"
 )
 
 type ActionIP struct{}
@@ -15,8 +16,8 @@ func (ActionIP) Handle(data json.RawMessage) []byte {
 	res := Res{
 		Code: 200,
 		Data: map[string]any{
-			"ttlHistory": capture.GetTTLHistory(c.IP),
-			"detail":     capture.GetIPInfoFromRedis(c.IP),
+			"ttlHistory": observer.GetTTLHistory(c.IP),
+			"detail":     ip.GetIPInfoFromRedis(c.IP),
 		},
 	}
 	result, _ := json.Marshal(res)

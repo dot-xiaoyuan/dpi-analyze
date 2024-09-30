@@ -1,7 +1,7 @@
 package analyze
 
 import (
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
+	layers2 "github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/layers"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
@@ -28,8 +28,8 @@ type Stream struct {
 	Net, Transport      gopacket.Flow
 	fsmErr              bool
 	Ident               string `bson:"ident"`
-	ProtocolFlags       capture.ProtocolFlags
-	Metadata            capture.Metadata
+	ProtocolFlags       layers2.ProtocolFlags
+	Metadata            layers2.Metadata
 	SrcIP               string                 `bson:"src_ip"`
 	DstIP               string                 `bson:"dst_ip"`
 	RejectFSM           int                    `bson:"reject_fsm"` // FSM (Finite State Machine)有限状态机
@@ -163,7 +163,7 @@ func (s *Stream) Save() {
 		return
 	}
 	// TODO ignore empty host
-	sessionData := capture.Sessions{
+	sessionData := layers2.Sessions{
 		SessionId:           s.SessionID,
 		SrcIp:               s.SrcIP,
 		DstIp:               s.DstIP,

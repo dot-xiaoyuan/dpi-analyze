@@ -64,3 +64,6 @@
 "Start Load Geo2IP Component" = "开始加载Geo2IP组件"
 "Failed to load GeoIP database" = "加载 Geo2IP 数据库失败"
 "Geo2IP component initialized!" = "Geo2IP组件加载完成"
+
+# socket
+"Unix Socket Server listening" = "Unix Socket 服务 [{{.sock}}]"

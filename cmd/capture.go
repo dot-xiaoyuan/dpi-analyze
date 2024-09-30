@@ -46,6 +46,7 @@ func init() {
 	CaptureCmd.Flags().StringVar(&config.BerkeleyPacketFilter, "bpf", config.Cfg.BerkeleyPacketFilter, "Berkeley packet filter")
 	CaptureCmd.Flags().BoolVar(&config.IgnoreMissing, "ignore-missing", config.Cfg.IgnoreMissing, "ignore missing packet")
 	CaptureCmd.Flags().BoolVar(&config.UseTTL, "use-ttl", config.Cfg.UseTTL, "save TTL for IP")
+	CaptureCmd.Flags().StringVar(&config.UnixSocket, "unix-socket", config.Cfg.UnixSocket, "unix socket")
 }
 
 // CaptureRreFunc 捕获前置方法

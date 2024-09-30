@@ -1,8 +1,9 @@
-package capture
+package ip
 
 import (
 	"context"
 	"fmt"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/layers"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/redis"
 	redis2 "github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
@@ -33,9 +34,9 @@ func TraversalIP(startTime, endTime int64, page, pageSize int64) (result IPTable
 
 	// Pipeline 批量查询
 	pipe := rdb.Pipeline()
-	result.TotalCount = rdb.ZCount(ctx, ZSetIPTable, strconv.FormatInt(startTime, 10), strconv.FormatInt(endTime, 10)).Val()
+	result.TotalCount = rdb.ZCount(ctx, layers.ZSetIPTable, strconv.FormatInt(startTime, 10), strconv.FormatInt(endTime, 10)).Val()
 	// step1. 分页查询集合
-	zRangCmd := rdb.ZRevRangeByScoreWithScores(ctx, ZSetIPTable, &redis2.ZRangeBy{
+	zRangCmd := rdb.ZRevRangeByScoreWithScores(ctx, layers.ZSetIPTable, &redis2.ZRangeBy{
 		Min:    strconv.FormatInt(startTime, 10), // 查询范围的最小时间戳
 		Max:    strconv.FormatInt(endTime, 10),   // 查询范围的最大时间戳
 		Offset: start,                            // 分页起始位置
@@ -53,7 +54,7 @@ func TraversalIP(startTime, endTime int64, page, pageSize int64) (result IPTable
 	pipe = rdb.Pipeline()
 	ipCommands := make([]*redis2.MapStringStringCmd, 0, len(ips))
 	for _, ip := range ips {
-		key := fmt.Sprintf(HashAnalyzeIP, ip.Member.(string))
+		key := fmt.Sprintf(layers.HashAnalyzeIP, ip.Member.(string))
 		cmd := pipe.HGetAll(ctx, key)
 		ipCommands = append(ipCommands, cmd)
 	}

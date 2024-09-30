@@ -3,6 +3,8 @@ package capture
 import (
 	"context"
 	"fmt"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/ip"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/observer"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
@@ -23,8 +25,8 @@ var (
 	TCPCount         int64
 	UDPCount         int64
 	OK               bool
-	IPEvents         = make(chan IPFieldChangeEvent, 1000)
-	ObserverEvents   = make(chan TTLChangeObserverEvent, 100)
+	IPEvents         = make(chan ip.IPFieldChangeEvent, 1000)
+	ObserverEvents   = make(chan observer.TTLChangeObserverEvent, 100)
 )
 
 type Config struct {
@@ -44,13 +46,13 @@ func StartCapture(ctx context.Context, c Config, handler PacketHandler, done cha
 	zap.L().Info(i18n.T("Starting capture"))
 	// 启动观察者 goroutine
 	zap.L().Info(i18n.T("Starting WatchTTLChange"))
-	CleanUp()
-	go WatchTTLChange(ObserverEvents)
+	observer.CleanUp()
+	go observer.WatchTTLChange(ObserverEvents)
 
 	// 启动ip属性事件监听 goroutine
 	zap.L().Info(i18n.T("Starting ProcessChangeEvent"))
 	//for i := 0; i < 10; i++ {
-	go ProcessChangeEvent(IPEvents)
+	go ip.ProcessChangeEvent(IPEvents)
 	//}
 	zap.L().Debug(i18n.TT("Make Events by Listen IP Change", map[string]interface{}{
 		"count": 1000,

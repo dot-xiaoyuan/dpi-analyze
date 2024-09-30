@@ -1,7 +1,9 @@
-package capture
+package observer
 
 import (
 	"context"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/layers"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/provider"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/redis"
 	redis2 "github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
@@ -81,14 +83,14 @@ func WatchTTLChange(events <-chan TTLChangeObserverEvent) {
 
 func CleanUp() {
 	// TODO 清空缓存
-	redis.GetRedisClient().Del(context.TODO(), ZSetObserverIPTable)
+	redis.GetRedisClient().Del(context.TODO(), layers.ZSetObserverIPTable)
 }
 
 func storeToRedis(ip string) {
 	rdb := redis.GetRedisClient()
 	ctx := context.TODO()
 
-	rdb.ZAdd(ctx, ZSetObserverIPTable, redis2.Z{
+	rdb.ZAdd(ctx, layers.ZSetObserverIPTable, redis2.Z{
 		Score:  float64(time.Now().Unix()),
 		Member: ip,
 	})
@@ -104,7 +106,7 @@ type TTLDetail struct {
 	History []TTLChange `json:"history"`
 }
 
-func (o *Observer) Traversal(c Condition) (any, error) {
+func (o *Observer) Traversal(c provider.Condition) (any, error) {
 	rdb := redis.GetRedisClient()
 	ctx := context.TODO()
 

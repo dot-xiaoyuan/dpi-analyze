@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/layers"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/provider"
 	"github.com/gin-gonic/gin"
 	"net"
@@ -39,7 +39,7 @@ func TTL() gin.HandlerFunc {
 			return
 		}
 
-		var ttlMap map[string][]capture.Internet
+		var ttlMap map[string][]layers.Internet
 		if err := json.Unmarshal(buf[:n], &ttlMap); err != nil {
 			c.JSON(400, gin.H{
 				"message": err.Error(),

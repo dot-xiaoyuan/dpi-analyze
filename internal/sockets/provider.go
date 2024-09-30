@@ -2,6 +2,7 @@ package sockets
 
 import (
 	"encoding/json"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/provider"
 	"go.uber.org/zap"
@@ -39,16 +40,18 @@ func NewActionHandler(action string) provider.Handler {
 
 func StartUnixSocketServer() {
 	// 删除旧的socket TODO sock文件通过配置与flag决定
-	_ = os.Remove("/tmp/capture.sock")
+	_ = os.Remove(config.Cfg.UnixSocket)
 	// 创建 socket
-	ln, err := net.Listen("unix", "/tmp/capture.sock")
+	ln, err := net.Listen("unix", config.Cfg.UnixSocket)
 	if err != nil {
 		zap.L().Error(i18n.T("Failed create Unix Socket"), zap.Error(err))
 		return
 	}
 	defer ln.Close()
 
-	zap.L().Info(i18n.T("Unix Socket Server listening on /tmp/capture.sock"))
+	zap.L().Info(i18n.TT("Unix Socket Server listening", map[string]interface{}{
+		"sock": config.Cfg.UnixSocket,
+	}))
 
 	for {
 		conn, err := ln.Accept()

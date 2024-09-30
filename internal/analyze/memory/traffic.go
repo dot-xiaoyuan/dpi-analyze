@@ -1,7 +1,7 @@
 package memory
 
 import (
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/layers"
 	"sync"
 )
 
@@ -17,10 +17,10 @@ type Traffic struct {
 }
 
 func (t *Traffic) Update(transmission interface{}) {
-	i := transmission.(capture.Transmission)
+	i := transmission.(layers.Transmission)
 	value, ok := Table.Load(t.Date)
 	if ok {
-		record := value.(capture.Transmission)
+		record := value.(layers.Transmission)
 		record.UpStream += i.UpStream
 		record.DownStream += i.DownStream
 		Table.Store(t.Date, record)
@@ -47,7 +47,7 @@ func GenerateChartData() []Record {
 	var result []Record
 	for _, date := range Lists {
 		if v, ok := Table.Load(date); ok {
-			temp := v.(capture.Transmission)
+			temp := v.(layers.Transmission)
 			result = append(result, Record{
 				Date:  date,
 				Type:  "up_stream",
