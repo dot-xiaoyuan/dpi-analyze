@@ -2,7 +2,9 @@ package analyze
 
 import (
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/analyze/memory"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
+	cip "github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/ip"
 	layers2 "github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/layers"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
 	"github.com/google/gopacket"
@@ -104,8 +106,22 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 	//ethernetMap.Update(ethernet)
 
 	// 插入 IP hash 表
-	ip.StoreIP(ip, ip.TTL, internet.TTL)
-	ip.StoreIP(ip, ip.Mac, ethernet.SrcMac)
+	_ = ants.Submit(func() {
+		cip.Store(cip.Hash{
+			IP:    ip,
+			Field: cip.TTL,
+			Value: internet.TTL,
+		})
+	})
+	_ = ants.Submit(func() {
+		cip.Store(cip.Hash{
+			IP:    ip,
+			Field: cip.Mac,
+			Value: ethernet.SrcMac,
+		})
+	})
+	//ip.StoreIP(ip, ip.TTL, internet.TTL)
+	//ip.StoreIP(ip, ip.Mac, ethernet.SrcMac)
 
 	// analyze TCP
 	if tcpLayer := packet.Layer(layers.LayerTypeTCP); tcpLayer != nil {

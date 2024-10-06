@@ -2,13 +2,16 @@ package layers
 
 import (
 	"context"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/redis"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
 	"os"
 	"time"
+)
+
+var (
+	ApplicationCount int // 应用总数
 )
 
 const (
@@ -152,7 +155,7 @@ func (a *ApplicationInfo) AddUp() {
 	rdb := redis.GetRedisClient()
 	err := rdb.ZIncrBy(context.Background(), ZSetApplicationMap, 1, a.AppName).Err()
 	// 累加全局应用计数
-	capture.ApplicationCount++
+	ApplicationCount++
 	if err != nil {
 		panic(err)
 	}

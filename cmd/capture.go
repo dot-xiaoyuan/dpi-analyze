@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/analyze"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/sockets"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/mongo"
@@ -85,8 +86,14 @@ func CaptureRreFunc(c *cobra.Command, args []string) {
 		zap.L().Info(i18n.T("Start Load Geo2IP Component"))
 		maxmind.Setup(config.Geo2IP)
 	}
+	// 创建协程池
+	ants.Setup(100)
 	// 启动 Unix Socket Server
-	go sockets.StartUnixSocketServer()
+	err := ants.Submit(sockets.StartUnixSocketServer)
+	if err != nil {
+		zap.L().Error("Failed to start unix sock server", zap.Error(err))
+		os.Exit(1)
+	}
 }
 
 // CaptureRun 捕获子命令入口
@@ -127,6 +134,8 @@ func CaptureRun(c *cobra.Command, args []string) {
 	case <-signalChan:
 		cancel()
 		spinners.Start()
+		// 释放协程池
+		ants.Release()
 		zap.L().Info(i18n.TT("Received terminate signal, stop analyze...", nil))
 		time.Sleep(time.Second)
 		spinners.Stop()

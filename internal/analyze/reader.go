@@ -2,6 +2,7 @@ package analyze
 
 import (
 	"bufio"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/ip"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/layers"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/features"
@@ -147,7 +148,13 @@ func (sr *StreamReader) SetHttpInfo(host, userAgent, contentType, upgrade string
 	}
 	// 如果ua有效
 	if userAgent != "" {
-		ip.StoreIP(sr.Parent.SrcIP, ip.UserAgent, userAgent)
+		_ = ants.Submit(func() {
+			ip.Store(ip.Hash{
+				IP:    sr.Parent.SrcIP,
+				Field: ip.UserAgent,
+				Value: userAgent,
+			})
+		})
 	}
 	// 如果特征库加载 进行域名分析
 	if features.DomainAc != nil && host != "" {
