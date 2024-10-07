@@ -2,7 +2,7 @@ package observer
 
 import (
 	"context"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/layers"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/redis"
 	v9 "github.com/redis/go-redis/v9"
 	"time"
@@ -72,7 +72,7 @@ func store2Redis(ip string) {
 	rdb := redis.GetRedisClient()
 	ctx := context.TODO()
 
-	rdb.ZAdd(ctx, layers.ZSetObserverTTL, v9.Z{
+	rdb.ZAdd(ctx, types.ZSetObserverTTL, v9.Z{
 		Score:  float64(time.Now().Unix()),
 		Member: ip,
 	})

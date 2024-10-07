@@ -3,7 +3,7 @@ package analyze
 import (
 	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
-	layers2 "github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/layers"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -36,20 +36,20 @@ func (f *Factory) New(netFlow, tcpFlow gopacket.Flow, tcp *layers.TCP, ac reasse
 		OptChecker:   reassembly.NewTCPOptionCheck(),
 		SrcIP:        netFlow.Src().String(),
 		DstIP:        netFlow.Dst().String(),
-		ProtocolFlags: layers2.ProtocolFlags{
-			TCP: layers2.TCPFlags{
+		ProtocolFlags: types.ProtocolFlags{
+			TCP: types.TCPFlags{
 				SYN: tcp.SYN,
 				ACK: tcp.ACK,
 				FIN: tcp.FIN,
 				RST: tcp.RST,
 			},
-			UDP: layers2.UDPFlags{
+			UDP: types.UDPFlags{
 				IsDNS: false,
 			},
 		},
-		Metadata: layers2.Metadata{
-			HttpInfo: layers2.HttpInfo{},
-			TlsInfo:  layers2.TlsInfo{},
+		Metadata: types.Metadata{
+			HttpInfo: types.HttpInfo{},
+			TlsInfo:  types.TlsInfo{},
 		},
 	}
 

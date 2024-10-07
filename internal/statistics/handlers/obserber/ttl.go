@@ -3,8 +3,8 @@ package obserber
 import (
 	"encoding/json"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/statistics/common"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/layers"
 	provider2 "github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/provider"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/provider"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/utils"
 	"github.com/gin-gonic/gin"
@@ -16,7 +16,7 @@ import (
 func ObserverTTL() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var condition provider2.Condition
-		condition.Table = layers.ZSetObserverTTL
+		condition.Table = types.ZSetObserverTTL
 		condition.Min = strconv.FormatInt(time.Now().Add(-24*time.Hour).Unix(), 10)
 		condition.Max = strconv.FormatInt(time.Now().Add(time.Hour).Unix(), 10)
 

@@ -3,8 +3,8 @@ package analyze
 import (
 	"bufio"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/layers"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/member"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/features"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
 	"io"
@@ -139,7 +139,7 @@ func (sr *StreamReader) GetUrls() []string {
 }
 
 func (sr *StreamReader) SetHttpInfo(host, userAgent, contentType, upgrade string) {
-	httpInfo := layers.HttpInfo{
+	httpInfo := types.HttpInfo{
 		Host:        host,
 		UserAgent:   userAgent,
 		ContentType: contentType,

@@ -4,8 +4,8 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/analyze/memory"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
-	layers2 "github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/layers"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/member"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -56,13 +56,13 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 	// 累加总流量
 	capture.TrafficCount += len(packet.Data())
 	// 链路层
-	ethernet := layers2.Ethernet{}
+	ethernet := types.Ethernet{}
 	if packet.LinkLayer() != nil {
 		ethernet.SrcMac = packet.LinkLayer().LinkFlow().Dst().String()
 		ethernet.DstMac = packet.LinkLayer().LinkFlow().Src().String()
 	}
 	// 网络层
-	internet := layers2.Internet{}
+	internet := types.Internet{}
 	var ip string
 	if packet.NetworkLayer().LayerType() == layers.LayerTypeIPv4 {
 		ipv4 := packet.Layer(layers.LayerTypeIPv4).(*layers.IPv4)
@@ -88,7 +88,7 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 		}
 	}
 	// 传输层
-	transmission := layers2.Transmission{}
+	transmission := types.Transmission{}
 	trafficMap := memory.Traffic{Date: time.Now().Format("0102/15/04")}
 	if len(packet.TransportLayer().TransportFlow().Src().String()) > len("1024") {
 		transmission.UpStream = int64(len(packet.Data()))

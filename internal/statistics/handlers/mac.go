@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/layers"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/provider"
 	"github.com/gin-gonic/gin"
 	"net"
@@ -39,7 +39,7 @@ func Mac() gin.HandlerFunc {
 			return
 		}
 
-		var macMap map[string][]layers.Ethernet
+		var macMap map[string][]types.Ethernet
 		if err := json.Unmarshal(buf[:n], &macMap); err != nil {
 			c.JSON(400, gin.H{
 				"message": err.Error(),

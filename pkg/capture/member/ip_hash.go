@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/layers"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/redis"
 	redis2 "github.com/redis/go-redis/v9"
 	"sync"
@@ -87,7 +87,7 @@ func putMemory(ip string, m *sync.Map, v any) {
 func getPropertyForRedis(ip string, property Property) (any, bool) {
 	rdb := redis.GetRedisClient()
 	ctx := context.TODO()
-	key := fmt.Sprintf(layers.HashAnalyzeIP, ip)
+	key := fmt.Sprintf(types.HashAnalyzeIP, ip)
 
 	val, err := rdb.HMGet(ctx, key, string(property)).Result()
 	if errors.Is(err, redis2.Nil) || len(val) == 1 {
@@ -100,7 +100,7 @@ func getPropertyForRedis(ip string, property Property) (any, bool) {
 func GetHashForRedis(ip string) map[string]string {
 	rdb := redis.GetRedisClient()
 	ctx := context.TODO()
-	key := fmt.Sprintf(layers.HashAnalyzeIP, ip)
+	key := fmt.Sprintf(types.HashAnalyzeIP, ip)
 
 	val, err := rdb.HGetAll(ctx, key).Result()
 	if errors.Is(err, redis2.Nil) || len(val) == 1 {
@@ -113,10 +113,10 @@ func GetHashForRedis(ip string) map[string]string {
 func storeHash2Redis(ip string, property Property, value any) {
 	rdb := redis.GetRedisClient()
 	ctx := context.TODO()
-	key := fmt.Sprintf(layers.HashAnalyzeIP, ip)
+	key := fmt.Sprintf(types.HashAnalyzeIP, ip)
 
 	// z_set 有序集合
-	rdb.ZAdd(ctx, layers.ZSetIP, redis2.Z{
+	rdb.ZAdd(ctx, types.ZSetIP, redis2.Z{
 		Score:  float64(time.Now().Unix()),
 		Member: ip,
 	})

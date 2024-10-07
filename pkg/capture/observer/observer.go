@@ -3,8 +3,8 @@ package observer
 import (
 	"context"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/layers"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/provider"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/redis"
 	v9 "github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
@@ -29,7 +29,7 @@ func Setup() {
 
 func CleanUp() {
 	// TODO 清空缓存
-	redis.GetRedisClient().Del(context.TODO(), layers.ZSetObserverTTL)
+	redis.GetRedisClient().Del(context.TODO(), types.ZSetObserverTTL)
 }
 
 type Results struct {
@@ -43,7 +43,7 @@ type TTLDetail struct {
 }
 
 var handlers = map[string]func(z v9.Z) any{
-	layers.ZSetObserverTTL: func(z v9.Z) any {
+	types.ZSetObserverTTL: func(z v9.Z) any {
 		var detail TTLDetail
 		detail.IP = z.Member.(string)
 		detail.History = GetTTLHistory(z.Member.(string))
