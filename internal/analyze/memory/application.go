@@ -16,7 +16,7 @@ type Application struct {
 
 func GenerateList() []Application {
 	rdb := redis.GetRedisClient()
-	result := rdb.ZRevRangeWithScores(context.Background(), layers.ZSetApplicationMap, 0, -1).Val()
+	result := rdb.ZRevRangeWithScores(context.Background(), layers.ZSetApplication, 0, -1).Val()
 	zap.L().Info("result", zap.Any("result", result))
 	var charts []Application
 	for _, v := range result {

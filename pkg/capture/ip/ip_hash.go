@@ -60,9 +60,16 @@ func Store(i interface{}) {
 	}
 	// 数值不一致， 更新缓存并推送事件
 	putMemory(hash.IP, m, v)
-
+	// 推送至channel
+	Events <- PropertyChangeEvent{
+		IP:       hash.IP,
+		OldValue: oldVal,
+		NewValue: v,
+		Property: hash.Field,
+	}
 }
 
+// 从缓存中获取
 func getMemory(ip string, m *sync.Map) (any, bool) {
 	val, ok := m.Load(ip)
 	if ok {
@@ -71,10 +78,12 @@ func getMemory(ip string, m *sync.Map) (any, bool) {
 	return nil, false
 }
 
+// 更新缓存
 func putMemory(ip string, m *sync.Map, v any) {
 	m.Store(ip, v)
 }
 
+// 从redis获取属性
 func getPropertyForRedis(ip string, property Property) (any, bool) {
 	rdb := redis.GetRedisClient()
 	ctx := context.TODO()
@@ -87,6 +96,7 @@ func getPropertyForRedis(ip string, property Property) (any, bool) {
 	return val[1], true
 }
 
+// GetHashForRedis 从redis获取hash
 func GetHashForRedis(ip string) map[string]string {
 	rdb := redis.GetRedisClient()
 	ctx := context.TODO()
@@ -99,13 +109,14 @@ func GetHashForRedis(ip string) map[string]string {
 	return val
 }
 
+// 存储ip hash 至redis
 func storeHash2Redis(ip string, property Property, value any) {
 	rdb := redis.GetRedisClient()
 	ctx := context.TODO()
 	key := fmt.Sprintf(layers.HashAnalyzeIP, ip)
 
 	// z_set 有序集合
-	rdb.ZAdd(ctx, layers.ZSetIPTable, redis2.Z{
+	rdb.ZAdd(ctx, layers.ZSetIP, redis2.Z{
 		Score:  float64(time.Now().Unix()),
 		Member: ip,
 	})

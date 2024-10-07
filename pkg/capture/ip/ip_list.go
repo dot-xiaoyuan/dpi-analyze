@@ -36,9 +36,9 @@ func TraversalIP(startTime, endTime int64, page, pageSize int64) (result Tables,
 
 	// Pipeline 批量查询
 	pipe := rdb.Pipeline()
-	result.TotalCount = rdb.ZCount(ctx, layers.ZSetIPTable, strconv.FormatInt(startTime, 10), strconv.FormatInt(endTime, 10)).Val()
+	result.TotalCount = rdb.ZCount(ctx, layers.ZSetIP, strconv.FormatInt(startTime, 10), strconv.FormatInt(endTime, 10)).Val()
 	// step1. 分页查询集合
-	zRangCmd := rdb.ZRevRangeByScoreWithScores(ctx, layers.ZSetIPTable, &redis2.ZRangeBy{
+	zRangCmd := rdb.ZRevRangeByScoreWithScores(ctx, layers.ZSetIP, &redis2.ZRangeBy{
 		Min:    strconv.FormatInt(startTime, 10), // 查询范围的最小时间戳
 		Max:    strconv.FormatInt(endTime, 10),   // 查询范围的最大时间戳
 		Offset: start,                            // 分页起始位置

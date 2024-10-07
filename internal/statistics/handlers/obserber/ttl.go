@@ -16,7 +16,7 @@ import (
 func ObserverTTL() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var condition provider2.Condition
-		condition.Table = layers.ZSetObserverIPTable
+		condition.Table = layers.ZSetObserverTTL
 		condition.Min = strconv.FormatInt(time.Now().Add(-24*time.Hour).Unix(), 10)
 		condition.Max = strconv.FormatInt(time.Now().Add(time.Hour).Unix(), 10)
 
