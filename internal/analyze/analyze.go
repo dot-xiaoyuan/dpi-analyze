@@ -2,7 +2,10 @@ package analyze
 
 import (
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/analyze/memory"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
+	cip "github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/ip"
+	layers2 "github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/layers"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -53,13 +56,13 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 	// 累加总流量
 	capture.TrafficCount += len(packet.Data())
 	// 链路层
-	ethernet := capture.Ethernet{}
+	ethernet := layers2.Ethernet{}
 	if packet.LinkLayer() != nil {
 		ethernet.SrcMac = packet.LinkLayer().LinkFlow().Dst().String()
 		ethernet.DstMac = packet.LinkLayer().LinkFlow().Src().String()
 	}
 	// 网络层
-	internet := capture.Internet{}
+	internet := layers2.Internet{}
 	var ip string
 	if packet.NetworkLayer().LayerType() == layers.LayerTypeIPv4 {
 		ipv4 := packet.Layer(layers.LayerTypeIPv4).(*layers.IPv4)
@@ -85,7 +88,7 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 		}
 	}
 	// 传输层
-	transmission := capture.Transmission{}
+	transmission := layers2.Transmission{}
 	trafficMap := memory.Traffic{Date: time.Now().Format("0102/15/04")}
 	if len(packet.TransportLayer().TransportFlow().Src().String()) > len("1024") {
 		transmission.UpStream = int64(len(packet.Data()))
@@ -103,8 +106,22 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 	//ethernetMap.Update(ethernet)
 
 	// 插入 IP hash 表
-	capture.StoreIP(ip, capture.TTL, internet.TTL)
-	capture.StoreIP(ip, capture.Mac, ethernet.SrcMac)
+	_ = ants.Submit(func() {
+		cip.Store(cip.Hash{
+			IP:    ip,
+			Field: cip.TTL,
+			Value: internet.TTL,
+		})
+	})
+	_ = ants.Submit(func() {
+		cip.Store(cip.Hash{
+			IP:    ip,
+			Field: cip.Mac,
+			Value: ethernet.SrcMac,
+		})
+	})
+	//ip.StoreIP(ip, ip.TTL, internet.TTL)
+	//ip.StoreIP(ip, ip.Mac, ethernet.SrcMac)
 
 	// analyze TCP
 	if tcpLayer := packet.Layer(layers.LayerTypeTCP); tcpLayer != nil {

@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"context"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/layers"
 	mongodb "github.com/dot-xiaoyuan/dpi-analyze/pkg/db/mongo"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
@@ -14,9 +14,9 @@ import (
 )
 
 type results struct {
-	Logs       []capture.Sessions `json:"logs"`
-	TotalCount int64              `json:"totalCount"`
-	Err        error              `json:"err"`
+	Logs       []layers.Sessions `json:"logs"`
+	TotalCount int64             `json:"totalCount"`
+	Err        error             `json:"err"`
 }
 
 func StreamLogs() gin.HandlerFunc {
@@ -77,7 +77,7 @@ func StreamLogs() gin.HandlerFunc {
 		defer cursor.Close(context.Background())
 
 		for cursor.Next(context.Background()) {
-			var log capture.Sessions
+			var log layers.Sessions
 			cursor.Decode(&log)
 			result.Logs = append(result.Logs, log)
 		}

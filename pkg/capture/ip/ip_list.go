@@ -1,8 +1,9 @@
-package capture
+package ip
 
 import (
 	"context"
 	"fmt"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/layers"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/redis"
 	redis2 "github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
@@ -10,12 +11,14 @@ import (
 	"time"
 )
 
-type IPTables struct {
-	Results    []IPInfoJson `json:"results"`
-	TotalCount int64        `json:"totalCount"`
+// IP 列表操作
+
+type Tables struct {
+	Results    []InfoJson `json:"results"`
+	TotalCount int64      `json:"totalCount"`
 }
 
-type IPInfoJson struct {
+type InfoJson struct {
 	IP       string `json:"ip"`
 	Mac      string `json:"mac"`
 	TTL      string `json:"ttl"`
@@ -24,7 +27,7 @@ type IPInfoJson struct {
 }
 
 // TraversalIP 遍历IP表
-func TraversalIP(startTime, endTime int64, page, pageSize int64) (result IPTables, err error) {
+func TraversalIP(startTime, endTime int64, page, pageSize int64) (result Tables, err error) {
 	rdb := redis.GetRedisClient()
 	ctx := context.TODO()
 
@@ -33,9 +36,9 @@ func TraversalIP(startTime, endTime int64, page, pageSize int64) (result IPTable
 
 	// Pipeline 批量查询
 	pipe := rdb.Pipeline()
-	result.TotalCount = rdb.ZCount(ctx, ZSetIPTable, strconv.FormatInt(startTime, 10), strconv.FormatInt(endTime, 10)).Val()
+	result.TotalCount = rdb.ZCount(ctx, layers.ZSetIP, strconv.FormatInt(startTime, 10), strconv.FormatInt(endTime, 10)).Val()
 	// step1. 分页查询集合
-	zRangCmd := rdb.ZRevRangeByScoreWithScores(ctx, ZSetIPTable, &redis2.ZRangeBy{
+	zRangCmd := rdb.ZRevRangeByScoreWithScores(ctx, layers.ZSetIP, &redis2.ZRangeBy{
 		Min:    strconv.FormatInt(startTime, 10), // 查询范围的最小时间戳
 		Max:    strconv.FormatInt(endTime, 10),   // 查询范围的最大时间戳
 		Offset: start,                            // 分页起始位置
@@ -53,7 +56,7 @@ func TraversalIP(startTime, endTime int64, page, pageSize int64) (result IPTable
 	pipe = rdb.Pipeline()
 	ipCommands := make([]*redis2.MapStringStringCmd, 0, len(ips))
 	for _, ip := range ips {
-		key := fmt.Sprintf(HashAnalyzeIP, ip.Member.(string))
+		key := fmt.Sprintf(layers.HashAnalyzeIP, ip.Member.(string))
 		cmd := pipe.HGetAll(ctx, key)
 		ipCommands = append(ipCommands, cmd)
 	}
@@ -65,10 +68,10 @@ func TraversalIP(startTime, endTime int64, page, pageSize int64) (result IPTable
 	}
 
 	// step3. 处理查询结果
-	ipDetails := make([]IPInfoJson, 0, len(ips))
+	ipDetails := make([]InfoJson, 0, len(ips))
 	for i, cmd := range ipCommands {
 		info := cmd.Val()
-		detail := IPInfoJson{
+		detail := InfoJson{
 			IP:       ips[i].Member.(string),
 			TTL:      info["ttl"],
 			UA:       info["ua"],

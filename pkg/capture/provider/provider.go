@@ -1,4 +1,4 @@
-package capture
+package provider
 
 // 数据提供器
 

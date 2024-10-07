@@ -2,7 +2,8 @@ package sockets
 
 import (
 	"encoding/json"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/observer"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/provider"
 	"go.uber.org/zap"
 )
 
@@ -10,14 +11,14 @@ type ActionObserver struct {
 }
 
 func (a *ActionObserver) Handle(data json.RawMessage) []byte {
-	var condition capture.Condition
+	var condition provider.Condition
 	err := json.Unmarshal(data, &condition)
 	if err != nil {
 		zap.L().Error("condition json unmarshal failed", zap.Error(err))
 		return nil
 	}
-	t := &capture.Observer{
-		Table: "ttl",
+	t := &observer.Observer{
+		Table: condition.Table,
 	}
 	res, err := t.Traversal(condition)
 	if err != nil {

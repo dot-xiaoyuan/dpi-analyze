@@ -1,4 +1,4 @@
-package capture
+package layers
 
 import (
 	"context"
@@ -10,11 +10,15 @@ import (
 	"time"
 )
 
+var (
+	ApplicationCount int // 应用总数
+)
+
 const (
-	ZSetApplicationMap  = "z_set:application_map"
-	ZSetIPTable         = "z_set:ip_table"
-	ZSetObserverIPTable = "z_set:observer_ip_table"
-	HashAnalyzeIP       = "hash:analyze:ip:%s"
+	ZSetApplication = "z_set:application"
+	ZSetIP          = "z_set:ip"
+	ZSetObserverTTL = "z_set:observer:ttl"
+	HashAnalyzeIP   = "hash:analyze:ip:%s"
 )
 
 // Ethernet 以太网
@@ -149,7 +153,7 @@ func (a *ApplicationInfo) AddUp() {
 		}
 	}()
 	rdb := redis.GetRedisClient()
-	err := rdb.ZIncrBy(context.Background(), ZSetApplicationMap, 1, a.AppName).Err()
+	err := rdb.ZIncrBy(context.Background(), ZSetApplication, 1, a.AppName).Err()
 	// 累加全局应用计数
 	ApplicationCount++
 	if err != nil {

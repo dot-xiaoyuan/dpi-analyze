@@ -3,6 +3,8 @@ package capture
 import (
 	"context"
 	"fmt"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/ip"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/observer"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
@@ -13,18 +15,15 @@ import (
 // 数据包捕获和抓取
 
 var (
-	Handle           *pcap.Handle
-	Err              error
-	Decoder          gopacket.Decoder
-	PacketsCount     int // 总包数
-	TrafficCount     int // 总流量
-	SessionCount     int // 总会话
-	ApplicationCount int // 应用总数
-	TCPCount         int64
-	UDPCount         int64
-	OK               bool
-	IPEvents         = make(chan IPFieldChangeEvent, 1000)
-	ObserverEvents   = make(chan TTLChangeObserverEvent, 100)
+	Handle       *pcap.Handle
+	Err          error
+	Decoder      gopacket.Decoder
+	PacketsCount int // 总包数
+	TrafficCount int // 总流量
+	SessionCount int // 总会话
+	TCPCount     int64
+	UDPCount     int64
+	OK           bool
 )
 
 type Config struct {
@@ -44,17 +43,13 @@ func StartCapture(ctx context.Context, c Config, handler PacketHandler, done cha
 	zap.L().Info(i18n.T("Starting capture"))
 	// 启动观察者 goroutine
 	zap.L().Info(i18n.T("Starting WatchTTLChange"))
-	CleanUp()
-	go WatchTTLChange(ObserverEvents)
+	observer.CleanUp()
+	observer.Setup()
 
 	// 启动ip属性事件监听 goroutine
 	zap.L().Info(i18n.T("Starting ProcessChangeEvent"))
-	//for i := 0; i < 10; i++ {
-	go ProcessChangeEvent(IPEvents)
-	//}
-	zap.L().Debug(i18n.TT("Make Events by Listen IP Change", map[string]interface{}{
-		"count": 1000,
-	}))
+	ip.Setup()
+
 	if c.OffLine != "" {
 		Handle, Err = pcap.OpenOffline(c.OffLine)
 		zap.L().Info(i18n.TT("Open offline package file", map[string]interface{}{
