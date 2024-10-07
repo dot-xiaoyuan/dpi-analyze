@@ -1,20 +1,16 @@
 package observer
 
 import (
-	"context"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/types"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/redis"
-	v9 "github.com/redis/go-redis/v9"
+	"sync"
 	"time"
 )
 
-// TTLChangeObserverEvent TTL变化观察事件
-type TTLChangeObserverEvent struct {
-	IP   string
-	Prev any
-	Curr any
-	Diff uint8
-}
+var (
+	TTLEvents       = make(chan ChangeObserverEvent, 100)
+	TTLHistoryCache = make(map[string]*TTLChangeHistory)
+	cacheMutex      sync.Mutex
+)
 
 type TTLChange struct {
 	Time time.Time `json:"time"`
@@ -33,14 +29,16 @@ func RecordTTLChange(ip string, ttl uint8) {
 
 	history, exists := TTLHistoryCache[ip]
 	if !exists {
-		store2Redis(ip)
+		ob := Observer{Table: types.ZSetObserverTTL}
+		ob.Store2Redis(ip)
+
 		history = &TTLChangeHistory{
-			Changes: make([]TTLChange, 0, 30),
+			Changes: make([]TTLChange, 0, MaxTTLCount),
 		}
 		TTLHistoryCache[ip] = history
 	}
 
-	if len(history.Changes) == 30 {
+	if len(history.Changes) == MaxTTLCount {
 		history.Changes = history.Changes[1:]
 	}
 	// 记录变化
@@ -62,18 +60,8 @@ func GetTTLHistory(ip string) []TTLChange {
 }
 
 // WatchTTLChange 观察ttl变化
-func WatchTTLChange(events <-chan TTLChangeObserverEvent) {
+func WatchTTLChange(events <-chan ChangeObserverEvent) {
 	for e := range events {
 		RecordTTLChange(e.IP, e.Curr.(uint8))
 	}
-}
-
-func store2Redis(ip string) {
-	rdb := redis.GetRedisClient()
-	ctx := context.TODO()
-
-	rdb.ZAdd(ctx, types.ZSetObserverTTL, v9.Z{
-		Score:  float64(time.Now().Unix()),
-		Member: ip,
-	})
 }

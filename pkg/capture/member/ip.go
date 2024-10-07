@@ -50,7 +50,7 @@ var handlers = map[Property]func(e PropertyChangeEvent){
 		zap.L().Debug("TTL Changed", zap.String("IP", event.IP), zap.Any("old", event.OldValue), zap.Any("new", event.NewValue))
 		_ = ants.Submit(func() {
 			// 发送到 TTL 观察者 Channel
-			observer.Events <- observer.TTLChangeObserverEvent{
+			observer.TTLEvents <- observer.ChangeObserverEvent{
 				IP:   event.IP,
 				Prev: event.OldValue,
 				Curr: event.NewValue,
@@ -62,7 +62,15 @@ var handlers = map[Property]func(e PropertyChangeEvent){
 		mutex.Unlock()
 	},
 	Mac: func(event PropertyChangeEvent) {
-
+		zap.L().Debug("MAC Changed", zap.String("IP", event.IP), zap.Any("old", event.OldValue), zap.Any("new", event.NewValue))
+		_ = ants.Submit(func() {
+			// 发送到 Mac 观察者 Channel
+			observer.MacEvents <- observer.MacChangeObserverEvent{
+				IP:   event.IP,
+				Prev: event.OldValue,
+				Curr: event.NewValue,
+			}
+		})
 	},
 	UserAgent: func(event PropertyChangeEvent) {
 
@@ -71,8 +79,13 @@ var handlers = map[Property]func(e PropertyChangeEvent){
 
 func ChangeEventIP(events <-chan PropertyChangeEvent) {
 	for e := range events {
+		mutex := getIPMutex(e.IP)
 		if handler, ok := handlers[e.Property]; ok {
 			handler(e)
+			// update redis
+			mutex.Lock()
+			storeHash2Redis(e.IP, e.Property, e.NewValue)
+			mutex.Unlock()
 		}
 	}
 }

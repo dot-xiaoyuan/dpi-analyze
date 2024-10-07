@@ -4,6 +4,7 @@ package provider
 
 type Provider interface {
 	Traversal(c Condition) (any, error)
+	Store2Redis(ip string)
 }
 
 type Condition struct {

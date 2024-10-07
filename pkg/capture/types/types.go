@@ -18,6 +18,7 @@ const (
 	ZSetApplication = "z_set:application"
 	ZSetIP          = "z_set:ip"
 	ZSetObserverTTL = "z_set:observer:ttl"
+	ZSetObserverMac = "z_set:observer:mac"
 	HashAnalyzeIP   = "hash:analyze:ip:%s"
 )
 

@@ -8,28 +8,38 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/redis"
 	v9 "github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
-	"sync"
+	"time"
 )
 
-var (
-	Events          = make(chan TTLChangeObserverEvent, 100)
-	TTLHistoryCache = make(map[string]*TTLChangeHistory)
-	cacheMutex      sync.Mutex
+const (
+	MaxTTLCount = 30
+	MaxMacCount = 3
 )
 
 type Observer struct {
 	Table string
 }
 
+// ChangeObserverEvent 观察事件
+type ChangeObserverEvent struct {
+	IP   string
+	Prev any
+	Curr any
+}
+
 func Setup() {
 	_ = ants.Submit(func() {
-		WatchTTLChange(Events)
+		WatchTTLChange(TTLEvents)
+	})
+	_ = ants.Submit(func() {
+		WatchMacChange(MacEvents)
 	})
 }
 
 func CleanUp() {
 	// TODO 清空缓存
 	redis.GetRedisClient().Del(context.TODO(), types.ZSetObserverTTL)
+	redis.GetRedisClient().Del(context.TODO(), types.ZSetObserverMac)
 }
 
 type Results struct {
@@ -86,4 +96,14 @@ func (o *Observer) Traversal(c provider.Condition) (any, error) {
 	}
 
 	return result, nil
+}
+
+func (o *Observer) Store2Redis(ip string) {
+	rdb := redis.GetRedisClient()
+	ctx := context.TODO()
+
+	rdb.ZAdd(ctx, o.Table, v9.Z{
+		Score:  float64(time.Now().Unix()),
+		Member: ip,
+	})
 }
