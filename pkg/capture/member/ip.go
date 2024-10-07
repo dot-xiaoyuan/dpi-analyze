@@ -1,4 +1,4 @@
-package ip
+package member
 
 import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"

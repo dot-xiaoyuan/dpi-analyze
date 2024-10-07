@@ -3,7 +3,7 @@ package capture
 import (
 	"context"
 	"fmt"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/ip"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/member"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/observer"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
 	"github.com/google/gopacket"
@@ -48,7 +48,7 @@ func StartCapture(ctx context.Context, c Config, handler PacketHandler, done cha
 
 	// 启动ip属性事件监听 goroutine
 	zap.L().Info(i18n.T("Starting ProcessChangeEvent"))
-	ip.Setup()
+	member.Setup()
 
 	if c.OffLine != "" {
 		Handle, Err = pcap.OpenOffline(c.OffLine)

@@ -4,8 +4,8 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/analyze/memory"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
-	cip "github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/ip"
 	layers2 "github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/layers"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/member"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -97,31 +97,21 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 	}
 	trafficMap.Update(transmission)
 
-	// 插入 TTL 缓存
-	//internetMap := memory.Internet{IP: ip}
-	//internetMap.Update(internet)
-
-	// 插入 Mac 缓存
-	//ethernetMap := memory.Ethernet{IP: ip}
-	//ethernetMap.Update(ethernet)
-
 	// 插入 IP hash 表
 	_ = ants.Submit(func() {
-		cip.Store(cip.Hash{
+		member.Store(member.Hash{
 			IP:    ip,
-			Field: cip.TTL,
+			Field: member.TTL,
 			Value: internet.TTL,
 		})
 	})
 	_ = ants.Submit(func() {
-		cip.Store(cip.Hash{
+		member.Store(member.Hash{
 			IP:    ip,
-			Field: cip.Mac,
+			Field: member.Mac,
 			Value: ethernet.SrcMac,
 		})
 	})
-	//ip.StoreIP(ip, ip.TTL, internet.TTL)
-	//ip.StoreIP(ip, ip.Mac, ethernet.SrcMac)
 
 	// analyze TCP
 	if tcpLayer := packet.Layer(layers.LayerTypeTCP); tcpLayer != nil {

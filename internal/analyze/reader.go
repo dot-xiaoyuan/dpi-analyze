@@ -3,8 +3,8 @@ package analyze
 import (
 	"bufio"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/ip"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/layers"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/member"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/features"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
 	"io"
@@ -149,9 +149,9 @@ func (sr *StreamReader) SetHttpInfo(host, userAgent, contentType, upgrade string
 	// 如果ua有效
 	if userAgent != "" {
 		_ = ants.Submit(func() {
-			ip.Store(ip.Hash{
+			member.Store(member.Hash{
 				IP:    sr.Parent.SrcIP,
-				Field: ip.UserAgent,
+				Field: member.UserAgent,
 				Value: userAgent,
 			})
 		})

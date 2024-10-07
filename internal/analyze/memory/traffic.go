@@ -24,7 +24,6 @@ func (t *Traffic) Update(transmission interface{}) {
 		record.UpStream += i.UpStream
 		record.DownStream += i.DownStream
 		Table.Store(t.Date, record)
-		// zap.L().Debug("Update Mac Cache", zap.String("ip", l.IP), zap.Any("Transmission", i))
 	} else {
 		// 不存在该IP记录，直接存储
 		Table.Store(t.Date, i)
@@ -33,7 +32,6 @@ func (t *Traffic) Update(transmission interface{}) {
 			Lists = Lists[1:]
 		}
 		Lists = append(Lists, t.Date)
-		// zap.L().Debug("Insert Mac Cache", zap.String("ip", l.IP), zap.Any("Transmission", i))
 	}
 }
 
