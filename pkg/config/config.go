@@ -33,6 +33,7 @@ var (
 	BerkeleyPacketFilter string
 	IgnoreMissing        bool
 	UseTTL               bool
+	UseUA                bool
 	StatisticsPort       uint
 )
 
@@ -47,6 +48,7 @@ type Yaml struct {
 	BerkeleyPacketFilter string  `mapstructure:"berkeley_packet_filter"`
 	IgnoreMissing        bool    `mapstructure:"ignore_missing"`
 	UseTTL               bool    `mapstructure:"use_ttl"`
+	UseUA                bool    `mapstructure:"use_ua"`
 	Capture              Capture `mapstructure:"capture"`
 	Mongodb              Mongodb `mapstructure:"mongodb"`
 	Redis                Redis   `mapstructure:"redis"`

@@ -34,12 +34,16 @@ func Setup() {
 	_ = ants.Submit(func() {
 		WatchMacChange(MacEvents)
 	})
+	_ = ants.Submit(func() {
+		WatchUaChange(UaEvents)
+	})
 }
 
 func CleanUp() {
 	// TODO 清空缓存
 	redis.GetRedisClient().Del(context.TODO(), types.ZSetObserverTTL)
 	redis.GetRedisClient().Del(context.TODO(), types.ZSetObserverMac)
+	redis.GetRedisClient().Del(context.TODO(), types.ZSetObserverUa)
 }
 
 type Results struct {

@@ -73,7 +73,15 @@ var handlers = map[Property]func(e PropertyChangeEvent){
 		})
 	},
 	UserAgent: func(event PropertyChangeEvent) {
-
+		zap.L().Debug("UA Changed", zap.String("IP", event.IP), zap.Any("old", event.OldValue), zap.Any("new", event.NewValue))
+		_ = ants.Submit(func() {
+			// 发送到 Mac 观察者 Channel
+			observer.MacEvents <- observer.MacChangeObserverEvent{
+				IP:   event.IP,
+				Prev: event.OldValue,
+				Curr: event.NewValue,
+			}
+		})
 	},
 }
 

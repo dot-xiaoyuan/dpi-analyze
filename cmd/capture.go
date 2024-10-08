@@ -14,6 +14,7 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/maxmind"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/spinners"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/uaparser"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
@@ -47,6 +48,7 @@ func init() {
 	CaptureCmd.Flags().StringVar(&config.BerkeleyPacketFilter, "bpf", config.Cfg.BerkeleyPacketFilter, "Berkeley packet filter")
 	CaptureCmd.Flags().BoolVar(&config.IgnoreMissing, "ignore-missing", config.Cfg.IgnoreMissing, "ignore missing packet")
 	CaptureCmd.Flags().BoolVar(&config.UseTTL, "use-ttl", config.Cfg.UseTTL, "save TTL for IP")
+	CaptureCmd.Flags().BoolVar(&config.UseUA, "use-ua", config.Cfg.UseUA, "use ua parser")
 	CaptureCmd.Flags().StringVar(&config.UnixSocket, "unix-socket", config.Cfg.UnixSocket, "unix socket")
 }
 
@@ -85,6 +87,11 @@ func CaptureRreFunc(c *cobra.Command, args []string) {
 	if config.Geo2IP != "" {
 		zap.L().Info(i18n.T("Start Load Geo2IP Component"))
 		maxmind.Setup(config.Geo2IP)
+	}
+	// 是否加载 ua parser
+	if config.UseUA {
+		zap.L().Info(i18n.T("Start Load User-Agent Parser Component"))
+		uaparser.Setup()
 	}
 	// 创建协程池
 	ants.Setup(100)
@@ -136,7 +143,7 @@ func CaptureRun(c *cobra.Command, args []string) {
 		spinners.Start()
 		// 释放协程池
 		ants.Release()
-		zap.L().Info(i18n.TT("Received terminate signal, stop analyze...", nil))
+		zap.L().Info(i18n.T("Received terminate signal, stop analyze..."))
 		time.Sleep(time.Second)
 		spinners.Stop()
 		os.Exit(0)

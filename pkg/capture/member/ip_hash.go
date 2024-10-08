@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/redis"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/uaparser"
 	redis2 "github.com/redis/go-redis/v9"
 	"sync"
 	"time"
@@ -35,7 +36,7 @@ func Store(i interface{}) {
 		break
 	case UserAgent:
 		m = &UaCache
-		v = hash.Value.(string)
+		v = uaparser.Parse(hash.Value.(string))
 		break
 	}
 

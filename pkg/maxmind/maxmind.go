@@ -27,7 +27,7 @@ func NewGeoIP(file string) {
 	spinners.Start()
 	defer func() {
 		if err := recover(); err != nil {
-			spinners.Start()
+			spinners.Stop()
 			zap.L().Error(i18n.T("Failed to load GeoIP database."), zap.Any("error", err))
 			os.Exit(1)
 		}
@@ -37,7 +37,7 @@ func NewGeoIP(file string) {
 		panic(err)
 	}
 	zap.L().Info(i18n.T("Geo2IP component initialized!"))
-	spinners.Start()
+	spinners.Stop()
 }
 
 type Record struct {

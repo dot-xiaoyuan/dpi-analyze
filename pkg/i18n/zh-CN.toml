@@ -67,3 +67,6 @@
 
 # socket
 "Unix Socket Server listening" = "Unix Socket 服务 [{{.sock}}]"
+
+# ua parser
+"Start Load User-Agent Parser Component" = "开始加载ua解析组件"
