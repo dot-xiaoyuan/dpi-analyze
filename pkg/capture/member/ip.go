@@ -81,7 +81,7 @@ var handlers = map[Property]func(e PropertyChangeEvent){
 		zap.L().Debug("UA Changed", zap.String("IP", event.IP), zap.Any("old", event.OldValue), zap.Any("new", event.NewValue))
 		_ = ants.Submit(func() {
 			// 发送到 Ua 观察者 Channel
-			observer.MacEvents <- observer.ChangeObserverEvent[string]{
+			observer.UaEvents <- observer.ChangeObserverEvent[string]{
 				IP:   event.IP,
 				Prev: event.OldValue.(string),
 				Curr: event.NewValue.(string),
