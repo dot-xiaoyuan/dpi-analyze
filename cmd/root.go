@@ -44,6 +44,7 @@ func init() {
 	// define sub command
 	rootCmd.AddCommand(CaptureCmd)
 	rootCmd.AddCommand(StatisticsCmd)
+	rootCmd.AddCommand(WebCmd)
 }
 
 func RunFunc(c *cobra.Command, args []string) {

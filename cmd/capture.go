@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/analyze"
-	"github.com/dot-xiaoyuan/dpi-analyze/internal/sockets"
+	"github.com/dot-xiaoyuan/dpi-analyze/internal/socket/handler"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
@@ -13,6 +13,7 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/features"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/maxmind"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/socket"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/spinners"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/uaparser"
 	"github.com/spf13/cobra"
@@ -96,7 +97,8 @@ func CaptureRreFunc(c *cobra.Command, args []string) {
 	// 创建协程池
 	ants.Setup(100)
 	// 启动 Unix Socket Server
-	err := ants.Submit(sockets.StartUnixSocketServer)
+	handler.InitHandlers()
+	err := ants.Submit(socket.StartServer)
 	if err != nil {
 		zap.L().Error("Failed to start unix sock server", zap.Error(err))
 		os.Exit(1)

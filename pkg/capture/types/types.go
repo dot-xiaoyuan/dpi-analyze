@@ -162,3 +162,22 @@ func (a *ApplicationInfo) AddUp() {
 		panic(err)
 	}
 }
+
+type Charts struct {
+	Name  string  `json:"name"`
+	Value float64 `json:"value"`
+}
+
+func GenerateChartData() []Charts {
+	rdb := redis.GetRedisClient()
+	result := rdb.ZRevRangeWithScores(context.Background(), ZSetApplication, 0, -1).Val()
+	zap.L().Info("result", zap.Any("result", result))
+	var charts []Charts
+	for _, v := range result {
+		charts = append(charts, Charts{
+			Name:  v.Member.(string),
+			Value: v.Score,
+		})
+	}
+	return charts
+}

@@ -35,6 +35,7 @@ var (
 	UseTTL               bool
 	UseUA                bool
 	StatisticsPort       uint
+	WebPort              uint
 )
 
 type Yaml struct {
@@ -53,12 +54,17 @@ type Yaml struct {
 	Mongodb              Mongodb `mapstructure:"mongodb"`
 	Redis                Redis   `mapstructure:"redis"`
 	Statistics           Statistics
+	Web                  Web
 }
 
 type Capture struct {
 	OfflineFile string `mapstructure:"offline_file"`
 	NIC         string `mapstructure:"nic"`
 	SnapLen     int32  `mapstructure:"snap_len"`
+}
+
+type Web struct {
+	Port uint `mapstructure:"port"`
 }
 
 type Statistics struct {

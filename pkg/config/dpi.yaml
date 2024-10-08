@@ -8,6 +8,8 @@ unix_socket: /tmp/capture.sock
 capture:
   offline_file:
   nic: en0
+web:
+  port: 8088
 statistics:
   port: 8088
 mongodb:
