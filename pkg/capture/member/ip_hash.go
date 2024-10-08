@@ -20,6 +20,7 @@ type Hash struct {
 	Value any
 }
 
+// Store IP加载/更新
 func Store(i interface{}) {
 	hash := i.(Hash)
 

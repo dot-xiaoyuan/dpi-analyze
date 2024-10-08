@@ -28,8 +28,8 @@ func NewActionHandler(action string) provider.Handler {
 	switch action {
 	case "dashboard":
 		return &ActionDashboard{}
-	case "ip-detail":
-		return &ActionIP{}
+	//case "ip-detail":
+	//	return &ActionIP{}
 	case "observer":
 		return &ActionObserver{}
 	}

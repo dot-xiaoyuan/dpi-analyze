@@ -17,8 +17,6 @@ var (
 	Events   = make(chan PropertyChangeEvent, 100)
 )
 
-type EventType int
-
 type Property string
 
 const (
@@ -27,17 +25,13 @@ const (
 	UserAgent Property = "user-agent"
 )
 
-func Setup() {
-	_ = ants.Submit(func() {
-		ChangeEventIP(Events)
-	})
-}
-
+// IP锁
 func getIPMutex(ip string) *sync.Mutex {
 	val, _ := Mutex.LoadOrStore(ip, &sync.Mutex{})
 	return val.(*sync.Mutex)
 }
 
+// PropertyChangeEvent 属性变化事件结构
 type PropertyChangeEvent struct {
 	IP       string
 	OldValue any
@@ -45,46 +39,7 @@ type PropertyChangeEvent struct {
 	Property Property
 }
 
-var handlers = map[Property]func(e PropertyChangeEvent){
-	TTL: func(event PropertyChangeEvent) {
-		zap.L().Debug("TTL Changed", zap.String("IP", event.IP), zap.Any("old", event.OldValue), zap.Any("new", event.NewValue))
-		_ = ants.Submit(func() {
-			// 发送到 TTL 观察者 Channel
-			observer.TTLEvents <- observer.ChangeObserverEvent{
-				IP:   event.IP,
-				Prev: event.OldValue,
-				Curr: event.NewValue,
-			}
-		})
-		mutex := getIPMutex(event.IP)
-		mutex.Lock()
-		storeHash2Redis(event.IP, event.Property, event.NewValue)
-		mutex.Unlock()
-	},
-	Mac: func(event PropertyChangeEvent) {
-		zap.L().Debug("MAC Changed", zap.String("IP", event.IP), zap.Any("old", event.OldValue), zap.Any("new", event.NewValue))
-		_ = ants.Submit(func() {
-			// 发送到 Mac 观察者 Channel
-			observer.MacEvents <- observer.MacChangeObserverEvent{
-				IP:   event.IP,
-				Prev: event.OldValue,
-				Curr: event.NewValue,
-			}
-		})
-	},
-	UserAgent: func(event PropertyChangeEvent) {
-		zap.L().Debug("UA Changed", zap.String("IP", event.IP), zap.Any("old", event.OldValue), zap.Any("new", event.NewValue))
-		_ = ants.Submit(func() {
-			// 发送到 Mac 观察者 Channel
-			observer.MacEvents <- observer.MacChangeObserverEvent{
-				IP:   event.IP,
-				Prev: event.OldValue,
-				Curr: event.NewValue,
-			}
-		})
-	},
-}
-
+// ChangeEventIP IP 属性变化事件
 func ChangeEventIP(events <-chan PropertyChangeEvent) {
 	for e := range events {
 		mutex := getIPMutex(e.IP)
@@ -96,4 +51,47 @@ func ChangeEventIP(events <-chan PropertyChangeEvent) {
 			mutex.Unlock()
 		}
 	}
+}
+
+// 具体属性变化事件触发方法
+var handlers = map[Property]func(e PropertyChangeEvent){
+	TTL: func(event PropertyChangeEvent) {
+		zap.L().Debug("TTL Changed", zap.String("IP", event.IP), zap.Any("old", event.OldValue), zap.Any("new", event.NewValue))
+		_ = ants.Submit(func() {
+			// 发送到 TTL 观察者 Channel
+			observer.TTLEvents <- observer.ChangeObserverEvent[uint8]{
+				IP:   event.IP,
+				Prev: event.OldValue.(uint8),
+				Curr: event.NewValue.(uint8),
+			}
+		})
+	},
+	Mac: func(event PropertyChangeEvent) {
+		zap.L().Debug("MAC Changed", zap.String("IP", event.IP), zap.Any("old", event.OldValue), zap.Any("new", event.NewValue))
+		_ = ants.Submit(func() {
+			// 发送到 Mac 观察者 Channel
+			observer.MacEvents <- observer.ChangeObserverEvent[string]{
+				IP:   event.IP,
+				Prev: event.OldValue.(string),
+				Curr: event.NewValue.(string),
+			}
+		})
+	},
+	UserAgent: func(event PropertyChangeEvent) {
+		zap.L().Debug("UA Changed", zap.String("IP", event.IP), zap.Any("old", event.OldValue), zap.Any("new", event.NewValue))
+		_ = ants.Submit(func() {
+			// 发送到 Ua 观察者 Channel
+			observer.MacEvents <- observer.ChangeObserverEvent[string]{
+				IP:   event.IP,
+				Prev: event.OldValue.(string),
+				Curr: event.NewValue.(string),
+			}
+		})
+	},
+}
+
+func Setup() {
+	_ = ants.Submit(func() {
+		ChangeEventIP(Events)
+	})
 }

@@ -8,42 +8,113 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/redis"
 	v9 "github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
+	"sync"
 	"time"
 )
 
 const (
 	MaxTTLCount = 30
 	MaxMacCount = 3
+	MaxUaCount  = 5
 )
 
-type Observer struct {
-	Table string
-}
+var (
+	cacheMutex sync.Mutex
+
+	TTLObserver = NewObserver[uint8](types.ZSetObserverTTL, MaxTTLCount)
+	MacObserver = NewObserver[string](types.ZSetObserverMac, MaxMacCount)
+	UaObserver  = NewObserver[string](types.ZSetObserverUa, MaxUaCount)
+
+	TTLEvents = make(chan ChangeObserverEvent[uint8], 100)
+	MacEvents = make(chan ChangeObserverEvent[string], 100)
+	UaEvents  = make(chan ChangeObserverEvent[string], 100)
+)
 
 // ChangeObserverEvent 观察事件
-type ChangeObserverEvent struct {
+type ChangeObserverEvent[T string | uint8] struct {
 	IP   string
-	Prev any
-	Curr any
+	Prev T
+	Curr T
 }
 
-func Setup() {
-	_ = ants.Submit(func() {
-		WatchTTLChange(TTLEvents)
-	})
-	_ = ants.Submit(func() {
-		WatchMacChange(MacEvents)
-	})
-	_ = ants.Submit(func() {
-		WatchUaChange(UaEvents)
+// ChangeHistory 变化历史记录
+type ChangeHistory[T string | uint8] struct {
+	Changes []ChangeRecord[T]
+}
+
+// ChangeRecord 记录每次变化的数据
+type ChangeRecord[T string | uint8] struct {
+	Time  time.Time `json:"time"`
+	Value T         `json:"value"`
+}
+
+// Observer 观察者
+type Observer[T string | uint8] struct {
+	HistoryCache map[string]*ChangeHistory[T]
+	MaxCount     int
+	Table        string
+}
+
+// NewObserver 创建一个观察者
+func NewObserver[T uint8 | string](table string, maxCount int) *Observer[T] {
+	return &Observer[T]{
+		HistoryCache: make(map[string]*ChangeHistory[T]),
+		MaxCount:     maxCount,
+		Table:        table,
+	}
+}
+
+// RecordChange 记录变化
+func (ob *Observer[T]) RecordChange(ip string, value T) {
+	cacheMutex.Lock()
+	defer cacheMutex.Unlock()
+
+	history, ok := ob.HistoryCache[ip]
+	if !ok {
+		ob.Store2Redis(ip)
+		history = &ChangeHistory[T]{
+			Changes: make([]ChangeRecord[T], 0, ob.MaxCount),
+		}
+		ob.HistoryCache[ip] = history
+	}
+
+	if len(history.Changes) == ob.MaxCount {
+		history.Changes = history.Changes[1:]
+	}
+
+	history.Changes = append(history.Changes, ChangeRecord[T]{
+		Time:  time.Now(),
+		Value: value,
 	})
 }
 
-func CleanUp() {
-	// TODO 清空缓存
-	redis.GetRedisClient().Del(context.TODO(), types.ZSetObserverTTL)
-	redis.GetRedisClient().Del(context.TODO(), types.ZSetObserverMac)
-	redis.GetRedisClient().Del(context.TODO(), types.ZSetObserverUa)
+// GetHistory 获取变化历史记录
+func (ob *Observer[T]) GetHistory(ip string) []ChangeRecord[T] {
+	cacheMutex.Lock()
+	defer cacheMutex.Unlock()
+
+	if history, ok := ob.HistoryCache[ip]; ok {
+		return history.Changes
+	}
+	return nil
+}
+
+// Store2Redis 保存IP到Redis
+func (ob *Observer[T]) Store2Redis(ip string) {
+	rdb := redis.GetRedisClient()
+	ctx := context.TODO()
+
+	rdb.ZAdd(ctx, ob.Table, v9.Z{
+		Score:  float64(time.Now().Unix()),
+		Member: ip,
+	})
+}
+
+// WatchChange 观察事件channel
+func (ob *Observer[T]) WatchChange(events <-chan ChangeObserverEvent[T]) {
+	for e := range events {
+		ob.RecordChange(e.IP, e.Curr)
+	}
 }
 
 type Results struct {
@@ -51,32 +122,8 @@ type Results struct {
 	Results    []any `json:"results"`
 }
 
-type TTLDetail struct {
-	IP      string      `json:"ip"`
-	History []TTLChange `json:"history"`
-}
-
-type MacDetail struct {
-	IP      string      `json:"ip"`
-	History []MacChange `json:"history"`
-}
-
-var handlers = map[string]func(z v9.Z) any{
-	types.ZSetObserverTTL: func(z v9.Z) any {
-		var detail TTLDetail
-		detail.IP = z.Member.(string)
-		detail.History = GetTTLHistory(z.Member.(string))
-		return detail
-	},
-	types.ZSetObserverMac: func(z v9.Z) any {
-		var detail MacDetail
-		detail.IP = z.Member.(string)
-		detail.History = GetMacHistory(z.Member.(string))
-		return detail
-	},
-}
-
-func (o *Observer) Traversal(c provider.Condition) (any, error) {
+// Traversal 遍历
+func (ob *Observer[T]) Traversal(c provider.Condition) (any, error) {
 	rdb := redis.GetRedisClient()
 	ctx := context.TODO()
 
@@ -104,21 +151,26 @@ func (o *Observer) Traversal(c provider.Condition) (any, error) {
 
 	ips := zRangCmd.Val()
 	for _, ip := range ips {
-		if handle, ok := handlers[c.Table]; ok {
-			r := handle(ip)
-			result.Results = append(result.Results, r)
-		}
+		record := ob.GetHistory(ip.Member.(string))
+		result.Results = append(result.Results, record)
 	}
-
 	return result, nil
 }
 
-func (o *Observer) Store2Redis(ip string) {
-	rdb := redis.GetRedisClient()
-	ctx := context.TODO()
-
-	rdb.ZAdd(ctx, o.Table, v9.Z{
-		Score:  float64(time.Now().Unix()),
-		Member: ip,
+func Setup() {
+	_ = ants.Submit(func() {
+		TTLObserver.WatchChange(TTLEvents)
 	})
+	_ = ants.Submit(func() {
+		MacObserver.WatchChange(MacEvents)
+	})
+	_ = ants.Submit(func() {
+		UaObserver.WatchChange(UaEvents)
+	})
+}
+
+func CleanUp() {
+	redis.GetRedisClient().Del(context.TODO(), types.ZSetObserverTTL)
+	redis.GetRedisClient().Del(context.TODO(), types.ZSetObserverMac)
+	redis.GetRedisClient().Del(context.TODO(), types.ZSetObserverUa)
 }

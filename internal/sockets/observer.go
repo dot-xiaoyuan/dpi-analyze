@@ -17,7 +17,7 @@ func (a *ActionObserver) Handle(data json.RawMessage) []byte {
 		zap.L().Error("condition json unmarshal failed", zap.Error(err))
 		return nil
 	}
-	t := &observer.Observer{
+	t := &observer.Observer[string]{
 		Table: condition.Table,
 	}
 	res, err := t.Traversal(condition)
