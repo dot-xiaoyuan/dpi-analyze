@@ -75,6 +75,7 @@ func setupRoutes(r *gin.Engine) {
 	v1.GET("/ip-tables", handlers.IpTables())
 	v1.GET("/ip-detail", handlers.IPInfo())
 	v1.GET("/observer-ttl", obserber.ObserverTTL())
+	v1.GET("/observer-mac", obserber.ObserverMac())
 	v1.GET("/mac", handlers.Mac())
 
 }

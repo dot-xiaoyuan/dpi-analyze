@@ -52,11 +52,22 @@ type TTLDetail struct {
 	History []TTLChange `json:"history"`
 }
 
+type MacDetail struct {
+	IP      string      `json:"ip"`
+	History []MacChange `json:"history"`
+}
+
 var handlers = map[string]func(z v9.Z) any{
 	types.ZSetObserverTTL: func(z v9.Z) any {
 		var detail TTLDetail
 		detail.IP = z.Member.(string)
 		detail.History = GetTTLHistory(z.Member.(string))
+		return detail
+	},
+	types.ZSetObserverMac: func(z v9.Z) any {
+		var detail MacDetail
+		detail.IP = z.Member.(string)
+		detail.History = GetMacHistory(z.Member.(string))
 		return detail
 	},
 }

@@ -35,7 +35,7 @@ func RecordMacChange(ip string, mac string) {
 	history, exists := MacHistoryCache[ip]
 	if !exists {
 		ob := Observer{
-			Table: types.ZSetObserverTTL,
+			Table: types.ZSetObserverMac,
 		}
 		ob.Store2Redis(ip)
 
