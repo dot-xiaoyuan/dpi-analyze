@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/utils"
+	"go.uber.org/zap"
 	"net"
 )
 
@@ -17,7 +19,8 @@ type Request struct {
 func SendUnixMessage(t MessageType, param interface{}) ([]byte, error) {
 	conn, err := net.Dial("unix", config.Cfg.UnixSocket)
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to socket: %v", err)
+		zap.L().Error(i18n.T("unix socket error"), zap.Error(fmt.Errorf("failed to connect to socket: %v", err)))
+		return nil, fmt.Errorf(i18n.T("failed to connect to socket: ")+"%v", err)
 	}
 	defer conn.Close()
 

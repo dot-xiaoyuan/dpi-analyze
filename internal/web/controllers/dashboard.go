@@ -14,9 +14,11 @@ func Dashboard() gin.HandlerFunc {
 		bytes, err := socket.SendUnixMessage(socket.Dashboard, nil)
 		if err != nil {
 			common.ErrorResponse(c, http.StatusBadRequest, err.Error())
+			return
 		}
 		var res any
 		_ = json.Unmarshal(bytes, &res)
 		common.SuccessResponse(c, res)
+		return
 	}
 }

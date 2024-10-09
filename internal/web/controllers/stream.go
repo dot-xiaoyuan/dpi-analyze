@@ -67,6 +67,7 @@ func StreamList() gin.HandlerFunc {
 		if err != nil {
 			zap.L().Error("mongodb.Aggregate", zap.Error(err))
 			common.ErrorResponse(c, http.StatusBadRequest, err.Error())
+			return
 		}
 		defer cursor.Close(context.Background())
 
@@ -81,6 +82,7 @@ func StreamList() gin.HandlerFunc {
 		if err != nil {
 			zap.L().Error("mongodb.cursor", zap.Error(err))
 			common.ErrorResponse(c, http.StatusBadRequest, err.Error())
+			return
 		}
 		common.SuccessResponse(c, pagination)
 	}

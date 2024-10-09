@@ -27,6 +27,7 @@ func IPList() gin.HandlerFunc {
 		result, err := member.TraversalIP(now.Add(-24*time.Hour).Unix(), now.Add(time.Hour).Unix(), page, pageSize)
 		if err != nil {
 			common.ErrorResponse(c, http.StatusBadRequest, err.Error())
+			return
 		}
 		common.SuccessResponse(c, result)
 	}
@@ -39,6 +40,7 @@ func IPDetail() gin.HandlerFunc {
 		bytes, err := socket.SendUnixMessage(socket.IPDetail, ip)
 		if err != nil {
 			common.ErrorResponse(c, http.StatusBadRequest, err.Error())
+			return
 		}
 		var res any
 		_ = json.Unmarshal(bytes, &res)

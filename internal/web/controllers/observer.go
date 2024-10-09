@@ -29,6 +29,7 @@ func ObserverHandler(property types.Property) gin.HandlerFunc {
 		bytes, err := socket.SendUnixMessage(socket.Observer, condition)
 		if err != nil {
 			common.ErrorResponse(c, http.StatusBadRequest, err.Error())
+			return
 		}
 		var res any
 		_ = json.Unmarshal(bytes, &res)
