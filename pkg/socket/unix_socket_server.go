@@ -55,5 +55,7 @@ func handleConnection(conn net.Conn) {
 	}
 
 	response := handler(req.Params)
-	_, _ = conn.Write(response)
+	var res []byte
+	res, _ = json.Marshal(response)
+	_, _ = conn.Write(res)
 }

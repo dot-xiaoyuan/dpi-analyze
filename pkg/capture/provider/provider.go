@@ -8,7 +8,6 @@ type Provider interface {
 }
 
 type Condition struct {
-	Table    string `json:"table"`
 	Min      string `json:"min"`
 	Max      string `json:"max"`
 	Page     int64  `json:"page"`

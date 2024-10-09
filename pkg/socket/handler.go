@@ -18,7 +18,7 @@ type Message struct {
 }
 
 // MessageHandlerFunc unix 处理方法
-type MessageHandlerFunc func(Params interface{}) []byte
+type MessageHandlerFunc func(Params string) any
 
 // 全局注册中心，存储消息类型与处理函数的映射
 var handlerRegistry = make(map[MessageType]MessageHandlerFunc)

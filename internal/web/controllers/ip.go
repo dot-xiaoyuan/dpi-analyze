@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/json"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/web/common"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/member"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/socket"
@@ -11,7 +12,8 @@ import (
 	"time"
 )
 
-func List() gin.HandlerFunc {
+// IPList IP 列表
+func IPList() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		queryPage := c.DefaultQuery("page", "1")
 		querySize := c.DefaultQuery("pageSize", "20")
@@ -30,12 +32,20 @@ func List() gin.HandlerFunc {
 	}
 }
 
-func Detail() gin.HandlerFunc {
+// IPDetail IP 详情
+func IPDetail() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		bytes, err := socket.SendMessage()
+		ip := c.Query("ip")
+		m := socket.Message{
+			Type:   socket.IPDetail,
+			Params: ip,
+		}
+		bytes, err := socket.SendMessage(m)
 		if err != nil {
 			common.ErrorResponse(c, http.StatusBadRequest, err.Error())
 		}
-		common.SuccessResponse(c, bytes)
+		var res any
+		_ = json.Unmarshal(bytes, &res)
+		common.SuccessResponse(c, res)
 	}
 }

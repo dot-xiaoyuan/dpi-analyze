@@ -43,7 +43,6 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&config.Geo2IP, "geo2ip", config.Cfg.Geo2IP, "geo2ip")
 	// define sub command
 	rootCmd.AddCommand(CaptureCmd)
-	rootCmd.AddCommand(StatisticsCmd)
 	rootCmd.AddCommand(WebCmd)
 }
 

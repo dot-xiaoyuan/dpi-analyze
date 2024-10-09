@@ -1,7 +1,6 @@
 package common
 
 import (
-	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -13,13 +12,10 @@ type Response struct {
 }
 
 func SuccessResponse(c *gin.Context, data interface{}) {
-	var res any
-	_ = json.Unmarshal(data.([]byte), &res)
-
 	c.JSON(http.StatusOK, Response{
 		Code:    0,
 		Message: "success",
-		Data:    res,
+		Data:    data,
 	})
 }
 

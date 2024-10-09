@@ -10,4 +10,12 @@ import (
 func Register(r *gin.Engine) {
 	v1 := r.Group("/v1")
 	v1.GET("/dashboard", controllers.Dashboard())
+	v1.GET("/ip/list", controllers.IPList())
+	v1.GET("/ip/detail", controllers.IPDetail())
+	// stream log
+	v1.GET("/stream/list", controllers.StreamList())
+	// observer
+	v1.GET("/observer/ttl", controllers.ObserverTTL())
+	v1.GET("/observer/mac", controllers.ObserverMac())
+	v1.GET("/observer/ua", controllers.ObserverUa())
 }

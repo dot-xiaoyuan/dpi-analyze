@@ -1,4 +1,4 @@
-package handlers
+package controllers
 
 import (
 	"context"
@@ -19,7 +19,7 @@ type results struct {
 	Err        error            `json:"err"`
 }
 
-func StreamLogs() gin.HandlerFunc {
+func StreamList() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		collection := c.DefaultQuery("collection", time.Now().Format("stream-06-01-02-15"))
 		page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))

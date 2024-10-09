@@ -95,7 +95,7 @@ func GetServerExtensionName(data []byte) string {
 				pos += 3 + serverNameLen
 			}
 		} else {
-			// Move past other extension types
+			// Move past other extension models
 			pos += extensionItemLen
 		}
 	}

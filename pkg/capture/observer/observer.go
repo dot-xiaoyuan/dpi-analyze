@@ -117,44 +117,38 @@ func (ob *Observer[T]) WatchChange(events <-chan ChangeObserverEvent[T]) {
 	}
 }
 
-type Results struct {
-	TotalCount int64 `json:"totalCount"`
-	Results    []any `json:"results"`
-}
-
 // Traversal 遍历
-func (ob *Observer[T]) Traversal(c provider.Condition) (any, error) {
+func (ob *Observer[T]) Traversal(c provider.Condition) (int64, interface{}, error) {
 	rdb := redis.GetRedisClient()
 	ctx := context.TODO()
 
-	var result Results
-	var err error
 	// 分页的起止索引
 	start := (c.Page - 1) * c.PageSize
 
 	// Pipeline 批量查询
 	pipe := rdb.Pipeline()
-	result.TotalCount = rdb.ZCount(ctx, c.Table, c.Min, c.Max).Val()
+	count := rdb.ZCount(ctx, ob.Table, c.Min, c.Max).Val()
 	// step1. 分页查询集合
-	zRangCmd := rdb.ZRevRangeByScoreWithScores(ctx, c.Table, &v9.ZRangeBy{
+	zRangCmd := rdb.ZRevRangeByScoreWithScores(ctx, ob.Table, &v9.ZRangeBy{
 		Min:    c.Min,      // 查询范围的最小时间戳
 		Max:    c.Max,      // 查询范围的最大时间戳
 		Offset: start,      // 分页起始位置
 		Count:  c.PageSize, // 每页大小
 	})
 
-	_, err = pipe.Exec(ctx)
+	_, err := pipe.Exec(ctx)
 	if err != nil {
 		zap.L().Error("ZRange pipe.Exec", zap.Error(err))
-		return nil, err
+		return 0, nil, err
 	}
 
 	ips := zRangCmd.Val()
+	var data []interface{}
 	for _, ip := range ips {
 		record := ob.GetHistory(ip.Member.(string))
-		result.Results = append(result.Results, record)
+		data = append(data, record)
 	}
-	return result, nil
+	return count, data, nil
 }
 
 func Setup() {
