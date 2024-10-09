@@ -6,7 +6,7 @@ type Pagination struct {
 	Page       int64       `json:"page"`
 	Limit      int64       `json:"limit"`
 	TotalCount int64       `json:"total_count"`
-	Data       interface{} `json:"data"`
+	Result     interface{} `json:"result"`
 }
 
 func NewPagination(p, l string) *Pagination {

@@ -11,9 +11,7 @@ import (
 // Dashboard 仪表盘
 func Dashboard() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		bytes, err := socket.SendMessage(socket.Message{
-			Type: socket.Dashboard,
-		})
+		bytes, err := socket.SendUnixMessage(socket.Dashboard, nil)
 		if err != nil {
 			common.ErrorResponse(c, http.StatusBadRequest, err.Error())
 		}

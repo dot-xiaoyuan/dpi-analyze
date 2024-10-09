@@ -8,15 +8,23 @@ import (
 	"net"
 )
 
-// SendMessage 向 Unix Socket 服务器发送消息并接收回应
-func SendMessage(m Message) ([]byte, error) {
+type Request struct {
+	Type   MessageType `json:"type"`
+	Params interface{} `json:"params"`
+}
+
+// SendUnixMessage 向 Unix Socket 服务器发送消息并接收回应
+func SendUnixMessage(t MessageType, param interface{}) ([]byte, error) {
 	conn, err := net.Dial("unix", config.Cfg.UnixSocket)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to socket: %v", err)
 	}
 	defer conn.Close()
 
-	jsonData, _ := json.Marshal(m)
+	jsonData, _ := json.Marshal(Request{
+		Type:   t,
+		Params: param,
+	})
 	// 发送消息到服务器
 	_, err = conn.Write(jsonData)
 	if err != nil {

@@ -36,11 +36,7 @@ func IPList() gin.HandlerFunc {
 func IPDetail() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ip := c.Query("ip")
-		m := socket.Message{
-			Type:   socket.IPDetail,
-			Params: ip,
-		}
-		bytes, err := socket.SendMessage(m)
+		bytes, err := socket.SendUnixMessage(socket.IPDetail, ip)
 		if err != nil {
 			common.ErrorResponse(c, http.StatusBadRequest, err.Error())
 		}

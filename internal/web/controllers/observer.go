@@ -1,9 +1,11 @@
 package controllers
 
 import (
+	"encoding/json"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/web/common"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/observer"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/provider"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/types"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/socket"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/utils"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -11,9 +13,7 @@ import (
 	"time"
 )
 
-func ObserverHandler(observer interface {
-	Traversal(condition provider.Condition) (int64, interface{}, error)
-}) gin.HandlerFunc {
+func ObserverHandler(property types.Property) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		pagination := utils.NewPagination(c.Query("page"), c.Query("pageSize"))
 
@@ -22,25 +22,28 @@ func ObserverHandler(observer interface {
 			Max:      strconv.FormatInt(time.Now().Add(time.Hour).Unix(), 10),
 			Page:     pagination.Page,
 			PageSize: pagination.Limit,
+			Type:     property,
 		}
 		var err error
 
-		pagination.TotalCount, pagination.Data, err = observer.Traversal(condition)
+		bytes, err := socket.SendUnixMessage(socket.Observer, condition)
 		if err != nil {
 			common.ErrorResponse(c, http.StatusBadRequest, err.Error())
 		}
-		common.SuccessResponse(c, pagination)
+		var res any
+		_ = json.Unmarshal(bytes, &res)
+		common.SuccessResponse(c, res)
 	}
 }
 
 func ObserverTTL() gin.HandlerFunc {
-	return ObserverHandler(observer.TTLObserver)
+	return ObserverHandler(types.TTL)
 }
 
 func ObserverMac() gin.HandlerFunc {
-	return ObserverHandler(observer.MacObserver)
+	return ObserverHandler(types.Mac)
 }
 
 func ObserverUa() gin.HandlerFunc {
-	return ObserverHandler(observer.UaObserver)
+	return ObserverHandler(types.UserAgent)
 }

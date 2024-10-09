@@ -3,6 +3,7 @@ package member
 import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/observer"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/types"
 	"go.uber.org/zap"
 	"sync"
 )
@@ -17,14 +18,6 @@ var (
 	Events   = make(chan PropertyChangeEvent, 100)
 )
 
-type Property string
-
-const (
-	TTL       Property = "ttl"
-	Mac       Property = "mac"
-	UserAgent Property = "user-agent"
-)
-
 // IP锁
 func getIPMutex(ip string) *sync.Mutex {
 	val, _ := Mutex.LoadOrStore(ip, &sync.Mutex{})
@@ -36,7 +29,7 @@ type PropertyChangeEvent struct {
 	IP       string
 	OldValue any
 	NewValue any
-	Property Property
+	Property types.Property
 }
 
 // ChangeEventIP IP 属性变化事件
@@ -54,8 +47,8 @@ func ChangeEventIP(events <-chan PropertyChangeEvent) {
 }
 
 // 具体属性变化事件触发方法
-var handlers = map[Property]func(e PropertyChangeEvent){
-	TTL: func(event PropertyChangeEvent) {
+var handlers = map[types.Property]func(e PropertyChangeEvent){
+	types.TTL: func(event PropertyChangeEvent) {
 		zap.L().Debug("TTL Changed", zap.String("IP", event.IP), zap.Any("old", event.OldValue), zap.Any("new", event.NewValue))
 		_ = ants.Submit(func() {
 			// 发送到 TTL 观察者 Channel
@@ -66,7 +59,7 @@ var handlers = map[Property]func(e PropertyChangeEvent){
 			}
 		})
 	},
-	Mac: func(event PropertyChangeEvent) {
+	types.Mac: func(event PropertyChangeEvent) {
 		zap.L().Debug("MAC Changed", zap.String("IP", event.IP), zap.Any("old", event.OldValue), zap.Any("new", event.NewValue))
 		_ = ants.Submit(func() {
 			// 发送到 Mac 观察者 Channel
@@ -77,7 +70,7 @@ var handlers = map[Property]func(e PropertyChangeEvent){
 			}
 		})
 	},
-	UserAgent: func(event PropertyChangeEvent) {
+	types.UserAgent: func(event PropertyChangeEvent) {
 		zap.L().Debug("UA Changed", zap.String("IP", event.IP), zap.Any("old", event.OldValue), zap.Any("new", event.NewValue))
 		_ = ants.Submit(func() {
 			// 发送到 Ua 观察者 Channel

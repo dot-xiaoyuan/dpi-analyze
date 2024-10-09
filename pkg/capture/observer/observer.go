@@ -143,12 +143,17 @@ func (ob *Observer[T]) Traversal(c provider.Condition) (int64, interface{}, erro
 	}
 
 	ips := zRangCmd.Val()
-	var data []interface{}
+	var result []interface{}
 	for _, ip := range ips {
-		record := ob.GetHistory(ip.Member.(string))
-		data = append(data, record)
+		var detail struct {
+			IP      string            `json:"ip"`
+			History []ChangeRecord[T] `json:"history"`
+		}
+		detail.IP = ip.Member.(string)
+		detail.History = ob.GetHistory(ip.Member.(string))
+		result = append(result, detail)
 	}
-	return count, data, nil
+	return count, result, nil
 }
 
 func Setup() {

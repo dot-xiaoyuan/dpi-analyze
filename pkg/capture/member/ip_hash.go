@@ -16,7 +16,7 @@ import (
 
 type Hash struct {
 	IP    string
-	Field Property
+	Field types.Property
 	Value any
 }
 
@@ -27,15 +27,15 @@ func Store(i interface{}) {
 	var m *sync.Map
 	var v any
 	switch hash.Field {
-	case TTL:
+	case types.TTL:
 		m = &TTLCache
 		v = hash.Value.(uint8)
 		break
-	case Mac:
+	case types.Mac:
 		m = &MacCache
 		v = hash.Value.(string)
 		break
-	case UserAgent:
+	case types.UserAgent:
 		m = &UaCache
 		v = uaparser.Parse(hash.Value.(string))
 		break
@@ -86,7 +86,7 @@ func putMemory(ip string, m *sync.Map, v any) {
 }
 
 // 从redis获取属性
-func getPropertyForRedis(ip string, property Property) (any, bool) {
+func getPropertyForRedis(ip string, property types.Property) (any, bool) {
 	rdb := redis.GetRedisClient()
 	ctx := context.TODO()
 	key := fmt.Sprintf(types.HashAnalyzeIP, ip)
@@ -112,7 +112,7 @@ func GetHashForRedis(ip string) map[string]string {
 }
 
 // 存储ip hash 至redis
-func storeHash2Redis(ip string, property Property, value any) {
+func storeHash2Redis(ip string, property types.Property, value any) {
 	rdb := redis.GetRedisClient()
 	ctx := context.TODO()
 	key := fmt.Sprintf(types.HashAnalyzeIP, ip)

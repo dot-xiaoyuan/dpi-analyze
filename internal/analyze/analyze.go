@@ -101,14 +101,14 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 	_ = ants.Submit(func() {
 		member.Store(member.Hash{
 			IP:    ip,
-			Field: member.TTL,
+			Field: types.TTL,
 			Value: internet.TTL,
 		})
 	})
 	_ = ants.Submit(func() {
 		member.Store(member.Hash{
 			IP:    ip,
-			Field: member.Mac,
+			Field: types.Mac,
 			Value: ethernet.SrcMac,
 		})
 	})

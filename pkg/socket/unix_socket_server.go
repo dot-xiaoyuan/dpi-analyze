@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
+	"go.uber.org/zap"
 	"net"
 	"os"
 )
@@ -39,11 +40,10 @@ func handleConnection(conn net.Conn) {
 	}
 
 	// 处理客户端发送的消息
-	message := string(buf[:n])
-	fmt.Printf("Received from client: %s\n", message)
+	zap.L().Debug("Received message", zap.String("message", string(buf[:n])))
 
 	var req Message
-	err = json.Unmarshal([]byte(message), &req)
+	err = json.Unmarshal(buf[:n], &req)
 	if err != nil {
 		fmt.Println("unmarshal error:", err)
 		return

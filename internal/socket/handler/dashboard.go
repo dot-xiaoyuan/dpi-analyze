@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/analyze/memory"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/types"
@@ -14,7 +15,7 @@ type Charts struct {
 	Value int64  `json:"value"`
 }
 
-func Dashboard(params string) any {
+func Dashboard(raw json.RawMessage) any {
 	tcpCount := atomic.LoadInt64(&capture.TCPCount)
 	udpCount := atomic.LoadInt64(&capture.TCPCount)
 

@@ -1,15 +1,13 @@
 package provider
 
+import "github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/types"
+
 // 数据提供器
 
-type Provider interface {
-	Traversal(c Condition) (any, error)
-	Store2Redis(ip string)
-}
-
 type Condition struct {
-	Min      string `json:"min"`
-	Max      string `json:"max"`
-	Page     int64  `json:"page"`
-	PageSize int64  `json:"page_size"`
+	Min      string         `json:"min"`
+	Max      string         `json:"max"`
+	Page     int64          `json:"page"`
+	PageSize int64          `json:"page_size"`
+	Type     types.Property `json:"type"`
 }

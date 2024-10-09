@@ -151,7 +151,7 @@ func (sr *StreamReader) SetHttpInfo(host, userAgent, contentType, upgrade string
 		_ = ants.Submit(func() {
 			member.Store(member.Hash{
 				IP:    sr.Parent.SrcIP,
-				Field: member.UserAgent,
+				Field: types.UserAgent,
 				Value: userAgent,
 			})
 		})
