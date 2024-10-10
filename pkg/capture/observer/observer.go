@@ -179,6 +179,7 @@ func (ob *Observer[T]) Traversal(c provider.Condition) (int64, interface{}, erro
 	// 分页的起止索引
 	start := (c.Page - 1) * c.PageSize
 
+	zap.L().Info("偏移量", zap.Int64("start", start), zap.Int64("page", c.Page), zap.Int64("size", c.PageSize))
 	// Pipeline 批量查询
 	pipe := rdb.Pipeline()
 	count := rdb.ZCount(ctx, ob.Table, c.Min, c.Max).Val()
