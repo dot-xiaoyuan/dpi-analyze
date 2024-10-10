@@ -8,6 +8,7 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/redis"
 	v9 "github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
+	"math"
 	"sync"
 	"time"
 )
@@ -39,7 +40,9 @@ type ChangeObserverEvent[T string | uint8] struct {
 
 // ChangeHistory 变化历史记录
 type ChangeHistory[T string | uint8] struct {
-	Changes []ChangeRecord[T]
+	Changes       []ChangeRecord[T]
+	ValueChanges  []uint8
+	MovingAverage []float64
 }
 
 // ChangeRecord 记录每次变化的数据
@@ -73,7 +76,8 @@ func (ob *Observer[T]) RecordChange(ip string, value T) {
 	if !ok {
 		ob.Store2Redis(ip)
 		history = &ChangeHistory[T]{
-			Changes: make([]ChangeRecord[T], 0, ob.MaxCount),
+			Changes:      make([]ChangeRecord[T], 0, ob.MaxCount),
+			ValueChanges: make([]uint8, 0, ob.MaxCount),
 		}
 		ob.HistoryCache[ip] = history
 	}
@@ -86,6 +90,29 @@ func (ob *Observer[T]) RecordChange(ip string, value T) {
 		Time:  time.Now(),
 		Value: value,
 	})
+
+	if ob.Table == types.ZSetObserverTTL {
+		if v, ok := any(value).(uint8); ok {
+			history.ValueChanges = append(history.ValueChanges, v)
+			history.MovingAverage = MovingAverage(history.ValueChanges, 3)
+		}
+	}
+}
+
+// MovingAverage 泛型约束 T 只允许是数值类型
+func MovingAverage(num []uint8, windowSize int) []float64 {
+	var result []float64
+	var sum uint8
+	for i := 0; i < len(num); i++ {
+		sum += num[i] // 累加数值
+		if i >= windowSize {
+			sum -= num[i-windowSize] // 从总和中减去滑出窗口的值
+		}
+		if i >= windowSize-1 {
+			result = append(result, math.Round(float64(sum)/float64(windowSize))) // 计算并添加移动平均
+		}
+	}
+	return result
 }
 
 // GetHistory 获取变化历史记录
@@ -95,6 +122,16 @@ func (ob *Observer[T]) GetHistory(ip string) []ChangeRecord[T] {
 
 	if history, ok := ob.HistoryCache[ip]; ok {
 		return history.Changes
+	}
+	return nil
+}
+
+func (ob *Observer[T]) GetMovingAverage(ip string) []float64 {
+	cacheMutex.Lock()
+	defer cacheMutex.Unlock()
+
+	if history, ok := ob.HistoryCache[ip]; ok {
+		return history.MovingAverage
 	}
 	return nil
 }
@@ -146,11 +183,13 @@ func (ob *Observer[T]) Traversal(c provider.Condition) (int64, interface{}, erro
 	var result []interface{}
 	for _, ip := range ips {
 		var detail struct {
-			IP      string            `json:"ip"`
-			History []ChangeRecord[T] `json:"history"`
+			IP            string            `json:"ip"`
+			History       []ChangeRecord[T] `json:"history"`
+			MovingAverage []float64         `json:"movingAverage"`
 		}
 		detail.IP = ip.Member.(string)
 		detail.History = ob.GetHistory(ip.Member.(string))
+		detail.MovingAverage = ob.GetMovingAverage(ip.Member.(string))
 		result = append(result, detail)
 	}
 	return count, result, nil
