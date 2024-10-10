@@ -42,7 +42,7 @@ type ChangeObserverEvent[T string | uint8] struct {
 type ChangeHistory[T string | uint8] struct {
 	Changes       []ChangeRecord[T]
 	ValueChanges  []uint8
-	MovingAverage []float64
+	MovingAverage []ChangeRecord[uint8]
 }
 
 // ChangeRecord 记录每次变化的数据
@@ -99,23 +99,23 @@ func (ob *Observer[T]) RecordChange(ip string, value T) {
 	}
 }
 
-func detectProxyUsingSMA(num []uint8, windowSize int, threshold float64) bool {
-	// 计算平滑处理后的TTL序列（SMA）
-	sma := movingAverage(num, windowSize)
-
-	// 比较原始TTL和平滑后的TTL差异
-	for i := windowSize - 1; i < len(num); i++ {
-		if math.Abs(float64(num[i])-sma[i-windowSize+1]) > threshold {
-			return true // 如果TTL的变化幅度超过阈值，认为有代理存在
-		}
-	}
-
-	return false // 没有检测到代理
-}
+//func detectProxyUsingSMA(num []uint8, windowSize int, threshold float64) bool {
+//	// 计算平滑处理后的TTL序列（SMA）
+//	sma := movingAverage(num, windowSize)
+//
+//	// 比较原始TTL和平滑后的TTL差异
+//	for i := windowSize - 1; i < len(num); i++ {
+//		if math.Abs(float64(num[i])-sma[i-windowSize+1]) > threshold {
+//			return true // 如果TTL的变化幅度超过阈值，认为有代理存在
+//		}
+//	}
+//
+//	return false // 没有检测到代理
+//}
 
 // movingAverage 泛型约束 T 只允许是数值类型
-func movingAverage(num []uint8, windowSize int) []float64 {
-	var result []float64
+func movingAverage(num []uint8, windowSize int) []ChangeRecord[uint8] {
+	var result []ChangeRecord[uint8]
 	var sum uint8
 	for i := 0; i < len(num); i++ {
 		sum += num[i] // 累加数值
@@ -123,7 +123,10 @@ func movingAverage(num []uint8, windowSize int) []float64 {
 			sum -= num[i-windowSize] // 从总和中减去滑出窗口的值
 		}
 		if i >= windowSize-1 {
-			result = append(result, math.Round(float64(sum)/float64(windowSize))) // 计算并添加移动平均
+			result = append(result, ChangeRecord[uint8]{
+				Time:  time.Now(),
+				Value: uint8(math.Round(float64(sum) / float64(windowSize))),
+			}) // 计算并添加移动平均
 		}
 	}
 	return result
@@ -140,7 +143,7 @@ func (ob *Observer[T]) GetHistory(ip string) []ChangeRecord[T] {
 	return nil
 }
 
-func (ob *Observer[T]) GetMovingAverage(ip string) []float64 {
+func (ob *Observer[T]) GetMovingAverage(ip string) []ChangeRecord[uint8] {
 	cacheMutex.Lock()
 	defer cacheMutex.Unlock()
 
@@ -197,9 +200,9 @@ func (ob *Observer[T]) Traversal(c provider.Condition) (int64, interface{}, erro
 	var result []interface{}
 	for _, ip := range ips {
 		var detail struct {
-			IP            string            `json:"ip"`
-			History       []ChangeRecord[T] `json:"history"`
-			MovingAverage []float64         `json:"movingAverage"`
+			IP            string                `json:"ip"`
+			History       []ChangeRecord[T]     `json:"history"`
+			MovingAverage []ChangeRecord[uint8] `json:"movingAverage"`
 		}
 		detail.IP = ip.Member.(string)
 		detail.History = ob.GetHistory(ip.Member.(string))
