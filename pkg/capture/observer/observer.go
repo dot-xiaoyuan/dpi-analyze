@@ -94,13 +94,27 @@ func (ob *Observer[T]) RecordChange(ip string, value T) {
 	if ob.Table == types.ZSetObserverTTL {
 		if v, ok := any(value).(uint8); ok {
 			history.ValueChanges = append(history.ValueChanges, v)
-			history.MovingAverage = MovingAverage(history.ValueChanges, 3)
+			history.MovingAverage = movingAverage(history.ValueChanges, 3)
 		}
 	}
 }
 
-// MovingAverage 泛型约束 T 只允许是数值类型
-func MovingAverage(num []uint8, windowSize int) []float64 {
+func detectProxyUsingSMA(num []uint8, windowSize int, threshold float64) bool {
+	// 计算平滑处理后的TTL序列（SMA）
+	sma := movingAverage(num, windowSize)
+
+	// 比较原始TTL和平滑后的TTL差异
+	for i := windowSize - 1; i < len(num); i++ {
+		if math.Abs(float64(num[i])-sma[i-windowSize+1]) > threshold {
+			return true // 如果TTL的变化幅度超过阈值，认为有代理存在
+		}
+	}
+
+	return false // 没有检测到代理
+}
+
+// movingAverage 泛型约束 T 只允许是数值类型
+func movingAverage(num []uint8, windowSize int) []float64 {
 	var result []float64
 	var sum uint8
 	for i := 0; i < len(num); i++ {

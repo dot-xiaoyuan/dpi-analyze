@@ -14,7 +14,8 @@ func StartServer() {
 	_ = os.Remove(config.Cfg.UnixSocket) // 清理旧的 socket 文件
 	l, err := net.Listen("unix", config.Cfg.UnixSocket)
 	if err != nil {
-		panic(fmt.Sprintf("failed to listen on socket: %v", err))
+		zap.L().Error(fmt.Sprintf("failed to listen on socket: %v", err))
+		os.Exit(1)
 	}
 	defer l.Close()
 

@@ -70,3 +70,4 @@
 
 # ua parser
 "Start Load User-Agent Parser Component" = "开始加载ua解析组件"
+"ua parser component initialized!" = "ua解析组件加载完成"

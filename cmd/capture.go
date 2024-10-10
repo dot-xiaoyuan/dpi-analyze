@@ -97,12 +97,13 @@ func CaptureRreFunc(c *cobra.Command, args []string) {
 	// 创建协程池
 	ants.Setup(100)
 	// 启动 Unix Socket Server
-	handler.InitHandlers()
 	err := ants.Submit(socket.StartServer)
 	if err != nil {
 		zap.L().Error("Failed to start unix sock server", zap.Error(err))
 		os.Exit(1)
 	}
+	// 注册unix handler
+	handler.InitHandlers()
 }
 
 // CaptureRun 捕获子命令入口
