@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
 	"go.uber.org/zap"
 	"net"
 	"os"
@@ -17,6 +18,9 @@ func StartServer() {
 		zap.L().Error(fmt.Sprintf("failed to listen on socket: %v", err))
 		os.Exit(1)
 	}
+	zap.L().Info(i18n.TT("Unix Socket Server listening", map[string]interface{}{
+		"sock": config.Cfg.UnixSocket,
+	}))
 	defer l.Close()
 
 	for {
