@@ -40,9 +40,10 @@ type ChangeObserverEvent[T string | uint8] struct {
 
 // ChangeHistory 变化历史记录
 type ChangeHistory[T string | uint8] struct {
-	Changes       []ChangeRecord[T]
-	ValueChanges  []uint8
-	MovingAverage []ChangeRecord[uint8]
+	Changes       []ChangeRecord[T] `json:"changes"`
+	ValueChanges  []uint            `json:"value_changes"`
+	MovingAverage []float64         `json:"moving_average"`
+	IsProxy       bool              `json:"is_proxy"`
 }
 
 // ChangeRecord 记录每次变化的数据
@@ -77,7 +78,7 @@ func (ob *Observer[T]) RecordChange(ip string, value T) {
 		ob.Store2Redis(ip)
 		history = &ChangeHistory[T]{
 			Changes:      make([]ChangeRecord[T], 0, ob.MaxCount),
-			ValueChanges: make([]uint8, 0, ob.MaxCount),
+			ValueChanges: make([]uint, 0, ob.MaxCount),
 		}
 		ob.HistoryCache[ip] = history
 	}
@@ -93,62 +94,50 @@ func (ob *Observer[T]) RecordChange(ip string, value T) {
 
 	if ob.Table == types.ZSetObserverTTL {
 		if v, ok := any(value).(uint8); ok {
-			history.ValueChanges = append(history.ValueChanges, v)
-			history.MovingAverage = movingAverage(history.ValueChanges, 3)
+			num := append(history.ValueChanges, uint(v))
+			history.ValueChanges = num
+			history.MovingAverage, history.IsProxy = detectProxyUsingSMA(num, 3, 3)
 		}
 	}
 }
 
-//func detectProxyUsingSMA(num []uint8, windowSize int, threshold float64) bool {
-//	// 计算平滑处理后的TTL序列（SMA）
-//	sma := movingAverage(num, windowSize)
-//
-//	// 比较原始TTL和平滑后的TTL差异
-//	for i := windowSize - 1; i < len(num); i++ {
-//		if math.Abs(float64(num[i])-sma[i-windowSize+1]) > threshold {
-//			return true // 如果TTL的变化幅度超过阈值，认为有代理存在
-//		}
-//	}
-//
-//	return false // 没有检测到代理
-//}
+func detectProxyUsingSMA(num []uint, windowSize int, threshold float64) ([]float64, bool) {
+	// 计算平滑处理后的TTL序列（SMA）
+	sma := movingAverage(num, windowSize)
+
+	// 比较原始TTL和平滑后的TTL差异
+	for i := windowSize - 1; i < len(num); i++ {
+		if math.Abs(float64(num[i])-sma[i-windowSize+1]) > threshold {
+			return sma, true // 如果TTL的变化幅度超过阈值，认为有代理存在
+		}
+	}
+
+	return sma, false // 没有检测到代理
+}
 
 // movingAverage 泛型约束 T 只允许是数值类型
-func movingAverage(num []uint8, windowSize int) []ChangeRecord[uint8] {
-	var result []ChangeRecord[uint8]
-	var sum uint8
+func movingAverage(num []uint, windowSize int) []float64 {
+	var result []float64
+	var sum uint
 	for i := 0; i < len(num); i++ {
 		sum += num[i] // 累加数值
 		if i >= windowSize {
 			sum -= num[i-windowSize] // 从总和中减去滑出窗口的值
 		}
 		if i >= windowSize-1 {
-			result = append(result, ChangeRecord[uint8]{
-				Time:  time.Now(),
-				Value: uint8(math.Round(float64(sum) / float64(windowSize))),
-			}) // 计算并添加移动平均
+			result = append(result, math.Round(float64(sum)/float64(windowSize))) // 计算并添加移动平均
 		}
 	}
 	return result
 }
 
 // GetHistory 获取变化历史记录
-func (ob *Observer[T]) GetHistory(ip string) []ChangeRecord[T] {
+func (ob *Observer[T]) GetHistory(ip string) *ChangeHistory[T] {
 	cacheMutex.Lock()
 	defer cacheMutex.Unlock()
 
 	if history, ok := ob.HistoryCache[ip]; ok {
-		return history.Changes
-	}
-	return nil
-}
-
-func (ob *Observer[T]) GetMovingAverage(ip string) []ChangeRecord[uint8] {
-	cacheMutex.Lock()
-	defer cacheMutex.Unlock()
-
-	if history, ok := ob.HistoryCache[ip]; ok {
-		return history.MovingAverage
+		return history
 	}
 	return nil
 }
@@ -179,7 +168,7 @@ func (ob *Observer[T]) Traversal(c provider.Condition) (int64, interface{}, erro
 	// 分页的起止索引
 	start := (c.Page - 1) * c.PageSize
 
-	zap.L().Info("偏移量", zap.Int64("start", start), zap.Int64("page", c.Page), zap.Int64("size", c.PageSize))
+	zap.L().Debug("Observer 偏移量", zap.Int64("start", start), zap.Int64("page", c.Page), zap.Int64("size", c.PageSize))
 	// Pipeline 批量查询
 	pipe := rdb.Pipeline()
 	count := rdb.ZCount(ctx, ob.Table, c.Min, c.Max).Val()
@@ -198,17 +187,9 @@ func (ob *Observer[T]) Traversal(c provider.Condition) (int64, interface{}, erro
 	}
 
 	ips := zRangCmd.Val()
-	var result []interface{}
+	var result []ChangeHistory[T]
 	for _, ip := range ips {
-		var detail struct {
-			IP            string                `json:"ip"`
-			History       []ChangeRecord[T]     `json:"history"`
-			MovingAverage []ChangeRecord[uint8] `json:"movingAverage"`
-		}
-		detail.IP = ip.Member.(string)
-		detail.History = ob.GetHistory(ip.Member.(string))
-		detail.MovingAverage = ob.GetMovingAverage(ip.Member.(string))
-		result = append(result, detail)
+		result = append(result, *ob.GetHistory(ip.Member.(string)))
 	}
 	return count, result, nil
 }
