@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/redis"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/uaparser"
-	redis2 "github.com/redis/go-redis/v9"
+	v9 "github.com/redis/go-redis/v9"
 	"sync"
 	"time"
 )
@@ -92,7 +92,7 @@ func getPropertyForRedis(ip string, property types.Property) (any, bool) {
 	key := fmt.Sprintf(types.HashAnalyzeIP, ip)
 
 	val, err := rdb.HMGet(ctx, key, string(property)).Result()
-	if errors.Is(err, redis2.Nil) || len(val) == 1 {
+	if errors.Is(err, v9.Nil) || len(val) == 1 {
 		return nil, false
 	}
 	return val[1], true
@@ -105,7 +105,7 @@ func GetHashForRedis(ip string) map[string]string {
 	key := fmt.Sprintf(types.HashAnalyzeIP, ip)
 
 	val, err := rdb.HGetAll(ctx, key).Result()
-	if errors.Is(err, redis2.Nil) || len(val) == 1 {
+	if errors.Is(err, v9.Nil) || len(val) == 1 {
 		return nil
 	}
 	return val
@@ -118,7 +118,7 @@ func storeHash2Redis(ip string, property types.Property, value any) {
 	key := fmt.Sprintf(types.HashAnalyzeIP, ip)
 
 	// z_set 有序集合
-	rdb.ZAdd(ctx, types.ZSetIP, redis2.Z{
+	rdb.ZAdd(ctx, types.ZSetIP, v9.Z{
 		Score:  float64(time.Now().Unix()),
 		Member: ip,
 	})

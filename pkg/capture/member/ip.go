@@ -3,7 +3,7 @@ package member
 import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/observer"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/types"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/types"
 	"go.uber.org/zap"
 	"sync"
 )

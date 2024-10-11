@@ -1,6 +1,8 @@
 package provider
 
-import "github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/types"
+import (
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/types"
+)
 
 // 数据提供器
 
