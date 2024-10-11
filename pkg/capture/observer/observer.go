@@ -40,7 +40,7 @@ type ChangeObserverEvent[T string | uint8] struct {
 
 // ChangeHistory 变化历史记录
 type ChangeHistory[T string | uint8] struct {
-	Changes       []ChangeRecord[T] `json:"changes"`
+	Changes       []ChangeRecord[T] `json:"origin_changes"`
 	ValueChanges  []uint            `json:"value_changes"`
 	MovingAverage []float64         `json:"moving_average"`
 	IsProxy       bool              `json:"is_proxy"`
@@ -160,6 +160,11 @@ func (ob *Observer[T]) WatchChange(events <-chan ChangeObserverEvent[T]) {
 	}
 }
 
+type WebResult[T uint8 | string] struct {
+	IP      string           `json:"ip"`
+	History ChangeHistory[T] `json:"history"`
+}
+
 // Traversal 遍历
 func (ob *Observer[T]) Traversal(c provider.Condition) (int64, interface{}, error) {
 	rdb := redis.GetRedisClient()
@@ -187,9 +192,13 @@ func (ob *Observer[T]) Traversal(c provider.Condition) (int64, interface{}, erro
 	}
 
 	ips := zRangCmd.Val()
-	var result []ChangeHistory[T]
+	var result []WebResult[T]
 	for _, ip := range ips {
-		result = append(result, *ob.GetHistory(ip.Member.(string)))
+		wr := WebResult[T]{
+			IP:      ip.Member.(string),
+			History: *ob.GetHistory(ip.Member.(string)),
+		}
+		result = append(result, wr)
 	}
 	return count, result, nil
 }
