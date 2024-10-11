@@ -79,6 +79,10 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 		// 设置源IP
 		ip = ipv6.SrcIP.String()
 	}
+	// 如果 TTL = 255，跳过该数据包
+	if internet.TTL == 255 {
+		return
+	}
 
 	if transportType := packet.TransportLayer().LayerType().String(); transportType != "" {
 		if transportType == "TCP" {
