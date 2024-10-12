@@ -35,6 +35,8 @@ func (ac *AssemblerContext) GetCaptureInfo() gopacket.CaptureInfo {
 }
 
 func NewAnalyzer() *Analyze {
+	// 清空有序集合以及遗留数据
+	member.CleanUp()
 	streamFactory := &Factory{}
 	streamPool := reassembly.NewStreamPool(streamFactory)
 	assembler := reassembly.NewAssembler(streamPool)

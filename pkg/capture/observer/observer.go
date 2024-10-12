@@ -204,6 +204,8 @@ func (ob *Observer[T]) Traversal(c provider.Condition) (int64, interface{}, erro
 }
 
 func Setup() {
+	// 程序运行前清空有序集合
+	CleanUp()
 	_ = ants.Submit(func() {
 		TTLObserver.WatchChange(TTLEvents)
 	})
