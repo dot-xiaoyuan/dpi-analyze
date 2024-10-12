@@ -109,7 +109,10 @@ func CaptureRreFunc(c *cobra.Command, args []string) {
 	// 注册unix handler
 	handler.InitHandlers()
 	// 同步用户
-	_, err = cron.AddJob("@every 1m", users.UserSync{})
+	userSync := users.UserSync{}
+	userSync.CleanUp()
+
+	_, err = cron.AddJob("@every 1m", userSync)
 	if err != nil {
 		zap.L().Error("Failed to start user sync job", zap.Error(err))
 		os.Exit(1)

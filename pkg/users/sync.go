@@ -17,6 +17,14 @@ import (
 
 type UserSync struct{}
 
+// CleanUp 清空用户在线表
+func (us UserSync) CleanUp() {
+	rdb := redis.GetOnlineRedisClient()
+	ctx := context.TODO()
+
+	rdb.Del(ctx, types.ZSetOnlineUsers).Val()
+}
+
 // Run SyncOnlineUsers 同步在线用户
 func (us UserSync) Run() {
 	rdb := redis.GetOnlineRedisClient()
@@ -29,7 +37,6 @@ func (us UserSync) Run() {
 	}
 
 	for _, id := range ids {
-		// TODO 在线ID
 		user := getHash(id, rdb)
 		if user.UserName != "" {
 			storeUser(user.IP, user)
@@ -49,10 +56,10 @@ func ListenUserEvents() {
 			time.Sleep(5 * time.Second)
 			continue
 		}
-		//zap.L().Debug("listen user event", zap.Any("event", event))
+
 		userEvent := UserEvent{}
 		_ = json.Unmarshal([]byte(event[1]), &userEvent)
-		//zap.L().Info("user event", zap.Strings("event", event))
+		zap.L().Debug(i18n.T("Listen user events"), zap.Int("action", userEvent.Action), zap.String("username", userEvent.UserName))
 
 		if userEvent.UserName == "" {
 			zap.L().Warn("user event is empty", zap.Strings("event", event))
