@@ -11,6 +11,7 @@ const (
 	Dashboard = MessageType(iota)
 	IPDetail
 	Observer
+	UserList
 )
 
 // Message unix 通信数据结构体

@@ -3,7 +3,7 @@ package controllers
 import (
 	"encoding/json"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/web/common"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/provider"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/provider"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/socket"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/utils"

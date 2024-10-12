@@ -18,4 +18,7 @@ func Register(r *gin.Engine) {
 	v1.GET("/observer/ttl", controllers.ObserverTTL())
 	v1.GET("/observer/mac", controllers.ObserverMac())
 	v1.GET("/observer/ua", controllers.ObserverUa())
+	// users
+	v1.GET("/users/list", controllers.UserList())
+	v1.GET("/users/events/log", controllers.UserEventsLog())
 }

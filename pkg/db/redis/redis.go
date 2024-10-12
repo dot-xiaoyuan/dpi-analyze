@@ -13,13 +13,29 @@ import (
 )
 
 var (
-	one         sync.Once
-	RedisClient *redis.Client
+	one    sync.Once
+	Client *redis.Client
+	Online *redis.Client
+	Cache  *redis.Client
 )
 
 func Setup() {
 	one.Do(func() {
-		err := loadRedisClient()
+		var err error
+		// setup dpi client
+		Client, err = loadRedisClient(config.Cfg.Redis.DPI)
+		if err != nil {
+			zap.L().Error(err.Error())
+			os.Exit(1)
+		}
+		// setup online client
+		Online, err = loadRedisClient(config.Cfg.Redis.Online)
+		if err != nil {
+			zap.L().Error(err.Error())
+			os.Exit(1)
+		}
+		// setup cache client
+		Cache, err = loadRedisClient(config.Cfg.Redis.Cache)
 		if err != nil {
 			zap.L().Error(err.Error())
 			os.Exit(1)
@@ -27,48 +43,57 @@ func Setup() {
 	})
 }
 
-func loadRedisClient() error {
+func loadRedisClient(c config.RedisConfig) (*redis.Client, error) {
 	spinners.Start()
 	defer func() {
 		spinners.Stop()
 	}()
 
-	if config.Cfg.Redis.Host == "" {
-		return fmt.Errorf(i18n.T("redis.host is empty"))
+	if c.Host == "" {
+		return nil, fmt.Errorf("redis host is empty")
 	}
-	if config.Cfg.Redis.Port == "" {
-		return fmt.Errorf(i18n.T("redis.port is empty"))
+	if c.Port == "" {
+		return nil, fmt.Errorf("redis port is empty")
 	}
 
 	ctx := context.Background()
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%s:%s", config.Cfg.Redis.Host, config.Cfg.Redis.Port),
-		Password: config.Cfg.Redis.Password,
-		DB:       config.Cfg.Redis.DB,
+		Addr:     fmt.Sprintf("%s:%s", c.Host, c.Port),
+		Password: c.Password,
+		DB:       c.DB,
 	})
 
 	// Ping Redis
 	_, err := rdb.Ping(ctx).Result()
 	if err != nil {
 		zap.L().Error(i18n.T("Failed to ping Redis"))
-		return err
+		return nil, err
 	} else {
 		zap.L().Info(i18n.TT("Connected to Redis!", map[string]interface{}{
-			"host": config.Cfg.Redis.Host,
-			"port": config.Cfg.Redis.Port,
+			"host": c.Host,
+			"port": c.Port,
 		}))
-		RedisClient = rdb
-		return nil
+		return rdb, nil
 	}
 }
 
 func GetRedisClient() *redis.Client {
-	if RedisClient == nil {
-		err := loadRedisClient()
-		if err != nil {
-			zap.L().Error(err.Error())
-			os.Exit(1)
-		}
+	if Client == nil {
+		Setup()
 	}
-	return RedisClient
+	return Client
+}
+
+func GetOnlineRedisClient() *redis.Client {
+	if Online == nil {
+		Setup()
+	}
+	return Online
+}
+
+func GetCacheRedisClient() *redis.Client {
+	if Cache == nil {
+		Setup()
+	}
+	return Cache
 }

@@ -3,7 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/observer"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/provider"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/provider"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/utils"
 )

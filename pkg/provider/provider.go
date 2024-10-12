@@ -13,3 +13,12 @@ type Condition struct {
 	PageSize int64          `json:"page_size"`
 	Type     types.Property `json:"type"`
 }
+
+type UserEventCondition struct {
+	Page      int64  `json:"page"`
+	PageSize  int64  `json:"page_size"`
+	Year      string `json:"year"`
+	Month     string `json:"month"`
+	SortField string `json:"sort_field"`
+	OrderBy   string `json:"order_by"`
+}

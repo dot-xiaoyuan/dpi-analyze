@@ -8,6 +8,7 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/cron"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/redis"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/features"
@@ -16,6 +17,7 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/socket"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/spinners"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/uaparser"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/users"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
@@ -74,6 +76,8 @@ func CaptureRreFunc(c *cobra.Command, args []string) {
 	spinners.Setup()
 	// 加载redis组件
 	redis.Setup()
+	// 加载 cron 组件
+	cron.Setup()
 	// 是否使用mongo
 	if config.UseMongo {
 		zap.L().Info(i18n.T("Start Load Mongodb Component"))
@@ -104,6 +108,17 @@ func CaptureRreFunc(c *cobra.Command, args []string) {
 	}
 	// 注册unix handler
 	handler.InitHandlers()
+	// 同步用户
+	_, err = cron.AddJob("@every 1m", users.UserSync{})
+	if err != nil {
+		zap.L().Error("Failed to start user sync job", zap.Error(err))
+		os.Exit(1)
+	}
+	cron.Start()
+	// 监听用户上下线事件
+	_ = ants.Submit(func() {
+		users.ListenUserEvents()
+	})
 }
 
 // CaptureRun 捕获子命令入口
@@ -144,6 +159,8 @@ func CaptureRun(c *cobra.Command, args []string) {
 	case <-signalChan:
 		cancel()
 		spinners.Start()
+		// 关闭cron
+		cron.Stop()
 		// 释放协程池
 		ants.Release()
 		zap.L().Info(i18n.T("Received terminate signal, stop analyze..."))

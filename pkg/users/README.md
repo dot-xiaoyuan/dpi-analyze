@@ -1,0 +1,6 @@
+# 用户管理
+
+1. 从在线表与队列中同步用户
+2. 产品ID与控制策略查询
+
+{"action":1,"session_id":"5d00a8c0-e","nas_ip":"127.0.0.1","nas_ip1":"0.0.0.0","user_name":"yuantong","ip":"192.168.0.93","ip6":"::","ip6_1":"::","ip6_2":"::","ip6_3":"::","user_mac":"","nas_port":0,"nas_port_id":"","called_station_id":"","nas_identifier":"","nas_port_type":0,"vlan_id":"0","vlan_id1":"0","vlan_id2":"0","device_id":"","bandwidth_up":512,"bandwidth_down":512,"products_id":1,"billing_id":1,"control_id":1,"group_id":1,"rad_online_id":14,"disable_proxy":1,"domain":"","os_name":"Mac OS","class_name":"Macintosh","mobile_phone":"","mobile_password":"","is_arrears":0,"bytes_in":0,"bytes_out":0,"add_time":1728635130,"my_ip":"127.0.0.1","drop_cause":0,"user_debug":0,"line_type":0,"ac_type":"srun","daa":0,"pool_id":0,"drop":0,"cur_bytes_in":0,"cur_bytes_out":0,"cur_bytes_in6":0,"cur_bytes_out6":0,"checkout_date":0,"remain_day":0,"remain_bytes":0,"sum_times":4,"sum_bytes":0,"sum_seconds":4748,"all_bytes":0,"all_seconds":0,"user_balance":0.000000,"user_charge":0.000000,"cur_charge":0.000000,"drop_reason":0,"drop_time":0,"dest_control":0,"proc":"rad_auth"}

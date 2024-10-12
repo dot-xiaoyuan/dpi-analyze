@@ -1,22 +1,44 @@
+# CLI 语言 可选 zh-CN(中文) en(英文)
 language: zh-CN
+# 日志登记
 log_level: info
+# 调试模式 开 - true 关 - false
 debug: false
+# geo2ip 数据文件
 geo2ip: /Users/yuantong/Documents/GeoIP2-City.mmdb
+# 是否开启mongodb
 use_mongo: false
+# 是否分析user-agent
 use_ua: true
+# unix socket句柄配置，web子命令和capture子命令通信
 unix_socket: /tmp/capture.sock
+# 捕获子命令相关配置
 capture:
+  # 离线数据包文件
   offline_file:
+  # 网卡
   nic: en0
+# web 前端页面相关配置
 web:
+  # 前端接口端口
   port: 8088
-statistics:
-  port: 8088
+# mongodb，用于流分析持久化存储与查询
 mongodb:
   host: 127.0.0.1
   port: 27017
 redis:
-  host: 127.0.0.1
-  port: 6379
-  password: ""
-  db: 0
+  # dpi程序使用，主要用户存储 ip hash、observer（观察者）、应用流量统计
+  dpi:
+    host: 127.0.0.1
+    port: 6379
+    password: ""
+  # 4k 在线表, 用于dpi同步在线用户与ip对应关系以及获取控制策略
+  online:
+    host: 192.168.0.190
+    port: 16380
+    password: "srun_3000@redis"
+  # 4k cache, 在线表同步接口，用于接收用户上下线事件来同步dpi的在线表
+  cache:
+    host: 192.168.0.190
+    port: 16384
+    password: "srun_3000@redis"

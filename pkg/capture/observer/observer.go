@@ -3,8 +3,8 @@ package observer
 import (
 	"context"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/provider"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/redis"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/provider"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/types"
 	v9 "github.com/redis/go-redis/v9"
 	"go.uber.org/zap"

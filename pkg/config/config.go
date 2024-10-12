@@ -34,7 +34,6 @@ var (
 	IgnoreMissing        bool
 	UseTTL               bool
 	UseUA                bool
-	StatisticsPort       uint
 	WebPort              uint
 )
 
@@ -53,7 +52,6 @@ type Yaml struct {
 	Capture              Capture `mapstructure:"capture"`
 	Mongodb              Mongodb `mapstructure:"mongodb"`
 	Redis                Redis   `mapstructure:"redis"`
-	Statistics           Statistics
 	Web                  Web
 }
 
@@ -67,16 +65,18 @@ type Web struct {
 	Port uint `mapstructure:"port"`
 }
 
-type Statistics struct {
-	Port uint `mapstructure:"port"`
-}
-
 type Mongodb struct {
 	Host string `mapstructure:"host"`
 	Port string `mapstructure:"port"`
 }
 
 type Redis struct {
+	DPI    RedisConfig `mapstructure:"dpi"`
+	Online RedisConfig `mapstructure:"online"`
+	Cache  RedisConfig `mapstructure:"cache"`
+}
+
+type RedisConfig struct {
 	Host     string `mapstructure:"host"`
 	Port     string `mapstructure:"port"`
 	Password string `mapstructure:"password"`
