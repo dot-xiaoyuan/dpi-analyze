@@ -48,14 +48,16 @@ func storeUser(ip string, user types.User) {
 	}).Val()
 }
 
+// 记录用户，下线删除在线表中的IP
 func dropUser(ip string) {
 	OnlineUsers.Delete(ip)
 	rdb := redis.GetRedisClient()
 	ctx := context.TODO()
 
-	rdb.ZRem(ctx, types.ZSetOnlineUsers, ip)
+	rdb.ZRem(ctx, types.ZSetOnlineUsers, ip).Val()
 }
 
+// 查找用户
 func findUser(ip string) types.User {
 	user, ok := OnlineUsers.Load(ip)
 	if ok {
