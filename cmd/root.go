@@ -17,7 +17,7 @@ const (
 )
 
 var rootCmd = &cobra.Command{
-	Use:    "dpi",
+	Use:    CliName,
 	Short:  CliVersion,
 	PreRun: PreFunc,
 	Run:    RunFunc,
@@ -40,7 +40,8 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&config.Language, "language", "l", config.Cfg.Language, "language")
 	rootCmd.PersistentFlags().StringVar(&config.LogLevel, "log-level", config.Cfg.LogLevel, "log level")
 	rootCmd.PersistentFlags().BoolVarP(&config.Debug, "debug", "D", config.Cfg.Debug, "Enable debug mode")
-	rootCmd.PersistentFlags().StringVar(&config.Geo2IP, "geo2ip", config.Cfg.Geo2IP, "geo2ip")
+	rootCmd.PersistentFlags().StringVarP(&config.Signal, "signal", "s", "", "send signal to a master process: stop, quit, reopen, reload")
+
 	// define sub command
 	rootCmd.AddCommand(CaptureCmd)
 	rootCmd.AddCommand(WebCmd)

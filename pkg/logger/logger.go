@@ -25,7 +25,7 @@ func Setup() {
 func initLogger() {
 	// 日志分割
 	lumberjackLogger := &lumberjack.Logger{
-		Filename:   fmt.Sprintf("./runtime/%s.log", time.Now().Format("2006-01-02")),
+		Filename:   fmt.Sprintf("%s/%s.log", config.LogDir, time.Now().Format("2006-01-02")),
 		MaxSize:    100,
 		MaxBackups: 7,
 		MaxAge:     30,
@@ -38,11 +38,15 @@ func initLogger() {
 		level = "debug"
 	}
 	// creat zap core
+	var ws []zapcore.WriteSyncer
+	if config.Debug {
+		ws = append(ws, zapcore.AddSync(os.Stdout))
+	}
+	ws = append(ws, zapcore.AddSync(lumberjackLogger))
 	core := zapcore.NewCore(
 		zapcore.NewConsoleEncoder(getEncodeConfig()),
 		zapcore.NewMultiWriteSyncer(
-			zapcore.AddSync(os.Stdout),
-			zapcore.AddSync(lumberjackLogger),
+			ws...,
 		),
 		parseLogLevel(level),
 	)

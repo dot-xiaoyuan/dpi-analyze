@@ -16,8 +16,11 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/maxmind"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/socket"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/spinners"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/uaparser"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/users"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/utils"
+	"github.com/sevlyar/go-daemon"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
@@ -37,12 +40,26 @@ var CaptureCmd = &cobra.Command{
 	Run:    CaptureRun,
 }
 
+var captureDaemon = &utils.Daemon{
+	Name: "capture",
+	Context: daemon.Context{
+		PidFileName: fmt.Sprintf("%s/capture.pid", config.RunDir),
+		PidFilePerm: 0644,
+		LogFileName: fmt.Sprintf("%s/capture.log", config.LogDir),
+		LogFilePerm: 0640,
+		WorkDir:     config.Home,
+		Args:        os.Args,
+		Umask:       027,
+	},
+}
+
 // TODO 流量总览 总流量、总会话数、TCP/UDP会话比列、每秒请求量(RPS)
 // TODO IP活动监控 访问量最多的IP、异常TTL改变监控、UA变化趋势、Mac地址变化趋势
 // TODO 协议统计 应用层协议分布、TLS版本与加密套件分布
 // TODO 流量来源与目的地 源IP和目标IP热图（MaxMind GeoIP）、最频繁访问目标IP
 // 初始化Flag
 func init() {
+	spinners.Setup()
 	// define flag
 	CaptureCmd.Flags().StringVar(&config.CaptureNic, "nic", config.Cfg.Capture.NIC, "capture nic")
 	CaptureCmd.Flags().StringVar(&config.CapturePcap, "pcap", config.Cfg.Capture.OfflineFile, "capture pcap file")
@@ -53,6 +70,7 @@ func init() {
 	CaptureCmd.Flags().BoolVar(&config.UseTTL, "use-ttl", config.Cfg.UseTTL, "save TTL for IP")
 	CaptureCmd.Flags().BoolVar(&config.UseUA, "use-ua", config.Cfg.UseUA, "use ua parser")
 	CaptureCmd.Flags().StringVar(&config.UnixSocket, "unix-socket", config.Cfg.UnixSocket, "unix socket")
+	CaptureCmd.Flags().StringVar(&config.Geo2IP, "geo2ip", config.Cfg.Geo2IP, "geo2ip")
 }
 
 // CaptureRreFunc 捕获前置方法
@@ -72,6 +90,44 @@ func CaptureRreFunc(c *cobra.Command, args []string) {
 		_ = c.Help()
 		os.Exit(0)
 	}
+}
+
+// CaptureRun 捕获子命令入口
+func CaptureRun(c *cobra.Command, args []string) {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Printf("PANIC : %v", err)
+			fmt.Println("发生严重错误，请联系支持人员。")
+			os.Exit(1)
+		}
+	}()
+
+	if config.Signal != "" {
+		switch config.Signal {
+		case types.STOP:
+			captureDaemon.Stop()
+		case types.START:
+			captureDaemon.Start(captureRun)
+		case types.STATUS:
+			captureDaemon.Status()
+		case types.RESTART:
+			captureDaemon.Restart(captureRun)
+		default:
+			fmt.Println("Usage: [start|stop|status|restart]")
+		}
+		os.Exit(0)
+	}
+	if config.Detach {
+		captureDaemon.Start(captureRun)
+		return
+	}
+	captureRun()
+}
+
+func captureRun() {
+	// Make Context
+	ctx, cancel := context.WithCancel(context.Background())
+
 	// 加载效果组件
 	spinners.Setup()
 	// 加载redis组件
@@ -122,20 +178,6 @@ func CaptureRreFunc(c *cobra.Command, args []string) {
 	_ = ants.Submit(func() {
 		users.ListenUserEvents()
 	})
-}
-
-// CaptureRun 捕获子命令入口
-func CaptureRun(c *cobra.Command, args []string) {
-	defer func() {
-		if err := recover(); err != nil {
-			log.Printf("PANIC : %v", err)
-			fmt.Println("发生严重错误，请联系支持人员。")
-			os.Exit(1)
-		}
-	}()
-
-	// Make Context
-	ctx, cancel := context.WithCancel(context.Background())
 
 	// Packet Capture
 	assembly := analyze.NewAnalyzer()

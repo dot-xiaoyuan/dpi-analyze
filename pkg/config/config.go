@@ -7,20 +7,22 @@ import (
 	"github.com/spf13/viper"
 	"log"
 	"os"
+	"path/filepath"
 )
 
 //go:embed dpi.yaml
 var YamlConfig []byte
 
-const (
-	EnvDevelopment     = "dev"
-	EnvProduction      = "prod"
-	DevConfigFileName  = "etc/dpi.yaml"
-	ProdConfigFileName = "/etc/dpi.yaml"
+var (
+	RunDir string
+	LogDir string
+	EtcDir string
+	BinDir string
 )
 
 var (
 	Home                 string
+	Signal               string
 	Cfg                  *Yaml
 	Language             string
 	LogLevel             string
@@ -96,32 +98,48 @@ func init() {
 	}()
 
 	viper.SetConfigType("yaml")
-
 	Home = os.Getenv("DPI_HOME")
-	env := os.Getenv("DPI_ENV")
+
+	Reload()
+}
+
+func Reload() {
 	// 根据环境变量加载不同的配置文件
-	if len(env) == 0 {
+	if len(Home) == 0 {
 		err := viper.ReadConfig(bytes.NewReader(YamlConfig))
 		if err != nil {
 			panic(err)
 		}
+		Home = "./dev_home"
 	} else {
-		switch os.Getenv("DPI_ENV") {
-		case EnvDevelopment:
-			viper.SetConfigFile(DevConfigFileName)
-			break
-		case EnvProduction:
-			viper.SetConfigFile(ProdConfigFileName)
-			break
-		}
+		viper.SetConfigFile(fmt.Sprintf("%s/dpi.yaml", EtcDir))
 		// 如果环境变量指定了配置文件，则尝试读取它
 		if err := viper.ReadInConfig(); err != nil {
 			panic(err)
 		}
 	}
+
+	RunDir = filepath.Join(Home, "run")
+	LogDir = filepath.Join(Home, "log")
+	EtcDir = filepath.Join(Home, "etc")
+	BinDir = filepath.Join(Home, "bin")
+
+	ensureDirExists(RunDir)
+	ensureDirExists(LogDir)
+	ensureDirExists(EtcDir)
+	ensureDirExists(BinDir)
+
 	// 将最终的配置解析到结构体中
 	err := viper.Unmarshal(&Cfg)
 	if err != nil {
 		panic(err)
+	}
+}
+
+func ensureDirExists(dir string) {
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		if err = os.MkdirAll(dir, 0755); err != nil {
+			panic(fmt.Sprintf("Failed to create directory %s: %v", dir, err))
+		}
 	}
 }

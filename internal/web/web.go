@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/web/router"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/logger"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/spinners"
@@ -29,6 +30,8 @@ type Config struct {
 }
 
 func NewWebServer(c Config) {
+	zap.L().Info(i18n.T("Start Load Mongodb Component"))
+	mongo.Setup()
 	zap.L().Info(i18n.T("Starting Web Server"))
 	web = gin.Default()
 	// cors
