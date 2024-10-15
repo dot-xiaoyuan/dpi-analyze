@@ -63,50 +63,50 @@ type ProtocolFlags struct {
 
 // HttpInfo 存储 HTTP 相关信息
 type HttpInfo struct {
-	Host        string   `bson:"host" json:"host"`
-	UserAgent   string   `bson:"user_agent" json:"user_agent"`
-	Urls        []string `bson:"urls" json:"urls"`
-	ContentType string   `bson:"content_type" json:"content_type"`
-	Upgrade     string   `bson:"upgrade" json:"upgrade"`
+	Host        string   `bson:"host,omitempty" json:"host"`
+	UserAgent   string   `bson:"user_agent,omitempty" json:"user_agent"`
+	Urls        []string `bson:"urls,omitempty" json:"urls"`
+	ContentType string   `bson:"content_type,omitempty" json:"content_type"`
+	Upgrade     string   `bson:"upgrade,omitempty" json:"upgrade"`
 }
 
 // DnsInfo 存储 DNS 相关信息
 type DnsInfo struct {
-	QueryName  string `bson:"query_name" json:"query_name"`
-	ResponseIp string `bson:"response_ip" json:"response_ip"`
+	QueryName  string `bson:"query_name,omitempty" json:"query_name"`
+	ResponseIp string `bson:"response_ip,omitempty" json:"response_ip"`
 }
 
 // RtpInfo 存储 RTP 相关信息
 type RtpInfo struct {
-	Codec   string `bson:"codec" json:"codec"`
-	Bitrate string `bson:"bitrate" json:"bitrate"`
+	Codec   string `bson:"codec,omitempty" json:"codec"`
+	Bitrate string `bson:"bitrate,omitempty" json:"bitrate"`
 }
 
 // TlsInfo 存储 TLS 相关信息
 type TlsInfo struct {
-	Version     string `bson:"version" json:"version"`
-	CipherSuite string `bson:"cipher_suite" json:"cipher_suite"`
-	Sni         string `bson:"sni" json:"sni"`
+	Version     string `bson:"version,omitempty" json:"version"`
+	CipherSuite string `bson:"cipher_suite,omitempty" json:"cipher_suite"`
+	Sni         string `bson:"sni,omitempty" json:"sni"`
 }
 
 type ApplicationInfo struct {
-	AppName     string `bson:"app_name" json:"app_name"`
-	AppCategory string `bson:"app_category" json:"app_category"`
+	AppName     string `bson:"app_name,omitempty" json:"app_name"`
+	AppCategory string `bson:"app_category,omitempty" json:"app_category"`
 }
 
 // Metadata 存储所有协议相关的附加信息
 type Metadata struct {
-	HttpInfo        HttpInfo        `bson:"http_info" json:"http_info"`
-	DnsInfo         DnsInfo         `bson:"dns_info" json:"dns_info"`
-	RtpInfo         RtpInfo         `bson:"rtp_info" json:"rtp_info"`
-	TlsInfo         TlsInfo         `bson:"tls_info" json:"tls_info"`
-	ApplicationInfo ApplicationInfo `bson:"application_info" json:"application_info"`
+	HttpInfo        HttpInfo        `bson:"http_info,omitempty" json:"http_info"`
+	DnsInfo         DnsInfo         `bson:"dns_info,omitempty" json:"dns_info"`
+	RtpInfo         RtpInfo         `bson:"rtp_info,omitempty" json:"rtp_info"`
+	TlsInfo         TlsInfo         `bson:"tls_info,omitempty" json:"tls_info"`
+	ApplicationInfo ApplicationInfo `bson:"application_info,omitempty" json:"application_info"`
 }
 
 // CustomFields 存储用户自定义字段
 type CustomFields struct {
-	FieldName  string `bson:"field_name"`
-	FieldValue string `bson:"field_value"`
+	FieldName  string `bson:"field_name,omitempty" json:"field_name"`
+	FieldValue string `bson:"field_value,omitempty" json:"field_value"`
 }
 
 // Sessions 用于存储每个网络会话的信息，包括源 IP、目标 IP、协议、传输层协议等。

@@ -39,7 +39,7 @@ func init() {
 	// define flags
 	rootCmd.PersistentFlags().StringVarP(&config.Language, "language", "l", config.Cfg.Language, "language")
 	rootCmd.PersistentFlags().StringVar(&config.LogLevel, "log-level", config.Cfg.LogLevel, "log level")
-	rootCmd.PersistentFlags().BoolVarP(&config.Debug, "debug", "d", config.Cfg.Debug, "debug mode")
+	rootCmd.PersistentFlags().BoolVarP(&config.Debug, "debug", "D", config.Cfg.Debug, "Enable debug mode")
 	rootCmd.PersistentFlags().StringVar(&config.Geo2IP, "geo2ip", config.Cfg.Geo2IP, "geo2ip")
 	// define sub command
 	rootCmd.AddCommand(CaptureCmd)

@@ -20,6 +20,7 @@ const (
 )
 
 var (
+	Home                 string
 	Cfg                  *Yaml
 	Language             string
 	LogLevel             string
@@ -35,12 +36,14 @@ var (
 	UseTTL               bool
 	UseUA                bool
 	WebPort              uint
+	Detach               bool
 )
 
 type Yaml struct {
 	Language             string  `mapstructure:"language"`
 	LogLevel             string  `mapstructure:"log_level"`
 	Debug                bool    `mapstructure:"debug"`
+	Detach               bool    `mapstructure:"detach"`
 	Geo2IP               string  `mapstructure:"geo2ip"`
 	UseMongo             bool    `mapstructure:"use_mongo"`
 	UnixSocket           string  `mapstructure:"unix_socket"`
@@ -94,6 +97,7 @@ func init() {
 
 	viper.SetConfigType("yaml")
 
+	Home = os.Getenv("DPI_HOME")
 	env := os.Getenv("DPI_ENV")
 	// 根据环境变量加载不同的配置文件
 	if len(env) == 0 {

@@ -59,7 +59,7 @@ func ListenUserEvents() {
 
 		userEvent := UserEvent{}
 		_ = json.Unmarshal([]byte(event[1]), &userEvent)
-		zap.L().Debug(i18n.T("Listen user events"), zap.Int("action", userEvent.Action), zap.String("username", userEvent.UserName))
+		zap.L().Info(i18n.T("Listen user events"), zap.Int("action", userEvent.Action), zap.String("username", userEvent.UserName))
 
 		if userEvent.UserName == "" {
 			zap.L().Warn("user event is empty", zap.Strings("event", event))
