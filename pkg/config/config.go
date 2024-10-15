@@ -32,7 +32,6 @@ var (
 	CaptureNic           string
 	CapturePcap          string
 	UseMongo             bool
-	UnixSocket           string
 	ParseFeature         bool
 	BerkeleyPacketFilter string
 	IgnoreMissing        bool
@@ -100,7 +99,9 @@ func init() {
 	viper.SetConfigType("yaml")
 	Home = os.Getenv("DPI_HOME")
 	if Home == "" {
-		Home = "./dev_home"
+		dir, _ := os.Getwd()
+		Home = filepath.Join(dir, "dev_home")
+		_ = os.Setenv("DPI_HOME", Home)
 	}
 	Reload()
 }

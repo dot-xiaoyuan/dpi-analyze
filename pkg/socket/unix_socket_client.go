@@ -8,6 +8,8 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/utils"
 	"go.uber.org/zap"
 	"net"
+	"os"
+	"path/filepath"
 )
 
 type Request struct {
@@ -17,7 +19,9 @@ type Request struct {
 
 // SendUnixMessage 向 Unix Socket 服务器发送消息并接收回应
 func SendUnixMessage(t MessageType, param interface{}) ([]byte, error) {
-	conn, err := net.Dial("unix", config.Cfg.UnixSocket)
+	sock := filepath.Join(config.RunDir, "unix.sock")
+	_ = os.Remove(sock) // 清理旧的 socket 文件
+	conn, err := net.Dial("unix", sock)
 	if err != nil {
 		zap.L().Error(i18n.T("unix socket error"), zap.Error(fmt.Errorf("failed to connect to socket: %v", err)))
 		return nil, fmt.Errorf(i18n.T("failed to connect to socket: ")+"%v", err)

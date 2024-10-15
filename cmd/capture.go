@@ -69,17 +69,11 @@ func init() {
 	CaptureCmd.Flags().BoolVar(&config.IgnoreMissing, "ignore-missing", config.Cfg.IgnoreMissing, "ignore missing packet")
 	CaptureCmd.Flags().BoolVar(&config.UseTTL, "use-ttl", config.Cfg.UseTTL, "save TTL for IP")
 	CaptureCmd.Flags().BoolVar(&config.UseUA, "use-ua", config.Cfg.UseUA, "use ua parser")
-	CaptureCmd.Flags().StringVar(&config.UnixSocket, "unix-socket", config.Cfg.UnixSocket, "unix socket")
 	CaptureCmd.Flags().StringVar(&config.Geo2IP, "geo2ip", config.Cfg.Geo2IP, "geo2ip")
 }
 
 // CaptureRreFunc 捕获前置方法
 func CaptureRreFunc(c *cobra.Command, args []string) {
-	if config.Debug {
-		go func() {
-			log.Println(http.ListenAndServe(":6060", nil))
-		}()
-	}
 
 	c.Short = i18n.T(c.Short)
 	c.Flags().VisitAll(func(flag *pflag.Flag) {
@@ -178,7 +172,12 @@ func captureRun() {
 	_ = ants.Submit(func() {
 		users.ListenUserEvents()
 	})
-
+	// 开启 debug pprof
+	if config.Debug {
+		_ = ants.Submit(func() {
+			log.Println(http.ListenAndServe(":6060", nil))
+		})
+	}
 	// Packet Capture
 	assembly := analyze.NewAnalyzer()
 	done := make(chan struct{})
@@ -202,8 +201,8 @@ func captureRun() {
 		}))
 		//fmt.Println(closed)
 	case <-signalChan:
-		cancel()
 		spinners.Start()
+		cancel()
 		// 关闭cron
 		cron.Stop()
 		// 释放协程池
