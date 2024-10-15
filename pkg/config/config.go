@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 //go:embed dpi.yaml
@@ -99,26 +100,14 @@ func init() {
 
 	viper.SetConfigType("yaml")
 	Home = os.Getenv("DPI_HOME")
-
+	if Home == "" {
+		Home = "./dev_home"
+	}
 	Reload()
 }
 
 func Reload() {
 	// 根据环境变量加载不同的配置文件
-	if len(Home) == 0 {
-		err := viper.ReadConfig(bytes.NewReader(YamlConfig))
-		if err != nil {
-			panic(err)
-		}
-		Home = "./dev_home"
-	} else {
-		viper.SetConfigFile(fmt.Sprintf("%s/dpi.yaml", EtcDir))
-		// 如果环境变量指定了配置文件，则尝试读取它
-		if err := viper.ReadInConfig(); err != nil {
-			panic(err)
-		}
-	}
-
 	RunDir = filepath.Join(Home, "run")
 	LogDir = filepath.Join(Home, "log")
 	EtcDir = filepath.Join(Home, "etc")
@@ -129,6 +118,18 @@ func Reload() {
 	ensureDirExists(EtcDir)
 	ensureDirExists(BinDir)
 
+	if strings.Contains(Home, "dev_home") {
+		err := viper.ReadConfig(bytes.NewReader(YamlConfig))
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		viper.SetConfigFile(fmt.Sprintf("%s/dpi.yaml", EtcDir))
+		// 如果环境变量指定了配置文件，则尝试读取它
+		if err := viper.ReadInConfig(); err != nil {
+			panic(err)
+		}
+	}
 	// 将最终的配置解析到结构体中
 	err := viper.Unmarshal(&Cfg)
 	if err != nil {
