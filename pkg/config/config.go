@@ -49,7 +49,6 @@ type Yaml struct {
 	Detach               bool    `mapstructure:"detach"`
 	Geo2IP               string  `mapstructure:"geo2ip"`
 	UseMongo             bool    `mapstructure:"use_mongo"`
-	UnixSocket           string  `mapstructure:"unix_socket"`
 	ParseFeature         bool    `mapstructure:"parse_app"`
 	BerkeleyPacketFilter string  `mapstructure:"berkeley_packet_filter"`
 	IgnoreMissing        bool    `mapstructure:"ignore_missing"`

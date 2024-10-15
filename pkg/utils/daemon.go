@@ -66,6 +66,8 @@ func (daemon *Daemon) Stop() {
 	if err := process.Kill(); err != nil {
 		fmt.Printf("Unable to kill process: %s.\n", err)
 	} else {
+		// 删除pid文件
+		_ = os.Remove(daemon.Context.PidFileName)
 		fmt.Printf("%s server stopped successfully.\n", daemon.Name)
 	}
 	return

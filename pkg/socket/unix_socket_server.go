@@ -8,18 +8,20 @@ import (
 	"go.uber.org/zap"
 	"net"
 	"os"
+	"path/filepath"
 )
 
 // StartServer 启动 Unix Socket 服务器
 func StartServer() {
-	_ = os.Remove(config.Cfg.UnixSocket) // 清理旧的 socket 文件
-	l, err := net.Listen("unix", config.Cfg.UnixSocket)
+	sock := filepath.Join(config.RunDir, "unix.sock")
+	_ = os.Remove(sock) // 清理旧的 socket 文件
+	l, err := net.Listen("unix", sock)
 	if err != nil {
 		zap.L().Error(fmt.Sprintf("failed to listen on socket: %v", err))
 		os.Exit(1)
 	}
 	zap.L().Info(i18n.TT("Unix Socket Server listening", map[string]interface{}{
-		"sock": config.Cfg.UnixSocket,
+		"sock": sock,
 	}))
 	defer l.Close()
 
