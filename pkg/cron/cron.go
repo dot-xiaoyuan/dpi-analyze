@@ -1,10 +1,7 @@
 package cron
 
 import (
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
 	"github.com/robfig/cron/v3"
-	"go.uber.org/zap"
-	"os"
 	"sync"
 )
 
@@ -13,20 +10,14 @@ var (
 	Cron *cron.Cron
 )
 
-func Setup() {
+func Setup() error {
 	one.Do(func() {
 		loadCronClient()
 	})
+	return nil
 }
 
 func loadCronClient() {
-	defer func() {
-		if err := recover(); err != nil {
-			zap.L().Error(i18n.T("Failed to load cron"), zap.Any("error", err))
-			os.Exit(1)
-		}
-	}()
-
 	Cron = cron.New()
 }
 

@@ -161,8 +161,8 @@ func handleSignals(cancel context.CancelFunc) {
 func loadComponents() {
 	spinners.WithSpinner("Loading Redis Component", redis.Setup)
 	spinners.WithSpinner("Loading Cron  Component", cron.Setup)
-	spinners.WithSpinner("Loading Ants  Component", func() {
-		ants.Setup(100)
+	spinners.WithSpinner("Loading Ants  Component", func() error {
+		return ants.Setup(100)
 	})
 
 	if config.UseMongo {
@@ -178,8 +178,8 @@ func loadComponents() {
 	}
 
 	if config.Geo2IP != "" {
-		spinners.WithSpinner("Loading Geo2IP Component", func() {
-			maxmind.Setup(config.Geo2IP)
+		spinners.WithSpinner("Loading Geo2IP Component", func() error {
+			return maxmind.Setup(config.Geo2IP)
 		})
 	}
 
@@ -221,7 +221,7 @@ func handleCaptureCompletion(cancel context.CancelFunc, assembly *analyze.Analyz
 func handleGracefulExit(cancel context.CancelFunc) {
 	cancel()
 
-	spinners.Stop("handle graceful exit")
+	spinners.Start(i18n.T("handle graceful wait exit"))
 	// 停止 cron，超时退出避免阻塞
 	done := make(chan struct{})
 	go func() {
@@ -243,6 +243,6 @@ func handleGracefulExit(cancel context.CancelFunc) {
 	// 刷新日志并退出
 	_ = zap.L().Sync()
 	time.Sleep(500 * time.Millisecond)
-	spinners.Stop("handle graceful exit")
+	spinners.Stop("capture stop", nil)
 	os.Exit(0)
 }

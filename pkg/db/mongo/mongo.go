@@ -19,14 +19,17 @@ var (
 	mongoURI string
 )
 
-func Setup() {
+func Setup() error {
+	var setupErr error
 	one.Do(func() {
 		err := loadMongoClient()
 		if err != nil {
 			zap.L().Error(err.Error())
-			os.Exit(1)
+			setupErr = err
+			return
 		}
 	})
+	return setupErr
 }
 
 /**

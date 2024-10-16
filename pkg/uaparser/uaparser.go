@@ -2,10 +2,10 @@ package uaparser
 
 import (
 	_ "embed"
+	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
 	"github.com/ua-parser/uap-go/uaparser"
 	"go.uber.org/zap"
-	"os"
 	"sync"
 )
 
@@ -17,26 +17,29 @@ var (
 	Parser *uaparser.Parser
 )
 
-func Setup() {
+func Setup() error {
+	var setupErr error
 	one.Do(func() {
-		loadParser()
+		err := loadParser()
+		setupErr = err
 	})
+	return setupErr
 }
 
-func loadParser() {
+func loadParser() (err error) {
 	defer func() {
-		if err := recover(); err != nil {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("panic recovered: %v", r)
 			zap.L().Error(i18n.T("Failed to load ua parser"), zap.Any("error", err))
-			os.Exit(1)
+			return
 		}
 	}()
 
-	var err error
 	Parser, err = uaparser.NewFromBytes(regexes)
 	if err != nil {
-		panic(err)
+		return err
 	}
-	zap.L().Info(i18n.T("ua parser component initialized!"))
+	return nil
 }
 
 func Parse(ua string) string {

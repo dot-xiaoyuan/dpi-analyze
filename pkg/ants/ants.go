@@ -3,7 +3,6 @@ package ants
 import (
 	"github.com/panjf2000/ants/v2"
 	"go.uber.org/zap"
-	"os"
 	"sync"
 )
 
@@ -12,15 +11,15 @@ var (
 	one  sync.Once
 )
 
-func Setup(maxGoroutines int) {
+func Setup(maxGoroutines int) error {
+	var err error
 	one.Do(func() {
-		var err error
 		Pool, err = ants.NewPool(maxGoroutines)
 		if err != nil {
 			zap.L().Error(err.Error())
-			os.Exit(1)
 		}
 	})
+	return err
 }
 
 func Submit(task func()) error {

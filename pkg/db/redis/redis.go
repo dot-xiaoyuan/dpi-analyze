@@ -7,7 +7,6 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
-	"os"
 	"sync"
 )
 
@@ -18,28 +17,35 @@ var (
 	Cache  *redis.Client
 )
 
-func Setup() {
+func Setup() error {
+	var setupErr error // 用于捕获 setup 过程中的错误
 	one.Do(func() {
 		var err error
 		// setup dpi client
 		Client, err = loadRedisClient(config.Cfg.Redis.DPI)
 		if err != nil {
-			zap.L().Error(err.Error())
-			os.Exit(1)
+			zap.L().Error("DPI Redis setup failed", zap.Error(err))
+			setupErr = err // 捕获错误
+			return         // 终止初始化流程
 		}
+
 		// setup online client
 		Online, err = loadRedisClient(config.Cfg.Redis.Online)
 		if err != nil {
-			zap.L().Error(err.Error())
-			os.Exit(1)
+			zap.L().Error("Online Redis setup failed", zap.Error(err))
+			setupErr = err
+			return
 		}
+
 		// setup cache client
 		Cache, err = loadRedisClient(config.Cfg.Redis.Cache)
 		if err != nil {
-			zap.L().Error(err.Error())
-			os.Exit(1)
+			zap.L().Error("Cache Redis setup failed", zap.Error(err))
+			setupErr = err
+			return
 		}
 	})
+	return setupErr
 }
 
 func loadRedisClient(c config.RedisConfig) (*redis.Client, error) {

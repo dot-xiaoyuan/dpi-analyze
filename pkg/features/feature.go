@@ -5,6 +5,7 @@ import (
 	"bytes"
 	_ "embed"
 	"errors"
+	"fmt"
 	"github.com/cloudflare/ahocorasick"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
 	"go.uber.org/zap"
@@ -22,6 +23,7 @@ var (
 	DomainFeature []string
 	DomainMap     = make(map[int]string)
 	DomainAc      *ahocorasick.Matcher
+	parseMu       sync.Mutex // 用于避免并发问题
 )
 
 type Feature struct {
@@ -35,93 +37,103 @@ type Feature struct {
 	Dict     string `json:"dict"`
 }
 
-func Setup() {
+// Setup 初始化特征组件，确保只加载一次
+func Setup() error {
+	var setupErr error
 	one.Do(func() {
-		loadFeature()
+		setupErr = loadFeature()
 	})
+	return setupErr
 }
 
-func loadFeature() {
+// 加载特征配置文件并解析
+func loadFeature() (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("panic recovered: %v", r)
+			zap.L().Error("Recovered from panic in loadFeature", zap.Any("error", r))
+			return
+		}
+	}()
 	scanner := bufio.NewScanner(bytes.NewReader(FeatureCfg))
-	l := 0
+	lineNumber := 0
+	var wg sync.WaitGroup
+
 	for scanner.Scan() {
-		l++
-		line := scanner.Text()
-		if strings.HasPrefix(line, "#") || strings.TrimSpace(line) == "" {
-			continue
-		}
-		line = strings.TrimSpace(line)
-		err := parse(line)
-		if err != nil {
-			zap.L().Error("Failed to parse feature", zap.String("line", line), zap.Error(err))
-			continue
-		}
-	}
-	zap.L().Info(i18n.T("Feature component initialized!"), zap.Int("count", l))
-}
+		line := strings.TrimSpace(scanner.Text())
+		lineNumber++
 
-// 解析特征库
-func parse(line string) error {
-	re := regexp.MustCompile(`(\d+) (.+):\[(.+)]`)
-	match := re.FindStringSubmatch(line)
-	if len(match) == 0 || len(match) < 3 {
-		return errors.New("invalid format Feature")
-	}
-
-	f := Feature{}
-	f.ID = match[1]
-	f.Name = match[2]
-	temp := match[3]
-	features := strings.Split(temp, ",")
-	for _, item := range features {
-		feature := strings.Split(item, ";")
-		if len(feature) != 6 {
+		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
 
-		f.Protocol = feature[0]
-		f.SrcPort = feature[1]
-		f.DstPort = feature[2]
-		f.Hostname = feature[3]
-		f.Request = feature[4]
-		f.Dict = feature[5]
-
-		domain(f.Name, f.Hostname)
-
-		//zap.L().Debug("append feature",
-		//	zap.String("n", f.Name),
-		//	zap.String("p", f.Protocol),
-		//	zap.String("h", f.Hostname),
-		//	zap.String("r", f.Request),
-		//	zap.String("sp", f.SrcPort),
-		//	zap.String("dp", f.DstPort),
-		//	zap.String("d", f.Dict),
-		//)
-		AppFeature = append(AppFeature, f)
+		wg.Add(1)
+		go func(line string, lineNum int) {
+			defer wg.Done()
+			if err = parse(line); err != nil {
+				zap.L().Error("Failed to parse feature", zap.String("line", line), zap.Error(err), zap.Int("lineNumber", lineNum))
+			}
+		}(line, lineNumber)
 	}
+
+	wg.Wait()
+	if scanner.Err() != nil {
+		return fmt.Errorf("error reading feature file: %w", scanner.Err())
+	}
+
+	// 创建 Aho-Corasick 匹配器
 	DomainAc = ahocorasick.NewStringMatcher(DomainFeature)
+	zap.L().Info(i18n.T("Feature component initialized!"), zap.Int("count", len(AppFeature)))
+
 	return nil
 }
 
-func domain(app, hostname string) {
-	if len(hostname) == 0 {
+// 解析单行特征配置
+func parse(line string) error {
+	re := regexp.MustCompile(`(\d+) (.+):\[(.+)]`)
+	match := re.FindStringSubmatch(line)
+	if len(match) < 4 {
+		return errors.New("invalid feature format")
+	}
+
+	f := Feature{
+		ID:   match[1],
+		Name: match[2],
+	}
+
+	features := strings.Split(match[3], ",")
+	for _, item := range features {
+		feature := strings.Split(item, ";")
+		if len(feature) != 6 {
+			return errors.New("invalid feature details")
+		}
+
+		f.Protocol, f.SrcPort, f.DstPort = feature[0], feature[1], feature[2]
+		f.Hostname, f.Request, f.Dict = feature[3], feature[4], feature[5]
+
+		parseMu.Lock()
+		AppFeature = append(AppFeature, f)
+		addDomain(f.Name, f.Hostname)
+		parseMu.Unlock()
+	}
+
+	return nil
+}
+
+// 处理域名并添加到匹配器列表
+func addDomain(app, hostname string) {
+	if hostname == "" {
 		return
 	}
-	// 加载完整域名
+
 	DomainFeature = append(DomainFeature, hostname)
 	DomainMap[len(DomainFeature)-1] = app
+
 	// 处理多级域名
-	dot := strings.Count(hostname, ".")
-	if dot >= 2 {
-		// 去除根域名
-		parts := strings.Split(hostname, ".")
-		hostname = strings.TrimSuffix(hostname, "."+parts[len(parts)-1])
-		// zap.L().Info("hostname", zap.String("hostname", hostname))
-		if strings.HasPrefix(hostname, ".") {
-			hostname = strings.TrimPrefix(hostname, ".")
-		}
-		// zap.L().Info("hostname", zap.String("hostname", hostname))
-		DomainFeature = append(DomainFeature, hostname)
+	if strings.Count(hostname, ".") >= 2 {
+		parts := strings.SplitN(hostname, ".", 2)
+		subdomain := parts[1]
+		DomainFeature = append(DomainFeature, subdomain)
 		DomainMap[len(DomainFeature)-1] = app
 	}
 }

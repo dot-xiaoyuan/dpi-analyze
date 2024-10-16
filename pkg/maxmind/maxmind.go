@@ -15,10 +15,11 @@ var (
 	Geo2IPDB *maxminddb.Reader
 )
 
-func Setup(file string) {
+func Setup(file string) error {
 	one.Do(func() {
 		NewGeoIP(file)
 	})
+	return nil
 }
 
 func NewGeoIP(file string) {
