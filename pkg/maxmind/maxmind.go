@@ -3,7 +3,6 @@ package maxmind
 import (
 	_ "embed"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/spinners"
 	"github.com/oschwald/maxminddb-golang"
 	"go.uber.org/zap"
 	"net"
@@ -24,10 +23,8 @@ func Setup(file string) {
 
 func NewGeoIP(file string) {
 	var err error
-	spinners.Start()
 	defer func() {
 		if err := recover(); err != nil {
-			spinners.Stop()
 			zap.L().Error(i18n.T("Failed to load GeoIP database."), zap.Any("error", err))
 			os.Exit(1)
 		}
@@ -37,7 +34,6 @@ func NewGeoIP(file string) {
 		panic(err)
 	}
 	zap.L().Info(i18n.T("Geo2IP component initialized!"))
-	spinners.Stop()
 }
 
 type Record struct {

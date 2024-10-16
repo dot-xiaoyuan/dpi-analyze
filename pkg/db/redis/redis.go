@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/spinners"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"os"
@@ -44,11 +43,6 @@ func Setup() {
 }
 
 func loadRedisClient(c config.RedisConfig) (*redis.Client, error) {
-	spinners.Start()
-	defer func() {
-		spinners.Stop()
-	}()
-
 	if c.Host == "" {
 		return nil, fmt.Errorf("redis host is empty")
 	}

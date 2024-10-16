@@ -7,7 +7,6 @@ import (
 	"errors"
 	"github.com/cloudflare/ahocorasick"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/spinners"
 	"go.uber.org/zap"
 	"regexp"
 	"strings"
@@ -43,7 +42,6 @@ func Setup() {
 }
 
 func loadFeature() {
-	spinners.Start()
 	scanner := bufio.NewScanner(bytes.NewReader(FeatureCfg))
 	l := 0
 	for scanner.Scan() {
@@ -59,7 +57,6 @@ func loadFeature() {
 			continue
 		}
 	}
-	spinners.Stop()
 	zap.L().Info(i18n.T("Feature component initialized!"), zap.Int("count", l))
 }
 

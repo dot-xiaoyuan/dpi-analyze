@@ -3,7 +3,6 @@ package uaparser
 import (
 	_ "embed"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/spinners"
 	"github.com/ua-parser/uap-go/uaparser"
 	"go.uber.org/zap"
 	"os"
@@ -25,11 +24,8 @@ func Setup() {
 }
 
 func loadParser() {
-	spinners.Start()
-
 	defer func() {
 		if err := recover(); err != nil {
-			spinners.Stop()
 			zap.L().Error(i18n.T("Failed to load ua parser"), zap.Any("error", err))
 			os.Exit(1)
 		}
@@ -41,7 +37,6 @@ func loadParser() {
 		panic(err)
 	}
 	zap.L().Info(i18n.T("ua parser component initialized!"))
-	spinners.Stop()
 }
 
 func Parse(ua string) string {

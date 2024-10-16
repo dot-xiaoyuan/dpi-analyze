@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/spinners"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/zap"
@@ -34,10 +33,6 @@ func Setup() {
  * 加载mongodb客户端
  */
 func loadMongoClient() (err error) {
-	spinners.Start()
-	defer func() {
-		spinners.Stop()
-	}()
 	if config.Cfg.Mongodb.Host == "" {
 		return fmt.Errorf(i18n.T("mongodb.host is empty"))
 	}

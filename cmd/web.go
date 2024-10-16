@@ -51,7 +51,7 @@ func WebRreFunc(c *cobra.Command, args []string) {
 	})
 }
 
-func WebRun(c *cobra.Command, args []string) {
+func WebRun(*cobra.Command, []string) {
 	defer func() {
 		if err := recover(); err != nil {
 			log.Printf("PANIC : %v", err)

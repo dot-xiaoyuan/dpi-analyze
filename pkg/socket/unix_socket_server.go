@@ -20,6 +20,7 @@ func StartServer() {
 		zap.L().Error(fmt.Sprintf("failed to listen on socket: %v", err))
 		os.Exit(1)
 	}
+	fmt.Println()
 	zap.L().Info(i18n.TT("Unix Socket Server listening", map[string]interface{}{
 		"sock": sock,
 	}))

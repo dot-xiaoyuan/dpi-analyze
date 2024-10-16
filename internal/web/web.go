@@ -8,7 +8,6 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/logger"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/spinners"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -67,8 +66,6 @@ func NewWebServer(c Config) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
-	spinners.Start()
-	defer spinners.Stop()
 
 	if err := server.Shutdown(ctx); err != nil {
 		zap.L().Fatal(i18n.T("Failed to shutdown Web Server"), zap.Error(err))

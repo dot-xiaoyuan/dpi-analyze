@@ -2,7 +2,6 @@ package utils
 
 import (
 	"fmt"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/spinners"
 	"github.com/sevlyar/go-daemon"
 	"os"
 	"strconv"
@@ -99,8 +98,6 @@ func (daemon *Daemon) Stop() {
 }
 
 func (daemon *Daemon) Restart(run func()) {
-	spinners.Start()
-	defer spinners.Stop()
 	daemon.Stop()
 	time.Sleep(time.Second)
 	daemon.Start(run)

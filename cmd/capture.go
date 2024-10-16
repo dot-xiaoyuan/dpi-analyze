@@ -59,6 +59,7 @@ var captureDaemon = &utils.Daemon{
 // TODO 流量来源与目的地 源IP和目标IP热图（MaxMind GeoIP）、最频繁访问目标IP
 // 初始化Flag
 func init() {
+	// 初始化加载组件
 	spinners.Setup()
 	// define flag
 	CaptureCmd.Flags().StringVar(&config.CaptureNic, "nic", config.Cfg.Capture.NIC, "capture nic")
@@ -87,7 +88,7 @@ func CaptureRreFunc(c *cobra.Command, args []string) {
 }
 
 // CaptureRun 捕获子命令入口
-func CaptureRun(c *cobra.Command, args []string) {
+func CaptureRun(*cobra.Command, []string) {
 	defer func() {
 		if err := recover(); err != nil {
 			log.Printf("PANIC : %v", err)
@@ -119,68 +120,19 @@ func CaptureRun(c *cobra.Command, args []string) {
 }
 
 func captureRun() {
-	// Make Context
+	// 创建上下文
 	ctx, cancel := context.WithCancel(context.Background())
 
-	// 加载效果组件
-	spinners.Setup()
-	// 加载redis组件
-	redis.Setup()
-	// 加载 cron 组件
-	cron.Setup()
-	// 是否使用mongo
-	if config.UseMongo {
-		zap.L().Info(i18n.T("Start Load Mongodb Component"))
-		mongo.Setup()
-	}
-	// 是否加载特征库
-	if config.ParseFeature {
-		zap.L().Info(i18n.T("Start Load Feature Component"))
-		features.Setup()
-	}
-	// 是否加载geo2ip
-	if config.Geo2IP != "" {
-		zap.L().Info(i18n.T("Start Load Geo2IP Component"))
-		maxmind.Setup(config.Geo2IP)
-	}
-	// 是否加载 ua parser
-	if config.UseUA {
-		zap.L().Info(i18n.T("Start Load User-Agent Parser Component"))
-		uaparser.Setup()
-	}
-	// 创建协程池
-	ants.Setup(100)
-	// 启动 Unix Socket Server
-	err := ants.Submit(socket.StartServer)
-	if err != nil {
-		zap.L().Error("Failed to start unix sock server", zap.Error(err))
-		os.Exit(1)
-	}
-	// 注册unix handler
-	handler.InitHandlers()
-	// 同步用户
-	userSync := users.UserSync{}
-	userSync.CleanUp()
+	// 启动系统信号监听
+	go handleSignals(cancel)
 
-	_, err = cron.AddJob("@every 1m", userSync)
-	if err != nil {
-		zap.L().Error("Failed to start user sync job", zap.Error(err))
-		os.Exit(1)
-	}
-	cron.Start()
-	// 监听用户上下线事件
-	_ = ants.Submit(func() {
-		users.ListenUserEvents()
-	})
-	// 开启 debug pprof
-	if config.Debug {
-		_ = ants.Submit(func() {
-			log.Println(http.ListenAndServe(":6060", nil))
-		})
-	}
-	// Packet Capture
+	// 使用spinner加载组件
+	loadComponents()
+
+	// 启动 Packet Capture
 	assembly := analyze.NewAnalyzer()
 	done := make(chan struct{})
+
 	go capture.StartCapture(ctx, capture.Config{
 		OffLine:              config.CapturePcap,
 		Nic:                  config.CaptureNic,
@@ -188,28 +140,109 @@ func captureRun() {
 		BerkeleyPacketFilter: config.BerkeleyPacketFilter,
 	}, assembly, done)
 
+	// wait signal
+	select {
+	case <-done:
+		handleCaptureCompletion(cancel, assembly)
+	}
+}
+
+// 信号监听 Goroutine
+func handleSignals(cancel context.CancelFunc) {
 	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
+
+	sig := <-signalChan
+	zap.L().Info("Received signal", zap.String("signal", sig.String()))
+	handleGracefulExit(cancel)
+}
+
+// 加载所有组件并使用 Spinner 提示
+func loadComponents() {
+	spinners.WithSpinner("Loading Redis Component", redis.Setup)
+	spinners.WithSpinner("Loading Cron  Component", cron.Setup)
+	spinners.WithSpinner("Loading Ants  Component", func() {
+		ants.Setup(100)
+	})
+
+	if config.UseMongo {
+		spinners.WithSpinner("Loading MongoDB Component", mongo.Setup)
+	}
+
+	if config.ParseFeature {
+		spinners.WithSpinner("Loading Feature Component", features.Setup)
+	}
+
+	if config.UseUA {
+		spinners.WithSpinner("Loading UserAgent Component", uaparser.Setup)
+	}
+
+	if config.Geo2IP != "" {
+		spinners.WithSpinner("Loading Geo2IP Component", func() {
+			maxmind.Setup(config.Geo2IP)
+		})
+	}
+
+	if err := ants.Submit(socket.StartServer); err != nil {
+		zap.L().Error("Failed to start unix sock server", zap.Error(err))
+		os.Exit(1)
+	}
+
+	handler.InitHandlers()
+	userSync := users.UserSync{}
+	userSync.CleanUp()
+
+	_, err := cron.AddJob("@every 1m", userSync)
+	if err != nil {
+		zap.L().Error("Failed to start user sync job", zap.Error(err))
+		os.Exit(1)
+	}
+
+	cron.Start()
+	_ = ants.Submit(users.ListenUserEvents)
+
+	if config.Debug {
+		_ = ants.Submit(func() {
+			log.Println(http.ListenAndServe(":6060", nil))
+		})
+	}
+}
+
+// 捕获任务完成后的处理
+func handleCaptureCompletion(cancel context.CancelFunc, assembly *analyze.Analyze) {
+	cancel()
+	closed := assembly.Assembler.FlushAll()
+	assembly.Factory.WaitGoRoutines()
+
+	zap.L().Info("Flushed stream", zap.Int("count", closed))
+}
+
+// 优雅退出
+func handleGracefulExit(cancel context.CancelFunc) {
+	cancel()
+
+	spinners.Stop("handle graceful exit")
+	// 停止 cron，超时退出避免阻塞
+	done := make(chan struct{})
+	go func() {
+		cron.Stop()
+		close(done)
+	}()
 
 	select {
 	case <-done:
-		cancel()
-		closed := assembly.Assembler.FlushAll()
-		assembly.Factory.WaitGoRoutines()
-		zap.L().Info(i18n.TT("Flushed stream", map[string]interface{}{
-			"count": closed,
-		}))
-		//fmt.Println(closed)
-	case <-signalChan:
-		spinners.Start()
-		cancel()
-		// 关闭cron
-		cron.Stop()
-		// 释放协程池
-		ants.Release()
-		zap.L().Info(i18n.T("Received terminate signal, stop analyze..."))
-		time.Sleep(time.Second)
-		spinners.Stop()
-		os.Exit(0)
+		zap.L().Info("Cron stopped")
+	case <-time.After(2 * time.Second):
+		zap.L().Warn("Cron stop timeout")
 	}
+
+	// 释放协程池
+	ants.Release()
+	zap.L().Info("Release goroutine pool")
+
+	// 刷新日志并退出
+	_ = zap.L().Sync()
+	time.Sleep(500 * time.Millisecond)
+	spinners.Stop("handle graceful exit")
+	os.Exit(0)
 }
