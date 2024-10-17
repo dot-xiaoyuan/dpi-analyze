@@ -23,7 +23,7 @@ const (
 	ZSetOnlineUsers    = "z_set:online:users"
 	HashAnalyzeIP      = "hash:analyze:ip:%s"
 	ListEventQueue     = "list:event:queue"
-	SetMMTLSConnection = "set:mm-tls:connection"
+	SetMMTLSConnection = "set:mm-tls:connection:%s:%s"
 )
 
 // Ethernet 以太网

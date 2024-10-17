@@ -86,7 +86,7 @@ func SendEvent2Redis(s, d, u string) {
 
 // 更新member
 func processEvent(event MMTLSEvent) {
-	key := fmt.Sprintf("connections:%s:%s", event.SourceIP, event.URL)
+	key := fmt.Sprintf(types.SetMMTLSConnection, event.SourceIP, event.URL)
 
 	_, err := redis.GetRedisClient().SAdd(context.Background(), key, event.TargetIP).Result()
 	if err != nil {
