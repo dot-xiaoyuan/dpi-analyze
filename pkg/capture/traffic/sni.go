@@ -39,6 +39,7 @@ func SendSNIEvent2Redis(s, d, u string) {
 func processSNIEvent(event SNIEvent) {
 	key := fmt.Sprintf(types.SetSNIConnection, event.SourceIP, event.URL)
 
+	fmt.Printf("processSNIEvent: [%s] => [%s]\n", key, event.URL)
 	_, err := redis.GetRedisClient().SAdd(context.Background(), key, event.TargetIP).Result()
 	if err != nil {
 		zap.L().Error("Failed to add SNI event to Redis:", zap.Error(err))
