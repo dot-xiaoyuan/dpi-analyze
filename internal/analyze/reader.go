@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/member"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/traffic"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/features"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/types"
@@ -160,6 +161,11 @@ func (sr *StreamReader) SetHttpInfo(host, userAgent, contentType, upgrade string
 	if features.DomainAc != nil && host != "" {
 		sr.Parent.Metadata.ApplicationInfo.AppName = features.DomainMatch(host)
 		sr.Parent.Metadata.ApplicationInfo.AddUp()
+	}
+	// 截取mmtls
+	if len(upgrade) > 0 && upgrade == "mmtls" {
+		//traffic.SendMMTLSEvent(sr.Parent.SrcIP, sr.Parent.DstIP, host)
+		traffic.SendEvent2Redis(sr.Parent.SrcIP, sr.Parent.DstIP, sr.GetUrls()[0])
 	}
 	sr.Parent.Metadata.HttpInfo = httpInfo
 	sr.Parent.ApplicationProtocol = protocols.HTTP

@@ -10,8 +10,6 @@ geo2ip: /Users/yuantong/Documents/GeoIP2-City.mmdb
 use_mongo: false
 # 是否分析user-agent
 use_ua: true
-# unix socket句柄配置，web子命令和capture子命令通信
-unix_socket: /tmp/capture.sock
 # 捕获子命令相关配置
 capture:
   # 离线数据包文件

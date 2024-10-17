@@ -7,6 +7,7 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/socket/handler"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/traffic"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/cron"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/mongo"
@@ -199,7 +200,8 @@ func loadComponents() {
 	}
 
 	cron.Start()
-	_ = ants.Submit(users.ListenUserEvents)
+	_ = ants.Submit(users.ListenUserEvents)      // 监听用户上下线
+	_ = ants.Submit(traffic.ListenEventConsumer) // 监听mmtls
 
 	if config.Debug {
 		_ = ants.Submit(func() {
