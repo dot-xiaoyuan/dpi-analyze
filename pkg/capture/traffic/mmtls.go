@@ -97,7 +97,7 @@ func processEvent(event MMTLSEvent) {
 	count, _ := redis.GetRedisClient().SCard(context.Background(), key).Result()
 	if count > 1 {
 		zap.L().Debug("Multiple target IPs", zap.String("src_ip", event.SourceIP), zap.String("dst_ip", event.TargetIP))
-		fmt.Printf("Multiple target IPs: %s\n", event.SourceIP)
+		fmt.Printf("Multiple target IPs: %s\n, member => %s", event.SourceIP, key)
 	}
 	redis.GetRedisClient().Expire(context.Background(), key, time.Minute*5).Val()
 }
