@@ -105,6 +105,7 @@ func (sr *StreamReader) GetIdentifier(buffer []byte) protocols.ProtocolType {
 func (sr *StreamReader) SetTlsInfo(sni, version, cipherSuite string) {
 	if sni != "" {
 		sr.Parent.Metadata.TlsInfo.Sni = sni
+		traffic.SendSNIEvent2Redis(sr.Parent.SrcIP, sr.Parent.DstIP, sni)
 	}
 	if version != "" {
 		sr.Parent.Metadata.TlsInfo.Version = version

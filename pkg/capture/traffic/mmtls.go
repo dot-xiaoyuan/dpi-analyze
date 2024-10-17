@@ -18,50 +18,6 @@ type Event struct {
 	URL      string
 }
 
-var (
-	eventChannel    = make(chan Event, 100)
-	connectionCache sync.Map // 记录 （源IP + URL） -> ConnectionInfo
-)
-
-type ConnectionInfo struct {
-	URL      string
-	TargetIP map[string]struct{}
-}
-
-func SendMMTLSEvent(sourceIP, targetIP, url string) {
-	event := Event{SourceIP: sourceIP, TargetIP: targetIP, URL: url}
-	eventChannel <- event
-}
-
-func handleEvent(event Event) {
-	key := fmt.Sprintf("%s-%s", event.SourceIP, event.URL)
-
-	// 检查缓存中是否已存在该 (源IP + URL) 组合
-	value, ok := connectionCache.Load(key)
-	if !ok {
-		// 不存在
-		info := ConnectionInfo{URL: event.URL, TargetIP: make(map[string]struct{})}
-		info.TargetIP[event.TargetIP] = struct{}{}
-		connectionCache.Store(key, info)
-	} else {
-		// 已存在
-		info := value.(ConnectionInfo)
-		if _, found := info.TargetIP[event.TargetIP]; !found {
-			// 新目标IP
-			info.TargetIP[event.TargetIP] = struct{}{}
-			connectionCache.Store(key, info)
-		}
-	}
-}
-
-func ListenMMTLSEvent() {
-	for event := range eventChannel {
-		_ = ants.Submit(func() {
-			handleEvent(event)
-		})
-	}
-}
-
 type MMTLSEvent struct {
 	SourceIP string
 	TargetIP string
@@ -77,7 +33,7 @@ var eventPool = sync.Pool{
 // SendEvent2Redis 发送事件到redis队列
 func SendEvent2Redis(s, d, u string) {
 	_, err := redis.GetRedisClient().LPush(context.Background(),
-		types.ListEventQueue,
+		types.ListMMTLSEventQueue,
 		fmt.Sprintf("%s|%s|%s", s, d, u)).Result()
 	if err != nil {
 		zap.L().Error("Failed to push event 2 redis:", zap.Error(err))
@@ -97,14 +53,14 @@ func processEvent(event MMTLSEvent) {
 	count, _ := redis.GetRedisClient().SCard(context.Background(), key).Result()
 	if count > 1 {
 		zap.L().Debug("Multiple target IPs", zap.String("src_ip", event.SourceIP), zap.String("dst_ip", event.TargetIP))
-		fmt.Printf("Multiple target IPs: %s\n, member => %s", event.SourceIP, key)
+		fmt.Printf("Multiple target IPs: %s, member => %s\n", event.SourceIP, key)
 	}
 	redis.GetRedisClient().Expire(context.Background(), key, time.Minute*5).Val()
 }
 
 func ListenEventConsumer() {
 	for {
-		result, err := redis.GetRedisClient().BRPop(context.Background(), 0, types.ListEventQueue).Result()
+		result, err := redis.GetRedisClient().BRPop(context.Background(), 0, types.ListMMTLSEventQueue).Result()
 		if err != nil {
 			time.Sleep(1 * time.Second)
 			continue

@@ -200,8 +200,9 @@ func loadComponents() {
 	}
 
 	cron.Start()
-	_ = ants.Submit(users.ListenUserEvents)      // 监听用户上下线
-	_ = ants.Submit(traffic.ListenEventConsumer) // 监听mmtls
+	_ = ants.Submit(users.ListenUserEvents)         // 监听用户上下线
+	_ = ants.Submit(traffic.ListenEventConsumer)    // 监听mmtls
+	_ = ants.Submit(traffic.ListenSNIEventConsumer) // 监听sni
 
 	if config.Debug {
 		_ = ants.Submit(func() {
