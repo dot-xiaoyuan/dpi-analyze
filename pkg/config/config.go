@@ -22,41 +22,43 @@ var (
 )
 
 var (
-	Home                 string
-	Signal               string
-	Cfg                  *Yaml
-	Language             string
-	LogLevel             string
-	Debug                bool
-	Geo2IP               string
-	CaptureNic           string
-	CapturePcap          string
-	UseMongo             bool
-	ParseFeature         bool
-	BerkeleyPacketFilter string
-	IgnoreMissing        bool
-	UseTTL               bool
-	UseUA                bool
-	WebPort              uint
-	Detach               bool
+	Home                  string
+	Signal                string
+	Cfg                   *Yaml
+	Language              string
+	LogLevel              string
+	Debug                 bool
+	Geo2IP                string
+	CaptureNic            string
+	CapturePcap           string
+	UseMongo              bool
+	ParseFeature          bool
+	BerkeleyPacketFilter  string
+	IgnoreMissing         bool
+	FollowOnlyOnlineUsers bool
+	UseTTL                bool
+	UseUA                 bool
+	WebPort               uint
+	Detach                bool
 )
 
 type Yaml struct {
-	Language             string  `mapstructure:"language"`
-	LogLevel             string  `mapstructure:"log_level"`
-	Debug                bool    `mapstructure:"debug"`
-	Detach               bool    `mapstructure:"detach"`
-	Geo2IP               string  `mapstructure:"geo2ip"`
-	UseMongo             bool    `mapstructure:"use_mongo"`
-	ParseFeature         bool    `mapstructure:"parse_app"`
-	BerkeleyPacketFilter string  `mapstructure:"berkeley_packet_filter"`
-	IgnoreMissing        bool    `mapstructure:"ignore_missing"`
-	UseTTL               bool    `mapstructure:"use_ttl"`
-	UseUA                bool    `mapstructure:"use_ua"`
-	Capture              Capture `mapstructure:"capture"`
-	Mongodb              Mongodb `mapstructure:"mongodb"`
-	Redis                Redis   `mapstructure:"redis"`
-	Web                  Web
+	Language              string  `mapstructure:"language"`
+	LogLevel              string  `mapstructure:"log_level"`
+	Debug                 bool    `mapstructure:"debug"`
+	Detach                bool    `mapstructure:"detach"`
+	Geo2IP                string  `mapstructure:"geo2ip"`
+	UseMongo              bool    `mapstructure:"use_mongo"`
+	ParseFeature          bool    `mapstructure:"parse_app"`
+	BerkeleyPacketFilter  string  `mapstructure:"berkeley_packet_filter"`
+	IgnoreMissing         bool    `mapstructure:"ignore_missing"`
+	FollowOnlyOnlineUsers bool    `mapstructure:"follow_only_online_users"`
+	UseTTL                bool    `mapstructure:"use_ttl"`
+	UseUA                 bool    `mapstructure:"use_ua"`
+	Capture               Capture `mapstructure:"capture"`
+	Mongodb               Mongodb `mapstructure:"mongodb"`
+	Redis                 Redis   `mapstructure:"redis"`
+	Web                   Web
 }
 
 type Capture struct {

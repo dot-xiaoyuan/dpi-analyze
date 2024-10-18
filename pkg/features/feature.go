@@ -21,7 +21,7 @@ var (
 	one           sync.Once
 	AppFeature    []Feature
 	DomainFeature []string
-	DomainMap     = make(map[int]string)
+	DomainMap     = make(map[int]Feature)
 	DomainAc      *ahocorasick.Matcher
 	parseMu       sync.Mutex // 用于避免并发问题
 )
@@ -35,6 +35,7 @@ type Feature struct {
 	Hostname string `json:"hostname"`
 	Request  string `json:"request"`
 	Dict     string `json:"dict"`
+	Category string `json:"category"`
 }
 
 // Setup 初始化特征组件，确保只加载一次
@@ -58,22 +59,31 @@ func loadFeature() (err error) {
 	scanner := bufio.NewScanner(bytes.NewReader(FeatureCfg))
 	lineNumber := 0
 	var wg sync.WaitGroup
-
+	var category string
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
 		lineNumber++
 
-		if line == "" || strings.HasPrefix(line, "#") {
+		// 跳过空行
+		if line == "" {
 			continue
+		}
+		if strings.HasPrefix(line, "#") {
+			if strings.Contains(line, "class") {
+				temp := strings.Split(line, " ")
+				category = temp[len(temp)-1]
+			} else {
+				continue
+			}
 		}
 
 		wg.Add(1)
-		go func(line string, lineNum int) {
+		go func(line string, lineNum int, category string) {
 			defer wg.Done()
-			if err = parse(line); err != nil {
+			if err = parse(line, category); err != nil {
 				zap.L().Error("Failed to parse feature", zap.String("line", line), zap.Error(err), zap.Int("lineNumber", lineNum))
 			}
-		}(line, lineNumber)
+		}(line, lineNumber, category)
 	}
 
 	wg.Wait()
@@ -89,7 +99,7 @@ func loadFeature() (err error) {
 }
 
 // 解析单行特征配置
-func parse(line string) error {
+func parse(line, category string) error {
 	re := regexp.MustCompile(`(\d+) (.+):\[(.+)]`)
 	match := re.FindStringSubmatch(line)
 	if len(match) < 4 {
@@ -97,8 +107,9 @@ func parse(line string) error {
 	}
 
 	f := Feature{
-		ID:   match[1],
-		Name: match[2],
+		ID:       match[1],
+		Name:     match[2],
+		Category: category,
 	}
 
 	features := strings.Split(match[3], ",")
@@ -113,7 +124,7 @@ func parse(line string) error {
 
 		parseMu.Lock()
 		AppFeature = append(AppFeature, f)
-		addDomain(f.Name, f.Hostname)
+		addDomain(f)
 		parseMu.Unlock()
 	}
 
@@ -121,19 +132,18 @@ func parse(line string) error {
 }
 
 // 处理域名并添加到匹配器列表
-func addDomain(app, hostname string) {
-	if hostname == "" {
+func addDomain(f Feature) {
+	if f.Hostname == "" {
 		return
 	}
 
-	DomainFeature = append(DomainFeature, hostname)
-	DomainMap[len(DomainFeature)-1] = app
-
+	DomainFeature = append(DomainFeature, f.Hostname)
+	DomainMap[len(DomainFeature)-1] = f
 	// 处理多级域名
-	if strings.Count(hostname, ".") >= 2 {
-		parts := strings.SplitN(hostname, ".", 2)
+	if strings.Count(f.Hostname, ".") >= 2 {
+		parts := strings.SplitN(f.Hostname, ".", 2)
 		subdomain := parts[1]
 		DomainFeature = append(DomainFeature, subdomain)
-		DomainMap[len(DomainFeature)-1] = app
+		DomainMap[len(DomainFeature)-1] = f
 	}
 }

@@ -48,8 +48,8 @@ func storeUser(ip string, user types.User) {
 	}).Val()
 }
 
-// 记录用户，下线删除在线表中的IP
-func dropUser(ip string) {
+// DropUser 记录用户，下线删除在线表中的IP
+func DropUser(ip string) {
 	OnlineUsers.Delete(ip)
 	rdb := redis.GetRedisClient()
 	ctx := context.TODO()
@@ -57,13 +57,19 @@ func dropUser(ip string) {
 	rdb.ZRem(ctx, types.ZSetOnlineUsers, ip).Val()
 }
 
-// 查找用户
-func findUser(ip string) types.User {
+// FindUser 查找用户
+func FindUser(ip string) types.User {
 	user, ok := OnlineUsers.Load(ip)
 	if ok {
 		return user.(types.User)
 	}
 	return types.User{}
+}
+
+// ExitsUser 用户是否存在
+func ExitsUser(ip string) bool {
+	_, ok := OnlineUsers.Load(ip)
+	return ok
 }
 
 func Traversal(c provider.Condition) (int64, interface{}, error) {
@@ -94,7 +100,7 @@ func Traversal(c provider.Condition) (int64, interface{}, error) {
 	ips := zRangCmd.Val()
 	var result []types.User
 	for _, ip := range ips {
-		user := findUser(ip.Member.(string))
+		user := FindUser(ip.Member.(string))
 		result = append(result, user)
 	}
 	return count, result, nil
@@ -119,7 +125,7 @@ func (u *UserEvent) LoadEvent() {
 
 // DropEvent 下线事件
 func (u *UserEvent) DropEvent() {
-	dropUser(u.Ip)
+	DropUser(u.Ip)
 	u.Save2Mongo()
 }
 

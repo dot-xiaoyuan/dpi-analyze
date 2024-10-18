@@ -105,7 +105,15 @@ func (sr *StreamReader) GetIdentifier(buffer []byte) protocols.ProtocolType {
 func (sr *StreamReader) SetTlsInfo(sni, version, cipherSuite string) {
 	if sni != "" {
 		sr.Parent.Metadata.TlsInfo.Sni = sni
-		traffic.SendSNIEvent2Redis(sr.Parent.SrcIP, sr.Parent.DstIP, sni)
+		traffic.SendSNIEvent2Redis(sr.Parent.SrcIP, sr.Parent.DstIP, sni, version, cipherSuite, sr.Parent.SessionID)
+		// 如果特征库加载 进行域名分析
+		if features.DomainAc != nil {
+			if ok, feature := features.DomainMatch(sni); ok {
+				sr.Parent.Metadata.ApplicationInfo.AppName = feature.Name
+				sr.Parent.Metadata.ApplicationInfo.AppCategory = feature.Category
+			}
+			sr.Parent.Metadata.ApplicationInfo.AddUp()
+		}
 	}
 	if version != "" {
 		sr.Parent.Metadata.TlsInfo.Version = version
@@ -114,12 +122,6 @@ func (sr *StreamReader) SetTlsInfo(sni, version, cipherSuite string) {
 		sr.Parent.Metadata.TlsInfo.CipherSuite = cipherSuite
 	}
 	sr.Parent.ApplicationProtocol = protocols.TLS
-	// 如果特征库加载 进行域名分析
-	if features.DomainAc != nil && sni != "" {
-		sr.Parent.Metadata.ApplicationInfo.AppName = features.DomainMatch(sni)
-		// zap.L().Debug("sni", zap.String("sni", sni), zap.String("packet", sr.Parent.SessionID))
-		sr.Parent.Metadata.ApplicationInfo.AddUp()
-	}
 }
 
 // GetIdent 获取流方向
@@ -160,7 +162,10 @@ func (sr *StreamReader) SetHttpInfo(host, userAgent, contentType, upgrade string
 	}
 	// 如果特征库加载 进行域名分析
 	if features.DomainAc != nil && host != "" {
-		sr.Parent.Metadata.ApplicationInfo.AppName = features.DomainMatch(host)
+		if ok, feature := features.DomainMatch(host); ok {
+			sr.Parent.Metadata.ApplicationInfo.AppName = feature.Name
+			sr.Parent.Metadata.ApplicationInfo.AppCategory = feature.Category
+		}
 		sr.Parent.Metadata.ApplicationInfo.AddUp()
 	}
 	// 截取mmtls

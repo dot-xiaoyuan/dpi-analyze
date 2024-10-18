@@ -5,8 +5,10 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/member"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/types"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/users"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/reassembly"
@@ -65,7 +67,7 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 	}
 	// 网络层
 	internet := types.Internet{}
-	var ip string
+	var ip, dip string
 	if packet.NetworkLayer().LayerType() == layers.LayerTypeIPv4 {
 		ipv4 := packet.Layer(layers.LayerTypeIPv4).(*layers.IPv4)
 		// 设置网络层信息 IPv4
@@ -73,6 +75,7 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 		internet.DstIP = ipv4.DstIP.String()
 		// 设置源IP
 		ip = ipv4.SrcIP.String()
+		dip = ipv4.DstIP.String()
 	} else if packet.NetworkLayer().LayerType() == layers.LayerTypeIPv6 {
 		ipv6 := packet.Layer(layers.LayerTypeIPv6).(*layers.IPv6)
 		// 设置网络层信息 IPv6
@@ -80,6 +83,21 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 		internet.DstIP = ipv6.DstIP.String()
 		// 设置源IP
 		ip = ipv6.SrcIP.String()
+		dip = ipv6.DstIP.String()
+	}
+	// 仅关注在线用户 如果在线用户中不存在该IP跳过该数据包
+	if config.FollowOnlyOnlineUsers && !users.ExitsUser(ip) && !users.ExitsUser(dip) {
+		return
+	}
+	// user_ip 转储缓存
+	var userIp string
+	if users.ExitsUser(ip) {
+		userIp = ip
+	} else if users.ExitsUser(dip) {
+		userIp = dip
+	}
+	if userIp == "" {
+		return
 	}
 	// 如果 TTL = 255，跳过该数据包
 	if internet.TTL == 255 {
@@ -106,14 +124,14 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 	// 插入 IP hash 表
 	_ = ants.Submit(func() {
 		member.Store(member.Hash{
-			IP:    ip,
+			IP:    userIp,
 			Field: types.TTL,
 			Value: internet.TTL,
 		})
 	})
 	_ = ants.Submit(func() {
 		member.Store(member.Hash{
-			IP:    ip,
+			IP:    userIp,
 			Field: types.Mac,
 			Value: ethernet.SrcMac,
 		})

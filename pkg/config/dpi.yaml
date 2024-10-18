@@ -8,6 +8,9 @@ debug: false
 geo2ip: /Users/yuantong/Documents/GeoIP2-City.mmdb
 # 是否开启mongodb
 use_mongo: false
+# 仅关注在线用户
+follow_only_online_users: true
+use_ttl: true
 # 是否分析user-agent
 use_ua: true
 # 捕获子命令相关配置

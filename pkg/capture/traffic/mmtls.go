@@ -56,7 +56,7 @@ func processEvent(event MMTLSEvent) {
 		fmt.Printf("Multiple target IPs: %s, member => %s\n", event.SourceIP, key)
 		dips := redis.GetRedisClient().SMembers(context.Background(), key).Val()
 		for _, dip := range dips {
-			fmt.Printf("dips:%s", dip)
+			fmt.Printf("dips:%s\n", dip)
 		}
 	}
 	redis.GetRedisClient().Expire(context.Background(), key, time.Minute*5).Val()
