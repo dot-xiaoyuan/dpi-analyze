@@ -69,6 +69,7 @@ func Store(i interface{}) {
 		NewValue: v,
 		Property: hash.Field,
 	}
+	return
 }
 
 // 从缓存中获取

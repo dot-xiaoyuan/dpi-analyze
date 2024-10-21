@@ -84,7 +84,5 @@ var handlers = map[types.Property]func(e PropertyChangeEvent){
 }
 
 func Setup() {
-	_ = ants.Submit(func() {
-		ChangeEventIP(Events)
-	})
+	go ChangeEventIP(Events)
 }

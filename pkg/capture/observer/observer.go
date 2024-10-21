@@ -2,7 +2,6 @@ package observer
 
 import (
 	"context"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/redis"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/provider"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/types"
@@ -206,15 +205,9 @@ func (ob *Observer[T]) Traversal(c provider.Condition) (int64, interface{}, erro
 func Setup() {
 	// 程序运行前清空有序集合
 	CleanUp()
-	_ = ants.Submit(func() {
-		TTLObserver.WatchChange(TTLEvents)
-	})
-	_ = ants.Submit(func() {
-		MacObserver.WatchChange(MacEvents)
-	})
-	_ = ants.Submit(func() {
-		UaObserver.WatchChange(UaEvents)
-	})
+	go TTLObserver.WatchChange(TTLEvents)
+	go MacObserver.WatchChange(MacEvents)
+	go UaObserver.WatchChange(UaEvents)
 }
 
 func CleanUp() {

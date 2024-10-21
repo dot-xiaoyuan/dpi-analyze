@@ -7,7 +7,6 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/socket/handler"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/traffic"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/cron"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/mongo"
@@ -18,7 +17,6 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/spinners"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/uaparser"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/users"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/utils"
 	"github.com/sevlyar/go-daemon"
 	"github.com/spf13/cobra"
@@ -136,19 +134,24 @@ func captureRun() {
 	done := make(chan struct{})
 	defer close(done)
 
-	_ = ants.Submit(func() {
-		capture.StartCapture(ctx, capture.Config{
-			OffLine:              config.CapturePcap,
-			Nic:                  config.CaptureNic,
-			SnapLen:              16 << 10,
-			BerkeleyPacketFilter: config.BerkeleyPacketFilter,
-		}, assembly, done)
-	})
+	go capture.StartCapture(ctx, capture.Config{
+		OffLine:              config.CapturePcap,
+		Nic:                  config.CaptureNic,
+		SnapLen:              16 << 10,
+		BerkeleyPacketFilter: config.BerkeleyPacketFilter,
+	}, assembly, done)
 
 	// 阻塞等待信号或完成
 	// 等待捕获完成
-	<-done
-	handleCaptureCompletion(cancel, assembly)
+	select {
+	case <-done:
+		handleCaptureCompletion(cancel, assembly)
+		fmt.Println("capture completed")
+		break
+	case <-ctx.Done():
+		fmt.Println("capture cancelled")
+		break
+	}
 }
 
 // 捕获任务完成后的处理
@@ -157,7 +160,10 @@ func handleCaptureCompletion(cancel context.CancelFunc, assembly *analyze.Analyz
 	closed := assembly.Assembler.FlushAll()
 	assembly.Factory.WaitGoRoutines()
 
+	spinners.Start("Capture Completion")
+	time.Sleep(time.Second * 3)
 	zap.L().Info("Flushed stream", zap.Int("count", closed))
+	spinners.Stop("Capture Completion", nil)
 }
 
 // 信号监听 Goroutine
@@ -207,7 +213,7 @@ func loadComponents() {
 	spinners.WithSpinner("Loading Redis Component", redis.Setup)
 	spinners.WithSpinner("Loading Cron  Component", cron.Setup)
 	spinners.WithSpinner("Loading Ants  Component", func() error {
-		return ants.Setup(100)
+		return ants.Setup(5)
 	})
 
 	if config.UseMongo {
@@ -232,27 +238,27 @@ func loadComponents() {
 	// 在线用户同步组件
 	// 1.运行后先清除遗留数据
 	// 2.首次加载先全量加载一次，然后定时同步
-	userSync := users.UserSync{}
-	userSync.CleanUp()
-	spinners.WithSpinner("Loading OnlineUsers", func() error {
-		return users.SyncOnlineUsers()
-	})
+	//userSync := users.UserSync{}
+	//userSync.CleanUp()
+	//spinners.WithSpinner("Loading OnlineUsers", func() error {
+	//	return users.SyncOnlineUsers()
+	//})
 
 	//_, err := cron.AddJob("@every 1m", userSync)
 	//if err != nil {
 	//	zap.L().Error("Failed to start user sync job", zap.Error(err))
 	//	os.Exit(1)
 	//}
-
+	//
 	//if err = ants.Submit(socket.StartServer); err != nil {
 	//	zap.L().Error("Failed to start unix sock server", zap.Error(err))
 	//	os.Exit(1)
 	//}
-
+	//
 	//cron.Start()
-	_ = ants.Submit(users.ListenUserEvents)         // 监听用户上下线
-	_ = ants.Submit(traffic.ListenEventConsumer)    // 监听mmtls
-	_ = ants.Submit(traffic.ListenSNIEventConsumer) // 监听sni
+	//_ = ants.Submit(users.ListenUserEvents)         // 监听用户上下线
+	//_ = ants.Submit(traffic.ListenEventConsumer)    // 监听mmtls
+	//_ = ants.Submit(traffic.ListenSNIEventConsumer) // 监听sni
 
 	if config.Debug {
 		_ = ants.Submit(func() {

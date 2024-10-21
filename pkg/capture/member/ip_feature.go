@@ -59,6 +59,7 @@ func Increment[T string | int](i interface{}) {
 	}
 	putFeatureByMemory(hash.IP, m, features)
 	putRedis(hash.IP, hash.Field)
+	return
 }
 
 func GetFeatureByMemory[T any](ip string, m *sync.Map) ([]T, bool) {
