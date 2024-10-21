@@ -105,7 +105,13 @@ func (sr *StreamReader) GetIdentifier(buffer []byte) protocols.ProtocolType {
 func (sr *StreamReader) SetTlsInfo(sni, version, cipherSuite string) {
 	if sni != "" {
 		sr.Parent.Metadata.TlsInfo.Sni = sni
-		traffic.SendSNIEvent2Redis(sr.Parent.SrcIP, sr.Parent.DstIP, sni, version, cipherSuite, sr.Parent.SessionID)
+		_ = ants.Submit(func() {
+			member.Increment[string](member.Feature[string]{
+				IP:    sr.Parent.SrcIP,
+				Field: types.SNI,
+				Value: sni,
+			})
+		})
 		// 如果特征库加载 进行域名分析
 		if features.DomainAc != nil {
 			if ok, feature := features.DomainMatch(sni); ok {
@@ -157,6 +163,16 @@ func (sr *StreamReader) SetHttpInfo(host, userAgent, contentType, upgrade string
 				IP:    sr.Parent.SrcIP,
 				Field: types.UserAgent,
 				Value: userAgent,
+			})
+		})
+	}
+	// host
+	if host != "" {
+		_ = ants.Submit(func() {
+			member.Increment[string](member.Feature[string]{
+				IP:    sr.Parent.SrcIP,
+				Field: types.HTTP,
+				Value: host,
 			})
 		})
 	}

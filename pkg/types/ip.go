@@ -7,3 +7,10 @@ const (
 	Mac       Property = "mac"
 	UserAgent Property = "user-agent"
 )
+
+type Feature string
+
+const (
+	SNI  Feature = "sni"
+	HTTP Feature = "http"
+)

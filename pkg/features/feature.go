@@ -72,6 +72,7 @@ func loadFeature() (err error) {
 			if strings.Contains(line, "class") {
 				temp := strings.Split(line, " ")
 				category = temp[len(temp)-1]
+				continue
 			} else {
 				continue
 			}
@@ -116,7 +117,7 @@ func parse(line, category string) error {
 	for _, item := range features {
 		feature := strings.Split(item, ";")
 		if len(feature) != 6 {
-			return errors.New("invalid feature details")
+			continue
 		}
 
 		f.Protocol, f.SrcPort, f.DstPort = feature[0], feature[1], feature[2]
