@@ -1,6 +1,7 @@
 package analyze
 
 import (
+	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/analyze/memory"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
@@ -51,6 +52,7 @@ func NewAnalyzer() *Analyze {
 }
 
 func (a *Analyze) HandlePacket(packet gopacket.Packet) {
+	fmt.Println(capture.PacketsCount)
 	if packet == nil {
 		return
 	}
@@ -87,7 +89,7 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 	}
 	// 仅关注在线用户 如果在线用户中不存在该IP跳过该数据包
 	if config.FollowOnlyOnlineUsers && !users.ExitsUser(ip) && !users.ExitsUser(dip) {
-		return
+		//return
 	}
 	// user_ip 转储缓存
 	var userIp string
@@ -97,11 +99,11 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 		userIp = dip
 	}
 	if userIp == "" {
-		return
+		//return
 	}
 	// 如果 TTL = 255，跳过该数据包
 	if internet.TTL == 255 {
-		return
+		//return
 	}
 
 	if transportType := packet.TransportLayer().LayerType().String(); transportType != "" {

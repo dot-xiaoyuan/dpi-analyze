@@ -15,7 +15,6 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/features"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/maxmind"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/socket"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/spinners"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/uaparser"
@@ -123,10 +122,10 @@ func CaptureRun(*cobra.Command, []string) {
 
 func captureRun() {
 	// 创建上下文
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, _ := context.WithCancel(context.Background())
 
 	// 启动系统信号监听
-	go handleSignals(cancel)
+	//go handleSignals(cancel)
 
 	// 使用spinner加载组件
 	loadComponents()
@@ -135,28 +134,63 @@ func captureRun() {
 	assembly := analyze.NewAnalyzer()
 	done := make(chan struct{})
 
-	go capture.StartCapture(ctx, capture.Config{
-		OffLine:              config.CapturePcap,
-		Nic:                  config.CaptureNic,
-		SnapLen:              16 << 10,
-		BerkeleyPacketFilter: config.BerkeleyPacketFilter,
-	}, assembly, done)
+	_ = ants.Submit(func() {
+		capture.StartCapture(ctx, capture.Config{
+			OffLine:              config.CapturePcap,
+			Nic:                  config.CaptureNic,
+			SnapLen:              16 << 10,
+			BerkeleyPacketFilter: config.BerkeleyPacketFilter,
+		}, assembly, done)
+	})
+}
 
-	// wait signal
-	select {
-	case <-done:
-		handleCaptureCompletion(cancel, assembly)
-	}
+// 捕获任务完成后的处理
+func handleCaptureCompletion(cancel context.CancelFunc, assembly *analyze.Analyze) {
+	cancel()
+	closed := assembly.Assembler.FlushAll()
+	assembly.Factory.WaitGoRoutines()
+
+	zap.L().Info("Flushed stream", zap.Int("count", closed))
 }
 
 // 信号监听 Goroutine
 func handleSignals(cancel context.CancelFunc) {
 	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
+	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
 
 	sig := <-signalChan
 	zap.L().Info("Received signal", zap.String("signal", sig.String()))
 	handleGracefulExit(cancel)
+}
+
+// 优雅退出
+func handleGracefulExit(cancel context.CancelFunc) {
+	cancel()
+
+	spinners.Start(i18n.T("handle graceful wait exit"))
+	// 停止 cron，超时退出避免阻塞
+	done := make(chan struct{})
+	go func() {
+		cron.Stop()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		zap.L().Info("Cron stopped")
+	case <-time.After(2 * time.Second):
+		zap.L().Warn("Cron stop timeout")
+	}
+
+	// 释放协程池
+	ants.Release()
+	zap.L().Info("Release goroutine pool")
+
+	// 刷新日志并退出
+	_ = zap.L().Sync()
+	time.Sleep(500 * time.Millisecond)
+	spinners.Stop("capture stop", nil)
+	os.Exit(0)
 }
 
 // 加载所有组件并使用 Spinner 提示
@@ -189,24 +223,24 @@ func loadComponents() {
 	// 在线用户同步组件
 	// 1.运行后先清除遗留数据
 	// 2.首次加载先全量加载一次，然后定时同步
-	userSync := users.UserSync{}
-	userSync.CleanUp()
-	spinners.WithSpinner("Loading OnlineUsers", func() error {
-		return users.SyncOnlineUsers()
-	})
+	//userSync := users.UserSync{}
+	//userSync.CleanUp()
+	//spinners.WithSpinner("Loading OnlineUsers", func() error {
+	//	return users.SyncOnlineUsers()
+	//})
 
-	_, err := cron.AddJob("@every 1m", userSync)
-	if err != nil {
-		zap.L().Error("Failed to start user sync job", zap.Error(err))
-		os.Exit(1)
-	}
-
-	if err = ants.Submit(socket.StartServer); err != nil {
-		zap.L().Error("Failed to start unix sock server", zap.Error(err))
-		os.Exit(1)
-	}
-
-	cron.Start()
+	//_, err := cron.AddJob("@every 1m", userSync)
+	//if err != nil {
+	//	zap.L().Error("Failed to start user sync job", zap.Error(err))
+	//	os.Exit(1)
+	//}
+	//
+	//if err = ants.Submit(socket.StartServer); err != nil {
+	//	zap.L().Error("Failed to start unix sock server", zap.Error(err))
+	//	os.Exit(1)
+	//}
+	//
+	//cron.Start()
 	_ = ants.Submit(users.ListenUserEvents)         // 监听用户上下线
 	_ = ants.Submit(traffic.ListenEventConsumer)    // 监听mmtls
 	_ = ants.Submit(traffic.ListenSNIEventConsumer) // 监听sni
@@ -216,43 +250,4 @@ func loadComponents() {
 			log.Println(http.ListenAndServe(":6060", nil))
 		})
 	}
-}
-
-// 捕获任务完成后的处理
-func handleCaptureCompletion(cancel context.CancelFunc, assembly *analyze.Analyze) {
-	cancel()
-	closed := assembly.Assembler.FlushAll()
-	assembly.Factory.WaitGoRoutines()
-
-	zap.L().Info("Flushed stream", zap.Int("count", closed))
-}
-
-// 优雅退出
-func handleGracefulExit(cancel context.CancelFunc) {
-	cancel()
-
-	spinners.Start(i18n.T("handle graceful wait exit"))
-	// 停止 cron，超时退出避免阻塞
-	done := make(chan struct{})
-	go func() {
-		cron.Stop()
-		close(done)
-	}()
-
-	select {
-	case <-done:
-		zap.L().Info("Cron stopped")
-	case <-time.After(2 * time.Second):
-		zap.L().Warn("Cron stop timeout")
-	}
-
-	// 释放协程池
-	ants.Release()
-	zap.L().Info("Release goroutine pool")
-
-	// 刷新日志并退出
-	_ = zap.L().Sync()
-	time.Sleep(500 * time.Millisecond)
-	spinners.Stop("capture stop", nil)
-	os.Exit(0)
 }

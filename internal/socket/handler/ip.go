@@ -13,10 +13,14 @@ func IPDetail(raw json.RawMessage) any {
 
 	var ip string
 	_ = json.Unmarshal(raw, &ip)
+
+	featureSni, _ := member.GetFeatureByMemory[string](ip, &member.SNICache)
+
 	res := models.IPDetail{
 		TTLHistory: observer.TTLObserver.GetHistory(ip),
 		MacHistory: observer.MacObserver.GetHistory(ip),
 		UaHistory:  observer.UaObserver.GetHistory(ip),
+		SNIHistory: featureSni,
 		Detail:     member.GetHashForRedis(ip),
 	}
 

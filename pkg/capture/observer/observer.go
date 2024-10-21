@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	MaxTTLCount = 30
+	MaxTTLCount = 15
 	MaxMacCount = 3
 	MaxUaCount  = 5
 )

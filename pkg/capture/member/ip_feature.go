@@ -44,10 +44,10 @@ func Increment[T string | int](i interface{}) {
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	features, ok := getMemoryT[T](hash.IP, m)
+	features, ok := GetFeatureByMemory[T](hash.IP, m)
 	if !ok {
 		// memory 不存在，缓存
-		putMemoryT(hash.IP, m, []T{hash.Value})
+		putFeatureByMemory(hash.IP, m, []T{hash.Value})
 		return
 	}
 	features = append(features, hash.Value)
@@ -57,11 +57,11 @@ func Increment[T string | int](i interface{}) {
 			return
 		}
 	}
-	putMemoryT(hash.IP, m, features)
+	putFeatureByMemory(hash.IP, m, features)
 	putRedis(hash.IP, hash.Field)
 }
 
-func getMemoryT[T any](ip string, m *sync.Map) ([]T, bool) {
+func GetFeatureByMemory[T any](ip string, m *sync.Map) ([]T, bool) {
 	val, ok := m.Load(ip)
 	if ok {
 		return val.([]T), true
@@ -69,11 +69,12 @@ func getMemoryT[T any](ip string, m *sync.Map) ([]T, bool) {
 	return nil, false
 }
 
-func putMemoryT[T any](ip string, m *sync.Map, values []T) {
+func putFeatureByMemory[T any](ip string, m *sync.Map, values []T) {
 	m.Store(ip, values)
 }
 
 func putRedis(ip string, field types.Feature) {
 	key := fmt.Sprintf(types.HashAnalyzeIP, ip)
+	fmt.Printf("redis key: %s field: %s \n", key, field)
 	redis.GetRedisClient().HIncrBy(context.Background(), key, string(field), 1).Val()
 }

@@ -7,7 +7,7 @@ debug: false
 # geo2ip 数据文件
 geo2ip: /Users/yuantong/Documents/GeoIP2-City.mmdb
 # 是否开启mongodb
-use_mongo: false
+use_mongo: true
 # 仅关注在线用户
 follow_only_online_users: true
 use_ttl: true
@@ -23,6 +23,11 @@ capture:
 web:
   # 前端接口端口
   port: 8088
+# 权重
+feature:
+  sni:
+    window_size: 60
+    count_size: 10
 # mongodb，用于流分析持久化存储与查询
 mongodb:
   host: 127.0.0.1
