@@ -184,19 +184,25 @@ func loadComponents() {
 			return maxmind.Setup(config.Geo2IP)
 		})
 	}
-
-	if err := ants.Submit(socket.StartServer); err != nil {
-		zap.L().Error("Failed to start unix sock server", zap.Error(err))
-		os.Exit(1)
-	}
-
+	// 注册unix路由
 	handler.InitHandlers()
+	// 在线用户同步组件
+	// 1.运行后先清除遗留数据
+	// 2.首次加载先全量加载一次，然后定时同步
 	userSync := users.UserSync{}
 	userSync.CleanUp()
+	spinners.WithSpinner("Loading OnlineUsers", func() error {
+		return users.SyncOnlineUsers()
+	})
 
 	_, err := cron.AddJob("@every 1m", userSync)
 	if err != nil {
 		zap.L().Error("Failed to start user sync job", zap.Error(err))
+		os.Exit(1)
+	}
+
+	if err = ants.Submit(socket.StartServer); err != nil {
+		zap.L().Error("Failed to start unix sock server", zap.Error(err))
 		os.Exit(1)
 	}
 

@@ -19,7 +19,7 @@ type UserSync struct{}
 
 // CleanUp 清空用户在线表
 func (us UserSync) CleanUp() {
-	rdb := redis.GetOnlineRedisClient()
+	rdb := redis.GetRedisClient()
 	ctx := context.TODO()
 
 	rdb.Del(ctx, types.ZSetOnlineUsers).Val()
@@ -27,21 +27,31 @@ func (us UserSync) CleanUp() {
 
 // Run SyncOnlineUsers 同步在线用户
 func (us UserSync) Run() {
+	err := SyncOnlineUsers()
+	if err != nil {
+		os.Exit(1)
+	}
+}
+
+func SyncOnlineUsers() error {
 	rdb := redis.GetOnlineRedisClient()
 	ctx := context.TODO()
 
 	ids, err := rdb.LRange(ctx, types.ListRadOnline, 0, -1).Result()
 	if err != nil {
 		zap.L().Error(i18n.T("SyncOnlineUsers error"), zap.Error(err))
-		os.Exit(1)
+		return err
 	}
 
+	var count int
 	for _, id := range ids {
 		user := getHash(id, rdb)
 		if user.UserName != "" {
+			count++
 			storeUser(user.IP, user)
 		}
 	}
+	return nil
 }
 
 func ListenUserEvents() {
