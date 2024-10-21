@@ -15,7 +15,6 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/features"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/maxmind"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/socket"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/spinners"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/uaparser"
@@ -135,6 +134,7 @@ func captureRun() {
 	// 启动 Packet Capture
 	assembly := analyze.NewAnalyzer()
 	done := make(chan struct{})
+	defer close(done)
 
 	_ = ants.Submit(func() {
 		capture.StartCapture(ctx, capture.Config{
@@ -165,9 +165,11 @@ func handleSignals(cancel context.CancelFunc) {
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGTERM)
 
-	sig := <-signalChan
-	zap.L().Info("Received signal", zap.String("signal", sig.String()))
-	time.AfterFunc(2*time.Second, cancel) // 延迟 2 秒取消
+	select {
+	case sig := <-signalChan:
+		zap.L().Info("Received signal", zap.String("signal", sig.String()))
+		cancel() // 收到信号后立即取消上下文
+	}
 }
 
 // 优雅退出
@@ -236,18 +238,18 @@ func loadComponents() {
 		return users.SyncOnlineUsers()
 	})
 
-	_, err := cron.AddJob("@every 1m", userSync)
-	if err != nil {
-		zap.L().Error("Failed to start user sync job", zap.Error(err))
-		os.Exit(1)
-	}
+	//_, err := cron.AddJob("@every 1m", userSync)
+	//if err != nil {
+	//	zap.L().Error("Failed to start user sync job", zap.Error(err))
+	//	os.Exit(1)
+	//}
 
-	if err = ants.Submit(socket.StartServer); err != nil {
-		zap.L().Error("Failed to start unix sock server", zap.Error(err))
-		os.Exit(1)
-	}
+	//if err = ants.Submit(socket.StartServer); err != nil {
+	//	zap.L().Error("Failed to start unix sock server", zap.Error(err))
+	//	os.Exit(1)
+	//}
 
-	cron.Start()
+	//cron.Start()
 	_ = ants.Submit(users.ListenUserEvents)         // 监听用户上下线
 	_ = ants.Submit(traffic.ListenEventConsumer)    // 监听mmtls
 	_ = ants.Submit(traffic.ListenSNIEventConsumer) // 监听sni
