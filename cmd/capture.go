@@ -15,6 +15,7 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/features"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/maxmind"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/socket"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/spinners"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/uaparser"
@@ -122,10 +123,11 @@ func CaptureRun(*cobra.Command, []string) {
 
 func captureRun() {
 	// 创建上下文
-	ctx, _ := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	// 启动系统信号监听
-	//go handleSignals(cancel)
+	go handleSignals(cancel)
 
 	// 使用spinner加载组件
 	loadComponents()
@@ -142,6 +144,11 @@ func captureRun() {
 			BerkeleyPacketFilter: config.BerkeleyPacketFilter,
 		}, assembly, done)
 	})
+
+	// 阻塞等待信号或完成
+	// 等待捕获完成
+	<-done
+	handleCaptureCompletion(cancel, assembly)
 }
 
 // 捕获任务完成后的处理
@@ -156,11 +163,11 @@ func handleCaptureCompletion(cancel context.CancelFunc, assembly *analyze.Analyz
 // 信号监听 Goroutine
 func handleSignals(cancel context.CancelFunc) {
 	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(signalChan, syscall.SIGTERM)
 
 	sig := <-signalChan
 	zap.L().Info("Received signal", zap.String("signal", sig.String()))
-	handleGracefulExit(cancel)
+	time.AfterFunc(2*time.Second, cancel) // 延迟 2 秒取消
 }
 
 // 优雅退出
@@ -223,24 +230,24 @@ func loadComponents() {
 	// 在线用户同步组件
 	// 1.运行后先清除遗留数据
 	// 2.首次加载先全量加载一次，然后定时同步
-	//userSync := users.UserSync{}
-	//userSync.CleanUp()
-	//spinners.WithSpinner("Loading OnlineUsers", func() error {
-	//	return users.SyncOnlineUsers()
-	//})
+	userSync := users.UserSync{}
+	userSync.CleanUp()
+	spinners.WithSpinner("Loading OnlineUsers", func() error {
+		return users.SyncOnlineUsers()
+	})
 
-	//_, err := cron.AddJob("@every 1m", userSync)
-	//if err != nil {
-	//	zap.L().Error("Failed to start user sync job", zap.Error(err))
-	//	os.Exit(1)
-	//}
-	//
-	//if err = ants.Submit(socket.StartServer); err != nil {
-	//	zap.L().Error("Failed to start unix sock server", zap.Error(err))
-	//	os.Exit(1)
-	//}
-	//
-	//cron.Start()
+	_, err := cron.AddJob("@every 1m", userSync)
+	if err != nil {
+		zap.L().Error("Failed to start user sync job", zap.Error(err))
+		os.Exit(1)
+	}
+
+	if err = ants.Submit(socket.StartServer); err != nil {
+		zap.L().Error("Failed to start unix sock server", zap.Error(err))
+		os.Exit(1)
+	}
+
+	cron.Start()
 	_ = ants.Submit(users.ListenUserEvents)         // 监听用户上下线
 	_ = ants.Submit(traffic.ListenEventConsumer)    // 监听mmtls
 	_ = ants.Submit(traffic.ListenSNIEventConsumer) // 监听sni
