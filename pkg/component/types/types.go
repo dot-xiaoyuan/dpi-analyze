@@ -2,7 +2,7 @@ package types
 
 import (
 	"context"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/redis"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/redis"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"

@@ -2,9 +2,9 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/i18n"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/logger"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"log"
@@ -22,8 +22,14 @@ var rootCmd = &cobra.Command{
 	PreRun: PreFunc,
 	Run:    RunFunc,
 	PersistentPreRun: func(c *cobra.Command, args []string) {
-		logger.Setup()
-		i18n.Setup(config.Language)
+		// 加载日志组件
+		logger := &logger.Logger{}
+		_ = logger.Setup()
+		// 加载翻译组件
+		err := i18n.I18n.Setup()
+		if err != nil {
+			log.Fatal(err)
+		}
 	},
 }
 

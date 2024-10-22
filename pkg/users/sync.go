@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/redis"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/i18n"
+	types2 "github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/redis"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/types"
 	"go.uber.org/zap"
 	"os"
 	"time"
@@ -22,7 +22,7 @@ func (us UserSync) CleanUp() {
 	rdb := redis.GetRedisClient()
 	ctx := context.TODO()
 
-	rdb.Del(ctx, types.ZSetOnlineUsers).Val()
+	rdb.Del(ctx, types2.ZSetOnlineUsers).Val()
 }
 
 // Run SyncOnlineUsers 同步在线用户
@@ -37,7 +37,7 @@ func SyncOnlineUsers() error {
 	rdb := redis.GetOnlineRedisClient()
 	ctx := context.TODO()
 
-	ids, err := rdb.LRange(ctx, types.ListRadOnline, 0, -1).Result()
+	ids, err := rdb.LRange(ctx, types2.ListRadOnline, 0, -1).Result()
 	if err != nil {
 		zap.L().Error(i18n.T("SyncOnlineUsers error"), zap.Error(err))
 		return err
@@ -58,7 +58,7 @@ func ListenUserEvents() {
 	rdb := redis.GetCacheRedisClient()
 	ctx := context.TODO()
 
-	listKey := fmt.Sprintf(types.ListAntiProxy, config.Cfg.Redis.DPI.Host)
+	listKey := fmt.Sprintf(types2.ListAntiProxy, config.Cfg.Redis.DPI.Host)
 
 	for {
 		event, err := rdb.BLPop(ctx, time.Minute, listKey).Result()

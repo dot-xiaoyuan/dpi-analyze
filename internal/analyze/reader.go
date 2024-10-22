@@ -5,9 +5,9 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/member"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/traffic"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/features"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/features"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/types"
 	"io"
 	"slices"
 	"sync"
@@ -113,8 +113,8 @@ func (sr *StreamReader) SetTlsInfo(sni, version, cipherSuite string) {
 			})
 		})
 		// 如果特征库加载 进行域名分析
-		if features.DomainAc != nil {
-			if ok, feature := features.DomainMatch(sni); ok {
+		if features.AhoCorasick != nil {
+			if ok, feature := features.Match(sni); ok {
 				sr.Parent.Metadata.ApplicationInfo.AppName = feature.Name
 				sr.Parent.Metadata.ApplicationInfo.AppCategory = feature.Category
 			}
@@ -177,8 +177,8 @@ func (sr *StreamReader) SetHttpInfo(host, userAgent, contentType, upgrade string
 		})
 	}
 	// 如果特征库加载 进行域名分析
-	if features.DomainAc != nil && host != "" {
-		if ok, feature := features.DomainMatch(host); ok {
+	if features.AhoCorasick != nil && host != "" {
+		if ok, feature := features.Match(host); ok {
 			sr.Parent.Metadata.ApplicationInfo.AppName = feature.Name
 			sr.Parent.Metadata.ApplicationInfo.AppCategory = feature.Category
 		}

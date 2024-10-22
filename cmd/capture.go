@@ -7,16 +7,19 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/socket/handler"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/traffic"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/cron"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/redis"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/features"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/i18n"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/maxmind"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/spinners"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/uaparser"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/cron"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/mongo"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/redis"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/features"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/maxmind"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/spinners"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/types"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/uaparser"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/socket"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/users"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/utils"
 	"github.com/sevlyar/go-daemon"
 	"github.com/spf13/cobra"
@@ -58,7 +61,7 @@ var captureDaemon = &utils.Daemon{
 // 初始化Flag
 func init() {
 	// 初始化加载组件
-	spinners.Setup()
+	_ = spinners.Spinner.Setup()
 	// define flag
 	CaptureCmd.Flags().StringVar(&config.CaptureNic, "nic", config.Cfg.Capture.NIC, "capture nic")
 	CaptureCmd.Flags().StringVar(&config.CapturePcap, "pcap", config.Cfg.Capture.OfflineFile, "capture pcap file")
@@ -175,13 +178,12 @@ func handleSignals(cancel context.CancelFunc) {
 	case sig := <-signalChan:
 		zap.L().Info("Received signal", zap.String("signal", sig.String()))
 		cancel() // 收到信号后立即取消上下文
+		handleGracefulExit()
 	}
 }
 
 // 优雅退出
-func handleGracefulExit(cancel context.CancelFunc) {
-	cancel()
-
+func handleGracefulExit() {
 	spinners.Start(i18n.T("handle graceful wait exit"))
 	// 停止 cron，超时退出避免阻塞
 	done := make(chan struct{})
@@ -210,27 +212,28 @@ func handleGracefulExit(cancel context.CancelFunc) {
 
 // 加载所有组件并使用 Spinner 提示
 func loadComponents() {
-	spinners.WithSpinner("Loading Redis Component", redis.Setup)
-	spinners.WithSpinner("Loading Cron  Component", cron.Setup)
+	spinners.WithSpinner("Loading Redis Component", redis.Redis.Setup)
+	spinners.WithSpinner("Loading Cron  Component", cron.Cron.Setup)
 	spinners.WithSpinner("Loading Ants  Component", func() error {
 		return ants.Setup(5)
 	})
 
 	if config.UseMongo {
-		spinners.WithSpinner("Loading MongoDB Component", mongo.Setup)
+		spinners.WithSpinner("Loading MongoDB Component", mongo.Mongo.Setup)
 	}
 
 	if config.ParseFeature {
-		spinners.WithSpinner("Loading Feature Component", features.Setup)
+		spinners.WithSpinner("Loading Feature Component", features.Features.Setup)
 	}
 
 	if config.UseUA {
-		spinners.WithSpinner("Loading UserAgent Component", uaparser.Setup)
+		spinners.WithSpinner("Loading UserAgent Component", uaparser.UaParser.Setup)
 	}
 
 	if config.Geo2IP != "" {
 		spinners.WithSpinner("Loading Geo2IP Component", func() error {
-			return maxmind.Setup(config.Geo2IP)
+			maxmind.MaxMind.Filename = config.Geo2IP
+			return maxmind.MaxMind.Setup()
 		})
 	}
 	// 注册unix路由
@@ -238,27 +241,27 @@ func loadComponents() {
 	// 在线用户同步组件
 	// 1.运行后先清除遗留数据
 	// 2.首次加载先全量加载一次，然后定时同步
-	//userSync := users.UserSync{}
-	//userSync.CleanUp()
-	//spinners.WithSpinner("Loading OnlineUsers", func() error {
-	//	return users.SyncOnlineUsers()
-	//})
+	userSync := users.UserSync{}
+	userSync.CleanUp()
+	spinners.WithSpinner("Loading OnlineUsers", func() error {
+		return users.SyncOnlineUsers()
+	})
 
-	//_, err := cron.AddJob("@every 1m", userSync)
-	//if err != nil {
-	//	zap.L().Error("Failed to start user sync job", zap.Error(err))
-	//	os.Exit(1)
-	//}
-	//
-	//if err = ants.Submit(socket.StartServer); err != nil {
-	//	zap.L().Error("Failed to start unix sock server", zap.Error(err))
-	//	os.Exit(1)
-	//}
-	//
-	//cron.Start()
-	//_ = ants.Submit(users.ListenUserEvents)         // 监听用户上下线
-	//_ = ants.Submit(traffic.ListenEventConsumer)    // 监听mmtls
-	//_ = ants.Submit(traffic.ListenSNIEventConsumer) // 监听sni
+	_, err := cron.AddJob("@every 1m", userSync)
+	if err != nil {
+		zap.L().Error("Failed to start user sync job", zap.Error(err))
+		os.Exit(1)
+	}
+
+	if err = ants.Submit(socket.StartServer); err != nil {
+		zap.L().Error("Failed to start unix sock server", zap.Error(err))
+		os.Exit(1)
+	}
+
+	cron.Start()
+	_ = ants.Submit(users.ListenUserEvents)         // 监听用户上下线
+	_ = ants.Submit(traffic.ListenEventConsumer)    // 监听mmtls
+	_ = ants.Submit(traffic.ListenSNIEventConsumer) // 监听sni
 
 	if config.Debug {
 		_ = ants.Submit(func() {

@@ -1,7 +1,7 @@
 package memory
 
 import (
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/types"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"sync"
 )
 

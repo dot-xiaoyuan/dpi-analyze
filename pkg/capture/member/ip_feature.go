@@ -3,8 +3,8 @@ package member
 import (
 	"context"
 	"fmt"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/redis"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/types"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/redis"
+	types2 "github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"sync"
 )
 
@@ -17,7 +17,7 @@ var (
 
 type Feature[T any] struct {
 	IP    string
-	Field types.Feature
+	Field types2.Feature
 	Value T
 }
 
@@ -32,10 +32,10 @@ func Increment[T string | int](i interface{}) {
 
 	var m *sync.Map
 	switch hash.Field {
-	case types.SNI:
+	case types2.SNI:
 		m = &SNICache
 		break
-	case types.HTTP:
+	case types2.HTTP:
 		m = &HTTPCache
 		break
 	}
@@ -74,8 +74,8 @@ func putFeatureByMemory[T any](ip string, m *sync.Map, values []T) {
 	m.Store(ip, values)
 }
 
-func putRedis(ip string, field types.Feature) {
-	key := fmt.Sprintf(types.HashAnalyzeIP, ip)
+func putRedis(ip string, field types2.Feature) {
+	key := fmt.Sprintf(types2.HashAnalyzeIP, ip)
 	fmt.Printf("redis key: %s field: %s \n", key, field)
 	redis.GetRedisClient().HIncrBy(context.Background(), key, string(field), 1).Val()
 }

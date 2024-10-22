@@ -1,11 +1,11 @@
 package analyze
 
 import (
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/i18n"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/mongo"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/types"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/reassembly"
@@ -183,7 +183,7 @@ func (s *Stream) Save() {
 		ApplicationProtocol: s.ApplicationProtocol,
 		Metadata:            s.Metadata,
 	}
-	err := mongo.InsertOne("stream", sessionData)
+	err := mongo.Mongo.InsertOne("stream", sessionData)
 	if err != nil {
 		panic(err)
 	}

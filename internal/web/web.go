@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/web/router"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/mongo"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/logger"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/i18n"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/spinners"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -30,7 +30,7 @@ type Config struct {
 
 func NewWebServer(c Config) {
 	zap.L().Info(i18n.T("Start Load Mongodb Component"))
-	mongo.Setup()
+	spinners.WithSpinner("Loading Mongodb Component", mongo.Mongo.Setup)
 	zap.L().Info(i18n.T("Starting Web Server"))
 	web = gin.Default()
 	// cors
@@ -46,7 +46,7 @@ func NewWebServer(c Config) {
 	// 注册路由
 	router.Register(web)
 	// 日志中间件
-	web.Use(logger.GinLogger())
+	//web.Use(logger.GinLogger())
 	// 服务
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", c.Port),

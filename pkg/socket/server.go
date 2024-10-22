@@ -3,8 +3,8 @@ package socket
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/i18n"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
 	"go.uber.org/zap"
 	"net"
 	"os"

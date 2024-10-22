@@ -2,7 +2,7 @@ package statistics
 
 import (
 	"context"
-	mongo2 "github.com/dot-xiaoyuan/dpi-analyze/pkg/db/mongo"
+	mongo2 "github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"

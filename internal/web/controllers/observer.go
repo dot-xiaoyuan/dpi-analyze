@@ -3,9 +3,9 @@ package controllers
 import (
 	"encoding/json"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/web/common"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/provider"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/socket"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/utils"
 	"github.com/gin-gonic/gin"
 	"net/http"

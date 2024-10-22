@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/member"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/observer"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/i18n"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/i18n"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
 	"go.uber.org/zap"

@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/analyze/memory"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/socket/models"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/types"
 	"sync/atomic"
 )
 

@@ -9,22 +9,28 @@ import (
 )
 
 var (
-	once    sync.Once
-	Spinner *spinner.Spinner
+	Spinner spinners
 	mu      sync.Mutex // 防止并发冲突
 	count   int
 )
 
-// Setup 初始化 Spinner 实例，只执行一次
-func Setup() {
-	once.Do(func() {
-		loadSpinner()
-	})
+type spinners struct {
+	once        sync.Once
+	initialized bool
+	s           *spinner.Spinner
 }
 
-// 创建 Spinner 实例
-func loadSpinner() {
-	Spinner = spinner.New(spinner.CharSets[11], 100*time.Millisecond, spinner.WithWriter(os.Stderr))
+func (s *spinners) Setup() error {
+	var setupErr error
+	s.once.Do(func() {
+		if s.initialized {
+			setupErr = fmt.Errorf("spinner already initialized")
+			return
+		}
+		Spinner.s = spinner.New(spinner.CharSets[11], 100*time.Millisecond, spinner.WithWriter(os.Stderr))
+		s.initialized = true
+	})
+	return setupErr
 }
 
 // Start 启动加载动画并附加任务描述
@@ -34,10 +40,10 @@ func Start(task string) {
 
 	count++
 	formattedTask := formatTask(fmt.Sprintf("[%d] %s...", count, task), 50)
-	Spinner.Prefix = formattedTask
-	_ = Spinner.Color("green", "bold")
+	Spinner.s.Prefix = formattedTask
+	_ = Spinner.s.Color("blue", "bold")
 
-	Spinner.Start()
+	Spinner.s.Start()
 }
 
 // Stop 停止加载动画并打印状态信息
@@ -45,7 +51,7 @@ func Stop(task string, err error) {
 	mu.Lock()
 	defer mu.Unlock()
 
-	Spinner.Stop()
+	Spinner.s.Stop()
 
 	// 清除加载动画残留的行，避免显示错乱
 	_, _ = fmt.Fprintf(os.Stderr, "\r\033[K")

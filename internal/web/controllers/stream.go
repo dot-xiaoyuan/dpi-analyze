@@ -3,8 +3,8 @@ package controllers
 import (
 	"context"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/web/common"
-	mongodb "github.com/dot-xiaoyuan/dpi-analyze/pkg/db/mongo"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/types"
+	mongodb "github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/utils"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"

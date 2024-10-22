@@ -3,8 +3,8 @@ package member
 import (
 	"context"
 	"fmt"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/db/redis"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/types"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/redis"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	v9 "github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"strconv"

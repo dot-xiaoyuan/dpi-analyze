@@ -1,7 +1,7 @@
 package provider
 
 import (
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/types"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 )
 
 // 数据提供器
