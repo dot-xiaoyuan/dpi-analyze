@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/briandowns/spinner"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/web/router"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/i18n"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/spinners"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -30,7 +30,13 @@ type Config struct {
 
 func NewWebServer(c Config) {
 	zap.L().Info(i18n.T("Start Load Mongodb Component"))
-	spinners.WithSpinner("Loading Mongodb Component", mongo.Mongo.Setup)
+	sp := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
+	sp.Start()
+	if err := mongo.Setup(); err != nil {
+		sp.Stop()
+		os.Exit(1)
+	}
+	sp.Stop()
 	zap.L().Info(i18n.T("Starting Web Server"))
 	web = gin.Default()
 	// cors

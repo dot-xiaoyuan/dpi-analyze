@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/web"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/i18n"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/spinners"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/utils"
@@ -38,7 +37,6 @@ var webDaemon = &utils.Daemon{
 }
 
 func init() {
-	_ = spinners.Spinner.Setup()
 	// define flag
 	WebCmd.Flags().UintVar(&config.WebPort, "port", 8088, "web port to listen on")
 	WebCmd.Flags().BoolVarP(&config.Detach, "detach", "d", config.Cfg.Detach, "Run web in background and print process ID")

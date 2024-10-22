@@ -11,6 +11,10 @@ import (
 
 var Redis redis
 
+func Setup() error {
+	return Redis.Setup()
+}
+
 type redis struct {
 	once        sync.Once
 	initialized bool

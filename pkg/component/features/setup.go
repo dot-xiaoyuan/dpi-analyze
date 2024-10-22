@@ -25,6 +25,10 @@ var (
 	parseMutex    sync.Mutex
 )
 
+func Setup() error {
+	return Features.Setup()
+}
+
 type Feature struct {
 	ID       string `json:"id"`
 	Name     string `json:"name"`

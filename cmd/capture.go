@@ -3,23 +3,23 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"github.com/briandowns/spinner"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/analyze"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/socket/handler"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/cron"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/redis"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/features"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/i18n"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/maxmind"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/spinners"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/uaparser"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/socket"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/users"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/utils"
+	v3 "github.com/robfig/cron/v3"
 	"github.com/sevlyar/go-daemon"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -32,6 +32,9 @@ import (
 	"syscall"
 	"time"
 )
+
+var sp = spinner.New(spinner.CharSets[36], 100*time.Millisecond)
+var cron = v3.New()
 
 var CaptureCmd = &cobra.Command{
 	Use:    "capture",
@@ -60,7 +63,6 @@ var captureDaemon = &utils.Daemon{
 // 初始化Flag
 func init() {
 	// 初始化加载组件
-	_ = spinners.Spinner.Setup()
 	// define flag
 	CaptureCmd.Flags().StringVar(&config.CaptureNic, "nic", config.Cfg.Capture.NIC, "capture nic")
 	CaptureCmd.Flags().StringVar(&config.CapturePcap, "pcap", config.Cfg.Capture.OfflineFile, "capture pcap file")
@@ -162,10 +164,10 @@ func handleCaptureCompletion(cancel context.CancelFunc, assembly *analyze.Analyz
 	closed := assembly.Assembler.FlushAll()
 	assembly.Factory.WaitGoRoutines()
 
-	spinners.Start("Capture Completion")
+	sp.Start()
 	time.Sleep(time.Second * 3)
 	zap.L().Info("Flushed stream", zap.Int("count", closed))
-	spinners.Stop("Capture Completion", nil)
+	sp.Stop()
 }
 
 // 信号监听 Goroutine
@@ -183,7 +185,7 @@ func handleSignals(cancel context.CancelFunc) {
 
 // 优雅退出
 func handleGracefulExit() {
-	spinners.Start(i18n.T("handle graceful wait exit"))
+	sp.Start()
 	// 停止 cron，超时退出避免阻塞
 	done := make(chan struct{})
 	go func() {
@@ -205,35 +207,52 @@ func handleGracefulExit() {
 	// 刷新日志并退出
 	_ = zap.L().Sync()
 	time.Sleep(500 * time.Millisecond)
-	spinners.Stop("capture stop", nil)
+	sp.Stop()
 	os.Exit(0)
 }
 
 // 加载所有组件并使用 Spinner 提示
 func loadComponents() {
-	spinners.WithSpinner("Loading Redis Component", redis.Redis.Setup)
-	spinners.WithSpinner("Loading Cron  Component", cron.Cron.Setup)
-	spinners.WithSpinner("Loading Ants  Component", func() error {
-		return ants.Setup(1000)
-	})
+	var err error
+	sp.Start()
+	defer sp.Stop()
+	if err = redis.Setup(); err != nil {
+		//sp.Stop()
+		os.Exit(1)
+	}
+	sp.Start()
+	if err = ants.Setup(1000); err != nil {
+		//sp.Stop()
+		os.Exit(1)
+	}
 
 	if config.UseMongo {
-		spinners.WithSpinner("Loading MongoDB Component", mongo.Mongo.Setup)
+		if err = mongo.Setup(); err != nil {
+			//sp.Stop()
+			os.Exit(1)
+		}
 	}
 
 	if config.ParseFeature {
-		spinners.WithSpinner("Loading Feature Component", features.Features.Setup)
+		if err = features.Setup(); err != nil {
+			//sp.Stop()
+			os.Exit(1)
+		}
 	}
 
 	if config.UseUA {
-		spinners.WithSpinner("Loading UserAgent Component", uaparser.UaParser.Setup)
+		if err = uaparser.Setup(); err != nil {
+			//sp.Stop()
+			os.Exit(1)
+		}
 	}
 
 	if config.Geo2IP != "" {
-		spinners.WithSpinner("Loading Geo2IP Component", func() error {
-			maxmind.MaxMind.Filename = config.Geo2IP
-			return maxmind.MaxMind.Setup()
-		})
+		maxmind.MaxMind.Filename = config.Geo2IP
+		if err = maxmind.MaxMind.Setup(); err != nil {
+			//sp.Stop()
+			os.Exit(1)
+		}
 	}
 	// 注册unix路由
 	handler.InitHandlers()
@@ -243,11 +262,12 @@ func loadComponents() {
 	// 2.首次加载先全量加载一次，然后定时同步
 	userSync := users.UserSync{}
 	userSync.CleanUp()
-	spinners.WithSpinner("Loading OnlineUsers", func() error {
-		return users.SyncOnlineUsers()
-	})
+	if err = users.SyncOnlineUsers(); err != nil {
+		//sp.Stop()
+		os.Exit(1)
+	}
 
-	_, err := cron.AddJob("@every 1m", userSync)
+	_, err = cron.AddJob("@every 1m", userSync)
 	if err != nil {
 		zap.L().Error("Failed to start user sync job", zap.Error(err))
 		os.Exit(1)

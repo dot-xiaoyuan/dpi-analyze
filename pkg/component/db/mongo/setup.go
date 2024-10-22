@@ -13,6 +13,10 @@ import (
 
 var Mongo mongodb
 
+func Setup() error {
+	return Mongo.Setup()
+}
+
 type mongodb struct {
 	once        sync.Once
 	initialized bool

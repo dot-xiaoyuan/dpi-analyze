@@ -13,6 +13,10 @@ var regexes []byte
 
 var UaParser uaParser
 
+func Setup() error {
+	return UaParser.Setup()
+}
+
 type uaParser struct {
 	once        sync.Once
 	initialized bool

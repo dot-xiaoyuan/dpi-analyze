@@ -2,6 +2,8 @@ package analyze
 
 import (
 	"bufio"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/member"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/features"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
@@ -102,13 +104,13 @@ func (sr *StreamReader) GetIdentifier(buffer []byte) protocols.ProtocolType {
 func (sr *StreamReader) SetTlsInfo(sni, version, cipherSuite string) {
 	if sni != "" {
 		sr.Parent.Metadata.TlsInfo.Sni = sni
-		//_ = ants.Submit(func() { // 统计SNI
-		//	member.Increment[string](member.Feature[string]{
-		//		IP:    sr.Parent.SrcIP,
-		//		Field: types.SNI,
-		//		Value: sni,
-		//	})
-		//})
+		_ = ants.Submit(func() { // 统计SNI
+			member.Increment[string](member.Feature[string]{
+				IP:    sr.Parent.SrcIP,
+				Field: types.SNI,
+				Value: sni,
+			})
+		})
 		// 如果特征库加载 进行域名分析
 		if features.AhoCorasick != nil {
 			if ok, feature := features.Match(sni); ok {

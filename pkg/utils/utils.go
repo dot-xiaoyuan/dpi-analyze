@@ -157,3 +157,7 @@ func AbsDiff(new, old uint8) uint8 {
 	}
 	return old - new
 }
+
+func FormatOutput(originText string, width int) string {
+	return fmt.Sprintf("%-*s", width, originText)
+}

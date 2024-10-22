@@ -51,7 +51,6 @@ func NewAnalyzer() *Analyze {
 }
 
 func (a *Analyze) HandlePacket(packet gopacket.Packet) {
-	zap.L().Debug("packet count", zap.Int("count", capture.PacketsCount))
 	if packet == nil {
 		return
 	}
@@ -88,7 +87,7 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 	}
 	// 仅关注在线用户 如果在线用户中不存在该IP跳过该数据包
 	if config.FollowOnlyOnlineUsers && !users.ExitsUser(ip) && !users.ExitsUser(dip) {
-		return
+		//return
 	}
 	// user_ip 转储缓存
 	var userIp string
