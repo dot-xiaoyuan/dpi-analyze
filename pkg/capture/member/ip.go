@@ -50,8 +50,7 @@ func ChangeEventIP(events <-chan PropertyChangeEvent) {
 var handlers = map[types.Property]func(e PropertyChangeEvent){
 	types.TTL: func(event PropertyChangeEvent) {
 		zap.L().Debug("TTL Changed", zap.String("IP", event.IP), zap.Any("old", event.OldValue), zap.Any("new", event.NewValue))
-		_ = ants.Submit(func() {
-			// 发送到 TTL 观察者 Channel
+		_ = ants.Submit(func() { // 发送到 TTL 观察者 Channel
 			observer.TTLEvents <- observer.ChangeObserverEvent[uint8]{
 				IP:   event.IP,
 				Prev: event.OldValue.(uint8),
@@ -61,8 +60,7 @@ var handlers = map[types.Property]func(e PropertyChangeEvent){
 	},
 	types.Mac: func(event PropertyChangeEvent) {
 		zap.L().Debug("MAC Changed", zap.String("IP", event.IP), zap.Any("old", event.OldValue), zap.Any("new", event.NewValue))
-		_ = ants.Submit(func() {
-			// 发送到 Mac 观察者 Channel
+		_ = ants.Submit(func() { // 发送到 Mac 观察者 Channel
 			observer.MacEvents <- observer.ChangeObserverEvent[string]{
 				IP:   event.IP,
 				Prev: event.OldValue.(string),
@@ -72,8 +70,7 @@ var handlers = map[types.Property]func(e PropertyChangeEvent){
 	},
 	types.UserAgent: func(event PropertyChangeEvent) {
 		zap.L().Debug("UA Changed", zap.String("IP", event.IP), zap.Any("old", event.OldValue), zap.Any("new", event.NewValue))
-		_ = ants.Submit(func() {
-			// 发送到 Ua 观察者 Channel
+		_ = ants.Submit(func() { // 发送到 Ua 观察者 Channel
 			observer.UaEvents <- observer.ChangeObserverEvent[string]{
 				IP:   event.IP,
 				Prev: event.OldValue.(string),

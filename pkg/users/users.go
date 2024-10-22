@@ -6,7 +6,7 @@ import (
 	mongodb "github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/redis"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/i18n"
-	types2 "github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/provider"
 	v9 "github.com/redis/go-redis/v9"
 	"go.mongodb.org/mongo-driver/bson"
@@ -22,27 +22,26 @@ var (
 	hashFields  = []string{"user_name", "ip", "user_mac", "line_type", "add_time", "products_id", "billing_id", "control_id"}
 )
 
-type UserEvent types2.UserEvent
+type UserEvent types.UserEvent
 
-func getHash(id string, rdb *v9.Client) types2.User {
-	hashKey := fmt.Sprintf(types2.HashRadOnline, id)
-	var user types2.User
+func getHash(id string, rdb *v9.Client) types.User {
+	hashKey := fmt.Sprintf(types.HashRadOnline, id)
+	var user types.User
 	if err := rdb.HMGet(context.TODO(), hashKey, hashFields...).Scan(&user); err != nil {
 		zap.L().Error("Error getting hash", zap.String("hashKey", hashKey), zap.Error(err))
-		return types2.User{}
+		return types.User{}
 	}
 
-	zap.L().Debug("get user", zap.Any("user", user))
 	return user
 }
 
 // 记录用户，内部用sync.map。有序列表使用z set
-func storeUser(ip string, user types2.User) {
+func storeUser(ip string, user types.User) {
 	OnlineUsers.LoadOrStore(ip, user)
 	rdb := redis.GetRedisClient()
 	ctx := context.TODO()
 
-	rdb.ZAdd(ctx, types2.ZSetOnlineUsers, v9.Z{
+	rdb.ZAdd(ctx, types.ZSetOnlineUsers, v9.Z{
 		Score:  float64(user.AddTime),
 		Member: ip,
 	}).Val()
@@ -54,16 +53,16 @@ func DropUser(ip string) {
 	rdb := redis.GetRedisClient()
 	ctx := context.TODO()
 
-	rdb.ZRem(ctx, types2.ZSetOnlineUsers, ip).Val()
+	rdb.ZRem(ctx, types.ZSetOnlineUsers, ip).Val()
 }
 
 // FindUser 查找用户
-func FindUser(ip string) types2.User {
+func FindUser(ip string) types.User {
 	user, ok := OnlineUsers.Load(ip)
 	if ok {
-		return user.(types2.User)
+		return user.(types.User)
 	}
-	return types2.User{}
+	return types.User{}
 }
 
 // ExitsUser 用户是否存在
@@ -82,9 +81,9 @@ func Traversal(c provider.Condition) (int64, interface{}, error) {
 	zap.L().Debug("Online Users 偏移量", zap.Int64("start", start), zap.Int64("page", c.Page), zap.Int64("size", c.PageSize))
 	// Pipeline 批量查询
 	pipe := rdb.Pipeline()
-	count := rdb.ZCount(ctx, types2.ZSetOnlineUsers, c.Min, c.Max).Val()
+	count := rdb.ZCount(ctx, types.ZSetOnlineUsers, c.Min, c.Max).Val()
 	// step1. 分页查询集合
-	zRangCmd := rdb.ZRevRangeByScoreWithScores(ctx, types2.ZSetOnlineUsers, &v9.ZRangeBy{
+	zRangCmd := rdb.ZRevRangeByScoreWithScores(ctx, types.ZSetOnlineUsers, &v9.ZRangeBy{
 		Min:    c.Min,      // 查询范围的最小时间戳
 		Max:    c.Max,      // 查询范围的最大时间戳
 		Offset: start,      // 分页起始位置
@@ -98,7 +97,7 @@ func Traversal(c provider.Condition) (int64, interface{}, error) {
 	}
 
 	ips := zRangCmd.Val()
-	var result []types2.User
+	var result []types.User
 	for _, ip := range ips {
 		user := FindUser(ip.Member.(string))
 		result = append(result, user)
@@ -110,7 +109,7 @@ func Traversal(c provider.Condition) (int64, interface{}, error) {
 // 1.更新在线表
 // 2.记录事件日志2mongo
 func (u *UserEvent) LoadEvent() {
-	storeUser(u.Ip, types2.User{
+	storeUser(u.Ip, types.User{
 		UserName:   u.UserName,
 		IP:         u.Ip,
 		UserMac:    u.UserMac,
@@ -176,9 +175,9 @@ func UserEventQuery(c provider.UserEventCondition) (int64, any, error) {
 	}
 	defer cursor.Close(context.Background())
 
-	var result []types2.UserEvent
+	var result []types.UserEvent
 	for cursor.Next(context.Background()) {
-		var log types2.UserEvent
+		var log types.UserEvent
 		_ = cursor.Decode(&log)
 		result = append(result, log)
 	}

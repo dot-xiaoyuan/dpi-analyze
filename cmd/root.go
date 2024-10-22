@@ -26,6 +26,7 @@ var rootCmd = &cobra.Command{
 		logger := &logger.Logger{}
 		_ = logger.Setup()
 		// 加载翻译组件
+		i18n.I18n.Lang = config.Language
 		err := i18n.I18n.Setup()
 		if err != nil {
 			log.Fatal(err)

@@ -7,7 +7,6 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/socket/handler"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/traffic"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/cron"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/redis"
@@ -215,7 +214,7 @@ func loadComponents() {
 	spinners.WithSpinner("Loading Redis Component", redis.Redis.Setup)
 	spinners.WithSpinner("Loading Cron  Component", cron.Cron.Setup)
 	spinners.WithSpinner("Loading Ants  Component", func() error {
-		return ants.Setup(5)
+		return ants.Setup(1000)
 	})
 
 	if config.UseMongo {
@@ -238,6 +237,7 @@ func loadComponents() {
 	}
 	// 注册unix路由
 	handler.InitHandlers()
+
 	// 在线用户同步组件
 	// 1.运行后先清除遗留数据
 	// 2.首次加载先全量加载一次，然后定时同步
@@ -259,13 +259,14 @@ func loadComponents() {
 	}
 
 	cron.Start()
-	_ = ants.Submit(users.ListenUserEvents)         // 监听用户上下线
-	_ = ants.Submit(traffic.ListenEventConsumer)    // 监听mmtls
-	_ = ants.Submit(traffic.ListenSNIEventConsumer) // 监听sni
+
+	go users.ListenUserEvents() // 监听用户上下线
+	//_ = ants.Submit(traffic.ListenEventConsumer)    // 监听mmtls
+	//_ = ants.Submit(traffic.ListenSNIEventConsumer) // 监听sni
 
 	if config.Debug {
-		_ = ants.Submit(func() {
+		go func() {
 			log.Println(http.ListenAndServe(":6060", nil))
-		})
+		}()
 	}
 }

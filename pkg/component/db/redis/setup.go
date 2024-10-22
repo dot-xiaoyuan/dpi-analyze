@@ -88,7 +88,12 @@ func createClient(c config.RedisConfig) (*v9.Client, error) {
 	if err != nil {
 		return nil, err
 	} else {
-		zap.L().Info("Connected to redis!", zap.String("HOST", c.Host), zap.String("PORT", c.Port))
+		zap.L().Info(
+			"Connected to redis!",
+			zap.String("host", c.Host),
+			zap.String("port", c.Port),
+			zap.String("Password", c.Password),
+		)
 		return rdb, nil
 	}
 }

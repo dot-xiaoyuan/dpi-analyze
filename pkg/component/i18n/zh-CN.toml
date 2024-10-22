@@ -38,6 +38,7 @@
 "No Protocol Handler" = "无协议处理程序"
 "SG reassembled packet with bytes" = "重组数据包[{{.count}}]字节[ {{.ident}} ]"
 "Connection Closed" = "连接关闭 [ {{.ident}} ]"
+"capture packet" = "捕获数据包"
 
 # Mongodb
 "Start Load Mongodb Component" = "开始加载Mongodb组件"
@@ -71,3 +72,7 @@
 # ua parser
 "Start Load User-Agent Parser Component" = "开始加载ua解析组件"
 "ua parser component initialized!" = "ua解析组件加载完成"
+
+# user
+"Listen user events" = "监听用户事件"
+"SyncOnlineUsers" = "同步在线用户"

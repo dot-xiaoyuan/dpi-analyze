@@ -51,6 +51,7 @@ func SyncOnlineUsers() error {
 			storeUser(user.IP, user)
 		}
 	}
+	zap.L().Info(i18n.T("SyncOnlineUsers"), zap.Int("count", count))
 	return nil
 }
 

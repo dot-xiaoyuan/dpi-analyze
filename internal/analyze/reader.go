@@ -2,9 +2,6 @@ package analyze
 
 import (
 	"bufio"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/member"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/traffic"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/features"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
@@ -105,13 +102,13 @@ func (sr *StreamReader) GetIdentifier(buffer []byte) protocols.ProtocolType {
 func (sr *StreamReader) SetTlsInfo(sni, version, cipherSuite string) {
 	if sni != "" {
 		sr.Parent.Metadata.TlsInfo.Sni = sni
-		_ = ants.Submit(func() {
-			member.Increment[string](member.Feature[string]{
-				IP:    sr.Parent.SrcIP,
-				Field: types.SNI,
-				Value: sni,
-			})
-		})
+		//_ = ants.Submit(func() { // 统计SNI
+		//	member.Increment[string](member.Feature[string]{
+		//		IP:    sr.Parent.SrcIP,
+		//		Field: types.SNI,
+		//		Value: sni,
+		//	})
+		//})
 		// 如果特征库加载 进行域名分析
 		if features.AhoCorasick != nil {
 			if ok, feature := features.Match(sni); ok {
@@ -158,24 +155,24 @@ func (sr *StreamReader) SetHttpInfo(host, userAgent, contentType, upgrade string
 	}
 	// 如果ua有效
 	if userAgent != "" {
-		_ = ants.Submit(func() {
-			member.Store(member.Hash{
-				IP:    sr.Parent.SrcIP,
-				Field: types.UserAgent,
-				Value: userAgent,
-			})
-		})
+		//_ = ants.Submit(func() { // 统计UA
+		//	member.Store(member.Hash{
+		//		IP:    sr.Parent.SrcIP,
+		//		Field: types.UserAgent,
+		//		Value: userAgent,
+		//	})
+		//})
 	}
 	// host
-	if host != "" {
-		_ = ants.Submit(func() {
-			member.Increment[string](member.Feature[string]{
-				IP:    sr.Parent.SrcIP,
-				Field: types.HTTP,
-				Value: host,
-			})
-		})
-	}
+	//if host != "" {
+	//	_ = ants.Submit(func() { // 统计 http
+	//		member.Increment[string](member.Feature[string]{
+	//			IP:    sr.Parent.SrcIP,
+	//			Field: types.HTTP,
+	//			Value: host,
+	//		})
+	//	})
+	//}
 	// 如果特征库加载 进行域名分析
 	if features.AhoCorasick != nil && host != "" {
 		if ok, feature := features.Match(host); ok {
@@ -183,11 +180,6 @@ func (sr *StreamReader) SetHttpInfo(host, userAgent, contentType, upgrade string
 			sr.Parent.Metadata.ApplicationInfo.AppCategory = feature.Category
 		}
 		sr.Parent.Metadata.ApplicationInfo.AddUp()
-	}
-	// 截取mmtls
-	if len(upgrade) > 0 && upgrade == "mmtls" {
-		//traffic.SendMMTLSEvent(sr.Parent.SrcIP, sr.Parent.DstIP, host)
-		traffic.SendEvent2Redis(sr.Parent.SrcIP, sr.Parent.DstIP, sr.GetUrls()[0])
 	}
 	sr.Parent.Metadata.HttpInfo = httpInfo
 	sr.Parent.ApplicationProtocol = protocols.HTTP
