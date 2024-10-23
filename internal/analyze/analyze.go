@@ -51,6 +51,7 @@ func NewAnalyzer() *Analyze {
 }
 
 func (a *Analyze) HandlePacket(packet gopacket.Packet) {
+	//zap.L().Debug("Packet", zap.Int("count", capture.PacketsCount))
 	if packet == nil {
 		return
 	}

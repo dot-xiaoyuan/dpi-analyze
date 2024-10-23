@@ -85,6 +85,12 @@ func (ob *Observer[T]) RecordChange(ip string, value T) {
 	if len(history.Changes) == ob.MaxCount {
 		history.Changes = history.Changes[1:]
 	}
+	if len(history.MovingAverage) == ob.MaxCount {
+		history.MovingAverage = history.MovingAverage[1:]
+	}
+	if len(history.ValueChanges) == ob.MaxCount {
+		history.ValueChanges = history.ValueChanges[1:]
+	}
 
 	history.Changes = append(history.Changes, ChangeRecord[T]{
 		Time:  time.Now(),

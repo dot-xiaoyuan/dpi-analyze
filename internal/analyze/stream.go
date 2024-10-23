@@ -2,14 +2,12 @@ package analyze
 
 import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/i18n"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/reassembly"
-	"go.uber.org/zap"
 	"sync"
 	"time"
 )
@@ -147,9 +145,9 @@ func (s *Stream) ReassembledSG(sg reassembly.ScatterGather, ac reassembly.Assemb
 }
 
 func (s *Stream) ReassemblyComplete(ac reassembly.AssemblerContext) bool {
-	zap.L().Debug(i18n.TT("Connection Closed", map[string]interface{}{
-		"ident": s.Ident,
-	}))
+	//zap.L().Debug(i18n.TT("Connection Closed", map[string]interface{}{
+	//	"ident": s.Ident,
+	//}))
 
 	close(s.Client.Bytes)
 	close(s.Server.Bytes)

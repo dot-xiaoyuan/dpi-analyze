@@ -7,6 +7,7 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/features"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/utils"
 	"io"
 	"slices"
 	"sync"
@@ -108,7 +109,7 @@ func (sr *StreamReader) SetTlsInfo(sni, version, cipherSuite string) {
 			member.Increment[string](member.Feature[string]{
 				IP:    sr.Parent.SrcIP,
 				Field: types.SNI,
-				Value: sni,
+				Value: utils.FormatDomain(sni),
 			})
 		})
 		// 如果特征库加载 进行域名分析
@@ -166,15 +167,15 @@ func (sr *StreamReader) SetHttpInfo(host, userAgent, contentType, upgrade string
 		//})
 	}
 	// host
-	//if host != "" {
-	//	_ = ants.Submit(func() { // 统计 http
-	//		member.Increment[string](member.Feature[string]{
-	//			IP:    sr.Parent.SrcIP,
-	//			Field: types.HTTP,
-	//			Value: host,
-	//		})
-	//	})
-	//}
+	if host != "" {
+		_ = ants.Submit(func() { // 统计 http
+			member.Increment[string](member.Feature[string]{
+				IP:    sr.Parent.SrcIP,
+				Field: types.HTTP,
+				Value: utils.FormatDomain(host),
+			})
+		})
+	}
 	// 如果特征库加载 进行域名分析
 	if features.AhoCorasick != nil && host != "" {
 		if ok, feature := features.Match(host); ok {

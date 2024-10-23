@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"strings"
 )
 
 // 工具包
@@ -160,4 +161,12 @@ func AbsDiff(new, old uint8) uint8 {
 
 func FormatOutput(originText string, width int) string {
 	return fmt.Sprintf("%-*s", width, originText)
+}
+
+func FormatDomain(sni string) string {
+	if strings.Count(sni, ".") >= 2 {
+		parts := strings.Split(sni, ".")
+		return parts[len(parts)-2] + "." + parts[len(parts)-1]
+	}
+	return sni
 }

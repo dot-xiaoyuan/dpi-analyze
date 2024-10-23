@@ -125,8 +125,8 @@ func parse(line, category string) error {
 		Category: category,
 	}
 
-	features := strings.Split(match[3], ",")
-	for _, item := range features {
+	featureList := strings.Split(match[3], ",")
+	for _, item := range featureList {
 		feature := strings.Split(item, ";")
 		if len(feature) != 6 {
 			continue

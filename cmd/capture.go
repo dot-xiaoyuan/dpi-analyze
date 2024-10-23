@@ -221,7 +221,7 @@ func loadComponents() {
 		os.Exit(1)
 	}
 	sp.Start()
-	if err = ants.Setup(1000); err != nil {
+	if err = ants.Setup(10); err != nil {
 		//sp.Stop()
 		os.Exit(1)
 	}
@@ -272,14 +272,9 @@ func loadComponents() {
 		zap.L().Error("Failed to start user sync job", zap.Error(err))
 		os.Exit(1)
 	}
-
-	if err = ants.Submit(socket.StartServer); err != nil {
-		zap.L().Error("Failed to start unix sock server", zap.Error(err))
-		os.Exit(1)
-	}
-
 	cron.Start()
 
+	go socket.StartServer()
 	go users.ListenUserEvents() // 监听用户上下线
 	//_ = ants.Submit(traffic.ListenEventConsumer)    // 监听mmtls
 	//_ = ants.Submit(traffic.ListenSNIEventConsumer) // 监听sni

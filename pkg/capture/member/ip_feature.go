@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/redis"
 	types2 "github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
+	"go.uber.org/zap"
 	"sync"
 )
 
@@ -21,12 +22,6 @@ type Feature[T any] struct {
 	Value T
 }
 
-// IP锁
-func getFeatureMutex(ip string) *sync.Mutex {
-	val, _ := Mutex.LoadOrStore(ip, &sync.Mutex{})
-	return val.(*sync.Mutex)
-}
-
 func Increment[T string | int](i interface{}) {
 	hash := i.(Feature[T])
 
@@ -40,23 +35,20 @@ func Increment[T string | int](i interface{}) {
 		break
 	}
 
-	mutex := getFeatureMutex(hash.IP)
-	mutex.Lock()
-	defer mutex.Unlock()
-
 	features, ok := GetFeatureByMemory[T](hash.IP, m)
 	if !ok {
 		// memory 不存在，缓存
 		putFeatureByMemory(hash.IP, m, []T{hash.Value})
 		return
 	}
-	features = append(features, hash.Value)
 	// 已存在特征则跳过
 	for _, f := range features {
 		if f == hash.Value {
 			return
 		}
 	}
+	zap.L().Debug("append", zap.Any("sni", hash.Value))
+	features = append(features, hash.Value)
 	putFeatureByMemory(hash.IP, m, features)
 	putRedis(hash.IP, hash.Field)
 	return
@@ -76,6 +68,6 @@ func putFeatureByMemory[T any](ip string, m *sync.Map, values []T) {
 
 func putRedis(ip string, field types2.Feature) {
 	key := fmt.Sprintf(types2.HashAnalyzeIP, ip)
-	fmt.Printf("redis key: %s field: %s \n", key, field)
+	zap.L().Debug("redis key", zap.String("key", key))
 	redis.GetRedisClient().HIncrBy(context.Background(), key, string(field), 1).Val()
 }

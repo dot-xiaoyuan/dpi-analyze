@@ -42,10 +42,12 @@ func Store(i interface{}) {
 	}
 
 	mutex := getIPMutex(hash.IP)
+	mutex.RLock()
+	oldVal, ok := getMemory(hash.IP, m)
+	mutex.RUnlock()
+
 	mutex.Lock()
 	defer mutex.Unlock()
-
-	oldVal, ok := getMemory(hash.IP, m)
 	if !ok {
 		// memory 不存在,进行缓存
 		putMemory(hash.IP, m, v)
