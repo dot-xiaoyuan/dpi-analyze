@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/redis"
-	types2 "github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/uaparser"
 	v9 "github.com/redis/go-redis/v9"
 	"sync"
@@ -16,7 +16,7 @@ import (
 
 type Hash struct {
 	IP    string
-	Field types2.Property
+	Field types.Property
 	Value any
 }
 
@@ -27,15 +27,15 @@ func Store(i interface{}) {
 	var m *sync.Map
 	var v any
 	switch hash.Field {
-	case types2.TTL:
+	case types.TTL:
 		m = &TTLCache
 		v = hash.Value.(uint8)
 		break
-	case types2.Mac:
+	case types.Mac:
 		m = &MacCache
 		v = hash.Value.(string)
 		break
-	case types2.UserAgent:
+	case types.UserAgent:
 		m = &UaCache
 		v = uaparser.Parse(hash.Value.(string))
 		break
@@ -89,10 +89,10 @@ func putMemory(ip string, m *sync.Map, v any) {
 }
 
 // 从redis获取属性
-func getPropertyForRedis(ip string, property types2.Property) (any, bool) {
+func getPropertyForRedis(ip string, property types.Property) (any, bool) {
 	rdb := redis.GetRedisClient()
 	ctx := context.TODO()
-	key := fmt.Sprintf(types2.HashAnalyzeIP, ip)
+	key := fmt.Sprintf(types.HashAnalyzeIP, ip)
 
 	val, err := rdb.HMGet(ctx, key, string(property)).Result()
 	if errors.Is(err, v9.Nil) || len(val) == 1 {
@@ -105,7 +105,7 @@ func getPropertyForRedis(ip string, property types2.Property) (any, bool) {
 func GetHashForRedis(ip string) map[string]string {
 	rdb := redis.GetRedisClient()
 	ctx := context.TODO()
-	key := fmt.Sprintf(types2.HashAnalyzeIP, ip)
+	key := fmt.Sprintf(types.HashAnalyzeIP, ip)
 
 	val, err := rdb.HGetAll(ctx, key).Result()
 	if errors.Is(err, v9.Nil) || len(val) == 1 {
@@ -115,13 +115,13 @@ func GetHashForRedis(ip string) map[string]string {
 }
 
 // 存储ip hash 至redis
-func storeHash2Redis(ip string, property types2.Property, value any) {
+func storeHash2Redis(ip string, property types.Property, value any) {
 	rdb := redis.GetRedisClient()
 	ctx := context.TODO()
-	key := fmt.Sprintf(types2.HashAnalyzeIP, ip)
+	key := fmt.Sprintf(types.HashAnalyzeIP, ip)
 
 	// z_set 有序集合
-	rdb.ZAdd(ctx, types2.ZSetIP, v9.Z{
+	rdb.ZAdd(ctx, types.ZSetIP, v9.Z{
 		Score:  float64(time.Now().Unix()),
 		Member: ip,
 	})
@@ -133,5 +133,5 @@ func storeHash2Redis(ip string, property types2.Property, value any) {
 func CleanUp() {
 	rdb := redis.GetRedisClient()
 	ctx := context.TODO()
-	rdb.Del(ctx, types2.ZSetIP)
+	rdb.Del(ctx, types.ZSetIP)
 }
