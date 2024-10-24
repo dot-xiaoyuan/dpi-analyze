@@ -2,6 +2,8 @@ package member
 
 import (
 	"fmt"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"go.uber.org/zap"
@@ -26,6 +28,15 @@ type Feature struct {
 	IP    string
 	Field types.Feature
 	Value string
+}
+
+type IPTimeWindow struct {
+	IP   string
+	Data []FeatureData
+}
+type FeatureData struct {
+	Field    types.Feature
+	Features []TimeFeature
 }
 
 func GetCache(field types.Feature) *sync.Map {
@@ -82,39 +93,37 @@ func GetQPS(ip string) int {
 }
 
 // CleanExpiredData 清理过期数据
+// 每次清理前将数据保存到 mongodb
 func CleanExpiredData() {
 	ticker := time.NewTicker(1 * time.Minute)
 	for range ticker.C {
-		now := time.Now()
 		featureCaches.Range(func(key, value any) bool {
 			m := value.(*sync.Map)
+			field := key.(types.Feature)
 
-			// 清理每个特征缓存中的过期数据
+			// 收集并保存IP所有特征数据
+			var itw IPTimeWindow
+			// 记录时间窗口内缓存的数据，然后清空缓存
 			m.Range(func(ip, features any) bool {
-				filtered := filterExpired(features.([]TimeFeature), now)
-				if len(filtered) > 0 {
-					m.Store(ip, features)
-				} else {
-					m.Delete(ip)
+				if itw.IP == "" {
+					itw.IP = ip.(string)
 				}
+				itw.Data = append(itw.Data, FeatureData{
+					Field:    field,
+					Features: features.([]TimeFeature),
+				})
+				// 清理缓存
+				m.Delete(ip)
 				return true
+			})
+			_ = ants.Submit(func() {
+				save2mongo(itw)
 			})
 			return true
 		})
 		// 每分钟重置 QPS 计数器
 		resetQPSCounters()
 	}
-}
-
-// 过滤过期数据
-func filterExpired(features []TimeFeature, now time.Time) []TimeFeature {
-	var result []TimeFeature
-	for _, f := range features {
-		if now.Sub(f.Timestamp) < config.Cfg.Feature.SNI.TimeWindow {
-			result = append(result, f)
-		}
-	}
-	return result
 }
 
 // 重置 QPS 计数器
@@ -132,4 +141,21 @@ func PrintStatistics() {
 		fmt.Printf("IP: %s, QPS: %d, Weight: %d\n", ip, qps.(int), weight.(int))
 		return true
 	})
+}
+
+func save2mongo(itw IPTimeWindow) {
+	if !config.UseMongo {
+		return
+	}
+	raw := make(map[string]interface{})
+	// 统计数量 (一个时间窗口内的数量)
+	for _, item := range itw.Data {
+		raw[string(item.Field)] = item.Features
+		raw[fmt.Sprintf("%s_count", item.Field)] = len(item.Features)
+	}
+
+	err := mongo.Mongo.InsertOneFeature(itw.IP, raw)
+	if err != nil {
+		panic(err)
+	}
 }

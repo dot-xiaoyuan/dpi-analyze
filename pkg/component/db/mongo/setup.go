@@ -66,8 +66,8 @@ func (m *mongodb) Setup() error {
 	return setupErr
 }
 
-// InsertOne 插入集合
-func (m *mongodb) InsertOne(c string, d interface{}) error {
+// InsertOneStream 插入集合
+func (m *mongodb) InsertOneStream(c string, d interface{}) error {
 	if m.client == nil {
 		zap.L().Error("Mongodb Client Not Initialized")
 		return fmt.Errorf("mongodb Client Not Initialized")
@@ -76,7 +76,21 @@ func (m *mongodb) InsertOne(c string, d interface{}) error {
 	collection := m.client.Database("dpi").Collection(time.Now().Format(c + "-06-01-02-15"))
 	_, err := collection.InsertOne(context.TODO(), d)
 	if err != nil {
-		zap.L().Error("Mongodb InsertOne Error", zap.Error(err))
+		zap.L().Error("Mongodb InsertOneStream Error", zap.Error(err))
+	}
+	return err
+}
+
+func (m *mongodb) InsertOneFeature(c string, d interface{}) error {
+	if m.client == nil {
+		zap.L().Error("Mongodb Client Not Initialized")
+		return fmt.Errorf("mongodb Client Not Initialized")
+	}
+
+	collection := m.client.Database("ip-feature").Collection(c)
+	_, err := collection.InsertOne(context.TODO(), d)
+	if err != nil {
+		zap.L().Error("Mongodb InsertOneFeature Error", zap.Error(err))
 	}
 	return err
 }

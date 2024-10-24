@@ -186,7 +186,7 @@ func (s *Stream) Save() {
 		ApplicationProtocol: s.ApplicationProtocol,
 		Metadata:            s.Metadata,
 	}
-	err := mongo.Mongo.InsertOne("stream", sessionData)
+	err := mongo.Mongo.InsertOneStream("stream", sessionData)
 	if err != nil {
 		panic(err)
 	}
