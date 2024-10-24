@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cloudflare/ahocorasick"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"go.uber.org/zap"
 	"regexp"
 	"strings"
@@ -156,7 +157,20 @@ func addDomain(f Feature) {
 	if strings.Count(f.Hostname, ".") >= 2 {
 		parts := strings.SplitN(f.Hostname, ".", 2)
 		subdomain := parts[1]
+		if ignoreDomain(subdomain) {
+			return
+		}
 		DomainFeature = append(DomainFeature, subdomain)
 		DomainMap[len(DomainFeature)-1] = f
 	}
+}
+
+// 忽略域名
+func ignoreDomain(domain string) bool {
+	for _, item := range config.Cfg.IgnoreFeature {
+		if strings.Contains(domain, item) {
+			return true
+		}
+	}
+	return false
 }

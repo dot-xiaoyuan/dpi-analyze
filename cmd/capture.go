@@ -214,35 +214,27 @@ func handleGracefulExit() {
 // 加载所有组件并使用 Spinner 提示
 func loadComponents() {
 	var err error
-	sp.Start()
-	defer sp.Stop()
 	if err = redis.Setup(); err != nil {
-		//sp.Stop()
 		os.Exit(1)
 	}
-	sp.Start()
 	if err = ants.Setup(10); err != nil {
-		//sp.Stop()
 		os.Exit(1)
 	}
 
 	if config.UseMongo {
 		if err = mongo.Setup(); err != nil {
-			//sp.Stop()
 			os.Exit(1)
 		}
 	}
 
 	if config.ParseFeature {
 		if err = features.Setup(); err != nil {
-			//sp.Stop()
 			os.Exit(1)
 		}
 	}
 
 	if config.UseUA {
 		if err = uaparser.Setup(); err != nil {
-			//sp.Stop()
 			os.Exit(1)
 		}
 	}
@@ -250,7 +242,6 @@ func loadComponents() {
 	if config.Geo2IP != "" {
 		maxmind.MaxMind.Filename = config.Geo2IP
 		if err = maxmind.MaxMind.Setup(); err != nil {
-			//sp.Stop()
 			os.Exit(1)
 		}
 	}
@@ -267,7 +258,7 @@ func loadComponents() {
 		os.Exit(1)
 	}
 
-	_, err = cron.AddJob("@every 1m", userSync)
+	_, err = cron.AddJob("@every 30m", userSync)
 	if err != nil {
 		zap.L().Error("Failed to start user sync job", zap.Error(err))
 		os.Exit(1)

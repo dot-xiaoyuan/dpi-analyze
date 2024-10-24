@@ -3,6 +3,7 @@ package analyze
 import (
 	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/member"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
 	"github.com/google/gopacket"
@@ -24,6 +25,12 @@ func (f *Factory) New(netFlow, tcpFlow gopacket.Flow, tcp *layers.TCP, ac reasse
 
 	// 会话数累加
 	capture.SessionCount++
+
+	member.Increment(member.Feature{ // 会话数
+		IP:    netFlow.Src().String(),
+		Field: types.Session,
+		Value: netFlow.Dst().String(),
+	})
 
 	stream := &Stream{
 		SessionID:    protocols.GenerateSessionId(netFlow.Src().String(), netFlow.Dst().String(), tcpFlow.Src().String(), tcpFlow.Dst().String(), "tcp"),

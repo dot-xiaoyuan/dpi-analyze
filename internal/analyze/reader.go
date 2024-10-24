@@ -10,6 +10,7 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/utils"
 	"io"
 	"slices"
+	"strings"
 	"sync"
 )
 
@@ -106,7 +107,7 @@ func (sr *StreamReader) SetTlsInfo(sni, version, cipherSuite string) {
 	if sni != "" {
 		sr.Parent.Metadata.TlsInfo.Sni = sni
 		_ = ants.Submit(func() { // 统计SNI
-			member.Increment[string](member.Feature[string]{
+			member.Increment(member.Feature{
 				IP:    sr.Parent.SrcIP,
 				Field: types.SNI,
 				Value: utils.FormatDomain(sni),
@@ -123,9 +124,23 @@ func (sr *StreamReader) SetTlsInfo(sni, version, cipherSuite string) {
 	}
 	if version != "" {
 		sr.Parent.Metadata.TlsInfo.Version = version
+		_ = ants.Submit(func() {
+			member.Increment(member.Feature{
+				IP:    sr.Parent.SrcIP,
+				Field: types.TLSVersion,
+				Value: version,
+			})
+		})
 	}
 	if cipherSuite != "" {
 		sr.Parent.Metadata.TlsInfo.CipherSuite = cipherSuite
+		_ = ants.Submit(func() {
+			member.Increment(member.Feature{
+				IP:    sr.Parent.SrcIP,
+				Field: types.CipherSuite,
+				Value: cipherSuite,
+			})
+		})
 	}
 	sr.Parent.ApplicationProtocol = protocols.TLS
 }
@@ -158,18 +173,18 @@ func (sr *StreamReader) SetHttpInfo(host, userAgent, contentType, upgrade string
 	}
 	// 如果ua有效
 	if userAgent != "" {
-		//_ = ants.Submit(func() { // 统计UA
-		//	member.Store(member.Hash{
-		//		IP:    sr.Parent.SrcIP,
-		//		Field: types.UserAgent,
-		//		Value: userAgent,
-		//	})
-		//})
+		_ = ants.Submit(func() { // 统计UA
+			member.Store(member.Hash{
+				IP:    sr.Parent.SrcIP,
+				Field: types.UserAgent,
+				Value: userAgent,
+			})
+		})
 	}
 	// host
-	if host != "" {
+	if host != "" && host != "<no-request-seen>" && !strings.HasPrefix(host, "/") {
 		_ = ants.Submit(func() { // 统计 http
-			member.Increment[string](member.Feature[string]{
+			member.Increment(member.Feature{
 				IP:    sr.Parent.SrcIP,
 				Field: types.HTTP,
 				Value: utils.FormatDomain(host),

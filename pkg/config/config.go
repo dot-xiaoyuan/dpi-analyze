@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 //go:embed dpi.yaml
@@ -40,6 +41,7 @@ var (
 	UseUA                 bool
 	WebPort               uint
 	Detach                bool
+	TimeWindow            int
 )
 
 type Yaml struct {
@@ -59,6 +61,8 @@ type Yaml struct {
 	Mongodb               Mongodb `mapstructure:"mongodb"`
 	Redis                 Redis   `mapstructure:"redis"`
 	Web                   Web
+	IgnoreFeature         []string `mapstructure:"ignore_feature"`
+	Feature               Feature
 }
 
 type Capture struct {
@@ -69,6 +73,15 @@ type Capture struct {
 
 type Web struct {
 	Port uint `mapstructure:"port"`
+}
+
+type Feature struct {
+	SNI FeatureConfig `mapstructure:"sni"`
+}
+
+type FeatureConfig struct {
+	TimeWindow time.Duration `mapstructure:"time_window"`
+	CountSize  int           `mapstructure:"count_size"`
 }
 
 type Mongodb struct {

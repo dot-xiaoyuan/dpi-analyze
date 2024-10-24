@@ -55,5 +55,6 @@ func (u *uaParser) Parse(ua string) (*uaparser.Os, error) {
 
 func Parse(ua string) string {
 	os, _ := UaParser.Parse(ua)
-	return os.Family
+	zap.L().Debug("Parsed ua from UA", zap.String("ua", ua), zap.String("os", os.ToString()))
+	return os.ToString()
 }

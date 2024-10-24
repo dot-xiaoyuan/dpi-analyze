@@ -23,10 +23,13 @@ capture:
 web:
   # 前端接口端口
   port: 8088
+# 忽略域名特征
+ignore_feature:
+  - com.cn
 # 权重
 feature:
   sni:
-    window_size: 60
+    time_window: 60
     count_size: 10
 # mongodb，用于流分析持久化存储与查询
 mongodb:

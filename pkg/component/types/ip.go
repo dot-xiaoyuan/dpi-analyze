@@ -11,6 +11,9 @@ const (
 type Feature string
 
 const (
-	SNI  Feature = "sni"
-	HTTP Feature = "http"
+	SNI         Feature = "sni"
+	HTTP        Feature = "http"
+	TLSVersion  Feature = "tls-version"
+	CipherSuite Feature = "cipher-suite"
+	Session     Feature = "session"
 )

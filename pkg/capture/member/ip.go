@@ -74,4 +74,5 @@ var handlers = map[types.Property]func(e PropertyChangeEvent){
 
 func Setup() {
 	go ChangeEventIP(Events)
+	go CleanExpiredData()
 }
