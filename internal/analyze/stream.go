@@ -1,8 +1,6 @@
 package analyze
 
 import (
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/member"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
@@ -136,9 +134,9 @@ func (s *Stream) ReassembledSG(sg reassembly.ScatterGather, ac reassembly.Assemb
 		// Missing bytes in stream: do not even try to parse it
 		return
 	}
-	_ = ants.Submit(func() {
-		member.IncrementQPS(s.SrcIP)
-	})
+	//_ = ants.Submit(func() {
+	//	member.IncrementQPS(s.SrcIP)
+	//})
 	data := sg.Fetch(length)
 	if length > 0 {
 		if dir == reassembly.TCPDirClientToServer {

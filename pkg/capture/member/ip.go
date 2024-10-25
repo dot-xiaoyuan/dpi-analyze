@@ -4,6 +4,7 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/observer"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"sync"
+	"time"
 )
 
 // IP 相关的核心逻辑
@@ -74,5 +75,5 @@ var handlers = map[types.Property]func(e PropertyChangeEvent){
 
 func Setup() {
 	go ChangeEventIP(Events)
-	go CleanExpiredData()
+	go StartFlushScheduler(time.Minute)
 }

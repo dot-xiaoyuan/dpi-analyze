@@ -1,28 +1,16 @@
 package member
 
 import (
+	"context"
 	"fmt"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
-	"go.uber.org/zap"
+	"log"
 	"sync"
 	"time"
 )
 
 // 特征
-
-var (
-	featureCaches sync.Map
-	qpsCounters   sync.Map
-	weights       sync.Map
-)
-
-type TimeFeature struct {
-	Timestamp time.Time
-	Value     string
-}
 
 type Feature struct {
 	IP    string
@@ -30,132 +18,98 @@ type Feature struct {
 	Value string
 }
 
-type IPTimeWindow struct {
-	IP   string
-	Data []FeatureData
-}
 type FeatureData struct {
-	Field    types.Feature
-	Features []TimeFeature
+	LastSeen time.Time `bson:"last_seen"` // 最后一次访问时间
+	Value    string    `bson:"value"`     // 特征数值
+	Count    int       `bson:"count"`     // 时间窗口内相同数值计数
 }
 
-func GetCache(field types.Feature) *sync.Map {
-	cache, _ := featureCaches.LoadOrStore(field, &sync.Map{})
-	return cache.(*sync.Map)
+type FeatureSet struct {
+	LastSeen time.Time                       `bson:"last_seen"`
+	Features map[types.Feature][]FeatureData `bson:"features"`
+	Total    map[types.Feature][]int         `bson:"total"`
 }
 
-func Increment(feature Feature) {
-	m := GetCache(feature.Field)
-	now := time.Now()
+var (
+	featureCaches = make(map[string]*FeatureSet) // IP为key的特征集合缓存
+	cacheLock     sync.RWMutex                   // 缓存锁
+)
 
-	features, ok := GetFeatureByMemory(feature.IP, m)
-	if ok {
-		// 判断时间窗口,如果超过时间窗口 清空缓存
-		// 如果特征值已存在并在时间窗口内，则跳过
-		for _, f := range features {
-			if f.Value == feature.Value && now.Sub(f.Timestamp) < (config.Cfg.Feature.SNI.TimeWindow*time.Second) {
-				return
-			}
+// GetFeatureSet 获取或创建IP对应的FeatureSet
+func GetFeatureSet(ip string) *FeatureSet {
+	cacheLock.RLock()
+	featureSet, exists := featureCaches[ip]
+	cacheLock.RUnlock()
+
+	if !exists {
+		cacheLock.Lock()
+		defer cacheLock.Unlock()
+		featureSet = &FeatureSet{
+			LastSeen: time.Now(),
+			Features: make(map[types.Feature][]FeatureData),
+			Total:    make(map[types.Feature][]int),
+		}
+		featureCaches[ip] = featureSet
+	}
+	return featureSet
+}
+
+// Increment 增量统计特征访问频率
+func Increment(f Feature) {
+
+	featureSet := GetFeatureSet(f.IP)
+
+	cacheLock.Lock()
+	defer cacheLock.Unlock()
+
+	// 获取当前特征的列表
+	featureList, exists := featureSet.Features[f.Field]
+	if !exists {
+		// 如果该字段没有数据，则初始化列表
+		featureSet.Features[f.Field] = []FeatureData{
+			{LastSeen: time.Now(), Value: f.Value, Count: 1},
+		}
+		return
+	}
+
+	// 遍历当前特征列表，检查是否存在相同的 Value
+	for i, feature := range featureList {
+		if feature.Value == f.Value {
+			// 如果找到相同的 Value，则更新 LastSeen 时间
+			featureList[i].LastSeen = time.Now()
+			featureList[i].Count++
+			return
 		}
 	}
 
-	// 添加or更新特征
-	newFeature := TimeFeature{Value: feature.Value, Timestamp: now}
-	features = append(features, newFeature)
-	putFeatureByMemory(feature.IP, m, features)
-
-	zap.L().Debug("Increment", zap.Any("feature", feature))
+	// 如果没有相同的 Value，则追加新的特征数据
+	featureSet.Features[f.Field] = append(
+		featureList,
+		FeatureData{LastSeen: time.Now(), Value: f.Value, Count: 1},
+	)
 }
 
-func GetFeatureByMemory(ip string, m *sync.Map) ([]TimeFeature, bool) {
-	val, ok := m.Load(ip)
-	if ok {
-		return val.([]TimeFeature), true
+// FlushToMongo 刷新到mongodb
+func FlushToMongo() {
+	cacheLock.Lock()
+	defer cacheLock.Unlock()
+
+	// 遍历缓存并插入MongoDB
+	for ip, featureSet := range featureCaches {
+		_, err := mongo.GetMongoClient().Database("features").Collection(fmt.Sprintf("ip-%s", ip)).InsertOne(context.TODO(), featureSet)
+		if err != nil {
+			log.Printf("Failed to insert data for IP %s: %v", ip, err)
+		}
+		delete(featureCaches, ip) // 清空缓存
 	}
-	return nil, false
 }
 
-func putFeatureByMemory(ip string, m *sync.Map, values []TimeFeature) {
-	m.Store(ip, values)
-}
+// StartFlushScheduler 刷新时间窗口，记录到mongodb
+func StartFlushScheduler(interval time.Duration) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
 
-// IncrementQPS 增加 QPS 计数
-func IncrementQPS(ip string) {
-	count, _ := qpsCounters.LoadOrStore(ip, 0)
-	qpsCounters.Store(ip, count.(int)+1)
-}
-
-func GetQPS(ip string) int {
-	if qps, ok := qpsCounters.Load(ip); ok {
-		return qps.(int)
-	}
-	return 0
-}
-
-// CleanExpiredData 清理过期数据
-// 每次清理前将数据保存到 mongodb
-func CleanExpiredData() {
-	ticker := time.NewTicker(1 * time.Minute)
 	for range ticker.C {
-		featureCaches.Range(func(key, value any) bool {
-			m := value.(*sync.Map)
-			field := key.(types.Feature)
-
-			// 收集并保存IP所有特征数据
-			var itw IPTimeWindow
-			// 记录时间窗口内缓存的数据，然后清空缓存
-			m.Range(func(ip, features any) bool {
-				if itw.IP == "" {
-					itw.IP = ip.(string)
-				}
-				itw.Data = append(itw.Data, FeatureData{
-					Field:    field,
-					Features: features.([]TimeFeature),
-				})
-				// 清理缓存
-				m.Delete(ip)
-				return true
-			})
-			_ = ants.Submit(func() {
-				save2mongo(itw)
-			})
-			return true
-		})
-		// 每分钟重置 QPS 计数器
-		resetQPSCounters()
-	}
-}
-
-// 重置 QPS 计数器
-func resetQPSCounters() {
-	qpsCounters.Range(func(key, _ any) bool {
-		qpsCounters.Store(key, 0)
-		return true
-	})
-}
-
-// PrintStatistics 输出统计信息
-func PrintStatistics() {
-	weights.Range(func(ip, weight any) bool {
-		qps, _ := qpsCounters.Load(ip)
-		fmt.Printf("IP: %s, QPS: %d, Weight: %d\n", ip, qps.(int), weight.(int))
-		return true
-	})
-}
-
-func save2mongo(itw IPTimeWindow) {
-	if !config.UseMongo {
-		return
-	}
-	raw := make(map[string]interface{})
-	// 统计数量 (一个时间窗口内的数量)
-	for _, item := range itw.Data {
-		raw[string(item.Field)] = item.Features
-		raw[fmt.Sprintf("%s_count", item.Field)] = len(item.Features)
-	}
-
-	err := mongo.Mongo.InsertOneFeature(itw.IP, raw)
-	if err != nil {
-		panic(err)
+		FlushToMongo()
 	}
 }
