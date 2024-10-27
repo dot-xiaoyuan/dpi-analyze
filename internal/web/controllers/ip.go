@@ -6,11 +6,11 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/web/common"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/member"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/socket"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/socket/models"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
 	"log"
 	"net/http"
@@ -55,19 +55,6 @@ func IPDetail() gin.HandlerFunc {
 	}
 }
 
-type Feature struct {
-	ID       primitive.ObjectID              `bson:"_id"`
-	LastSeen time.Time                       `bson:"last_seen"`
-	Features map[string][]member.FeatureData `bson:"features"`
-	Charts   []Chart                         `bson:"charts"`
-}
-
-type Chart struct {
-	Date  time.Time `json:"date"`
-	Name  string    `json:"name"`
-	Value int       `json:"value"`
-}
-
 func getFeature(ip string) (any, error) {
 	collection := mongo.GetMongoClient().Database("features").Collection(fmt.Sprintf("ip-%s", ip))
 
@@ -87,12 +74,13 @@ func getFeature(ip string) (any, error) {
 	if err != nil {
 		return nil, err
 	}
-	var results []Feature
+	var results []types.FeatureSet
 	if err = cursor.All(mongo.Context, &results); err != nil {
 		log.Fatal(err)
 	}
+	var charts []types.Chart
 	for _, result := range results {
-		fmt.Println(result.Features)
+		charts = append(charts, result.Total...)
 	}
-	return results, nil
+	return charts, nil
 }
