@@ -8,6 +8,7 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/i18n"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/users"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -91,13 +92,13 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 		return
 	}
 	// user_ip 转储缓存
-	var userIp string
+	var userIP, tranIP string
 	if users.ExitsUser(ip) {
-		userIp = ip
+		userIP, tranIP = ip, dip
 	} else if users.ExitsUser(dip) {
-		userIp = dip
+		userIP, tranIP = dip, ip
 	}
-	if userIp == "" {
+	if userIP == "" {
 		return
 	}
 	// 如果 TTL = 255，跳过该数据包
@@ -124,14 +125,14 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 
 	_ = ants.Submit(func() { // 插入 IP hash TTL表
 		member.Store(member.Hash{
-			IP:    userIp,
+			IP:    userIP,
 			Field: types.TTL,
 			Value: internet.TTL,
 		})
 	})
 	_ = ants.Submit(func() { // 插入 IP hash Mac表
 		member.Store(member.Hash{
-			IP:    userIp,
+			IP:    userIP,
 			Field: types.Mac,
 			Value: ethernet.SrcMac,
 		})
@@ -144,6 +145,23 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 			CaptureInfo: packet.Metadata().CaptureInfo,
 		}
 		a.Assembler.AssembleWithContext(packet.NetworkLayer().NetworkFlow(), tcp, ac)
+	}
+	// analyze UDP
+	if udpLayer := packet.Layer(layers.LayerTypeUDP); udpLayer != nil {
+		udp := udpLayer.(*layers.UDP)
+
+		protocols.CheckUDP(userIP, tranIP, udp)
+
+		// 会话数累加
+		capture.SessionCount++
+
+		_ = ants.Submit(func() {
+			member.Increment(types.Feature{ // 会话数
+				IP:    userIP,
+				Field: types.Session,
+				Value: tranIP,
+			})
+		})
 	}
 
 	if capture.PacketsCount%1000 == 0 {

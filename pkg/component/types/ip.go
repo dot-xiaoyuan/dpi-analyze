@@ -18,6 +18,22 @@ const (
 	TLSVersion  FeatureType = "tls_version"
 	CipherSuite FeatureType = "cipher_suite"
 	Session     FeatureType = "session"
+	DNS         FeatureType = "dns"
+	DHCP        FeatureType = "dhcp"
+	DHCPv6      FeatureType = "dhcp_v6"
+	NTP         FeatureType = "ntp"
+	QUIC        FeatureType = "quic"
+	TFTP        FeatureType = "tftp"
+	SNMP        FeatureType = "snmp"
+	MDNS        FeatureType = "mdns"
+	VXLAN       FeatureType = "vxlan"
+	SIP         FeatureType = "sip"
+	SFlow       FeatureType = "s_flow"
+	Geneve      FeatureType = "geneve"
+	BFD         FeatureType = "bfd"
+	GTPv1U      FeatureType = "gtp_v1u"
+	RMCP        FeatureType = "rmcp"
+	Radius      FeatureType = "radius"
 )
 
 type TrafficRecord struct {
