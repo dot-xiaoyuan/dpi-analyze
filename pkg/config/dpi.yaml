@@ -5,7 +5,7 @@ log_level: info
 # 调试模式 开 - true 关 - false
 debug: true
 # geo2ip 数据文件
-geo2ip: /Users/eros/Documents/GeoIP2-City.mmdb
+geo2ip: /Users/yuantong/Documents/GeoIP2-City.mmdb
 # 是否开启mongodb
 use_mongo: true
 # 仅关注在线用户

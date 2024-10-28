@@ -10,14 +10,14 @@ const (
 	UserAgent Property = "user_agent"
 )
 
-type Feature string
+type FeatureType string
 
 const (
-	SNI         Feature = "sni"
-	HTTP        Feature = "http"
-	TLSVersion  Feature = "tls_version"
-	CipherSuite Feature = "cipher_suite"
-	Session     Feature = "session"
+	SNI         FeatureType = "sni"
+	HTTP        FeatureType = "http"
+	TLSVersion  FeatureType = "tls_version"
+	CipherSuite FeatureType = "cipher_suite"
+	Session     FeatureType = "session"
 )
 
 type TrafficRecord struct {

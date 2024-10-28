@@ -1,26 +1,21 @@
 package member
 
 import (
-	"context"
-	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
-	"log"
+	"go.mongodb.org/mongo-driver/bson"
+	mgo "go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.uber.org/zap"
 	"sync"
 	"time"
 )
 
 // 特征
-
-type Feature struct {
-	IP    string
-	Field types.Feature
-	Value string
-}
-
 var (
 	featureCaches = make(map[string]*types.FeatureSet) // IP为key的特征集合缓存
 	cacheLock     sync.RWMutex                         // 缓存锁
+	indexOnce     sync.Once
 )
 
 // GetFeatureSet 获取或创建IP对应的FeatureSet
@@ -33,8 +28,9 @@ func GetFeatureSet(ip string) *types.FeatureSet {
 		cacheLock.Lock()
 		defer cacheLock.Unlock()
 		featureSet = &types.FeatureSet{
+			IP:       ip,
 			LastSeen: time.Now(),
-			Features: make(map[types.Feature][]types.FeatureData),
+			Features: make(map[types.FeatureType][]types.FeatureData),
 		}
 		featureCaches[ip] = featureSet
 	}
@@ -42,8 +38,7 @@ func GetFeatureSet(ip string) *types.FeatureSet {
 }
 
 // Increment 增量统计特征访问频率
-func Increment(f Feature) {
-
+func Increment(f types.Feature) {
 	featureSet := GetFeatureSet(f.IP)
 
 	cacheLock.Lock()
@@ -90,12 +85,14 @@ func FlushToMongo() {
 	defer cacheLock.Unlock()
 
 	// 遍历缓存并插入MongoDB
+	var docs []interface{}
 	for ip, featureSet := range featureCaches {
-		_, err := mongo.GetMongoClient().Database("features").Collection(fmt.Sprintf("ip-%s", ip)).InsertOne(context.TODO(), featureSet)
-		if err != nil {
-			log.Printf("Failed to insert data for IP %s: %v", ip, err)
-		}
+		docs = append(docs, featureSet)
 		delete(featureCaches, ip) // 清空缓存
+	}
+	err := batchInsertToMongo(docs)
+	if err != nil {
+		zap.L().Error("batch insert to mongo failed", zap.Error(err))
 	}
 }
 
@@ -110,7 +107,7 @@ func StartFlushScheduler(interval time.Duration) {
 }
 
 // updateChart 更新 Total 切片中的 Chart 数据
-func updateChart(featureSet *types.FeatureSet, industry types.Feature, newCount int) {
+func updateChart(featureSet *types.FeatureSet, industry types.FeatureType, newCount int) {
 	for i, chart := range featureSet.Total {
 		if chart.Industry == industry {
 			// 更新相应的 Chart 数据
@@ -123,5 +120,53 @@ func updateChart(featureSet *types.FeatureSet, industry types.Feature, newCount 
 		Date:       time.Now(),
 		Industry:   industry,
 		Unemployed: newCount,
+	})
+}
+
+// TTL索引
+func ensureIndex() error {
+	collection := mongo.GetMongoClient().Database(types.Features).Collection(types.OnlineUsersFeature)
+	_, err :=
+		collection.Indexes().CreateMany(
+			mongo.Context,
+			[]mgo.IndexModel{
+				{
+					Keys: bson.D{{"ip", 1}},
+				},
+				{
+					Keys:    bson.D{{"last_seen", 1}},
+					Options: options.Index().SetExpireAfterSeconds(60 * 30),
+				},
+			},
+		)
+	return err
+}
+
+// 批量插入到mongodb
+func batchInsertToMongo(docs []interface{}) error {
+	collection := mongo.GetMongoClient().Database(types.Features).Collection(types.OnlineUsersFeature)
+
+	batchSize := 500
+	for i := 0; i < len(docs); i += batchSize {
+		end := i + batchSize
+		if end > len(docs) {
+			end = len(docs)
+		}
+
+		// 批量插入
+		_, err := collection.InsertMany(mongo.Context, docs[i:end])
+		if err != nil {
+			zap.L().Error("Batch insert to mongo failed", zap.Error(err))
+			return err
+		}
+	}
+	return nil
+}
+
+func EnsureIndexOnce() {
+	indexOnce.Do(func() {
+		if err := ensureIndex(); err != nil {
+			zap.L().Panic("EnsureIndex failed", zap.Error(err))
+		}
 	})
 }

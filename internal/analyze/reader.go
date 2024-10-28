@@ -107,7 +107,7 @@ func (sr *StreamReader) SetTlsInfo(sni, version, cipherSuite string) {
 	if sni != "" {
 		sr.Parent.Metadata.TlsInfo.Sni = sni
 		_ = ants.Submit(func() { // 统计SNI
-			member.Increment(member.Feature{
+			member.Increment(types.Feature{
 				IP:    sr.Parent.SrcIP,
 				Field: types.SNI,
 				Value: utils.FormatDomain(sni),
@@ -125,7 +125,7 @@ func (sr *StreamReader) SetTlsInfo(sni, version, cipherSuite string) {
 	if version != "" {
 		sr.Parent.Metadata.TlsInfo.Version = version
 		_ = ants.Submit(func() {
-			member.Increment(member.Feature{
+			member.Increment(types.Feature{
 				IP:    sr.Parent.SrcIP,
 				Field: types.TLSVersion,
 				Value: version,
@@ -135,7 +135,7 @@ func (sr *StreamReader) SetTlsInfo(sni, version, cipherSuite string) {
 	if cipherSuite != "" {
 		sr.Parent.Metadata.TlsInfo.CipherSuite = cipherSuite
 		_ = ants.Submit(func() {
-			member.Increment(member.Feature{
+			member.Increment(types.Feature{
 				IP:    sr.Parent.SrcIP,
 				Field: types.CipherSuite,
 				Value: cipherSuite,
@@ -184,7 +184,7 @@ func (sr *StreamReader) SetHttpInfo(host, userAgent, contentType, upgrade string
 	// host
 	if host != "" && host != "<no-request-seen>" && !strings.HasPrefix(host, "/") {
 		_ = ants.Submit(func() { // 统计 http
-			member.Increment(member.Feature{
+			member.Increment(types.Feature{
 				IP:    sr.Parent.SrcIP,
 				Field: types.HTTP,
 				Value: utils.FormatDomain(host),

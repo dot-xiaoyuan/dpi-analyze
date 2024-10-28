@@ -26,7 +26,7 @@ func (f *Factory) New(netFlow, tcpFlow gopacket.Flow, tcp *layers.TCP, ac reasse
 	// 会话数累加
 	capture.SessionCount++
 
-	member.Increment(member.Feature{ // 会话数
+	member.Increment(types.Feature{ // 会话数
 		IP:    netFlow.Src().String(),
 		Field: types.Session,
 		Value: netFlow.Dst().String(),

@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/web/common"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/member"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
@@ -56,19 +55,10 @@ func IPDetail() gin.HandlerFunc {
 }
 
 func getFeature(ip string) (any, error) {
-	collection := mongo.GetMongoClient().Database("features").Collection(fmt.Sprintf("ip-%s", ip))
+	collection := mongo.GetMongoClient().Database(types.Features).Collection(types.OnlineUsersFeature)
 
 	// 查询条件
-	filter := bson.M{
-		//"features": bson.M{
-		//	"$elemMatch": bson.M{
-		//		"last_seen": bson.M{
-		//			"$gte": time.Now().Add(-24 * time.Hour).Unix(),
-		//			"$lte": time.Now(),
-		//		},
-		//	},
-		//},
-	}
+	filter := bson.D{{"ip", ip}}
 	// 执行查询
 	cursor, err := collection.Find(mongo.Context, filter)
 	if err != nil {
