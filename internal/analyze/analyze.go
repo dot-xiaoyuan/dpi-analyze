@@ -8,7 +8,6 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/i18n"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/users"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -150,7 +149,7 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 	if udpLayer := packet.Layer(layers.LayerTypeUDP); udpLayer != nil {
 		udp := udpLayer.(*layers.UDP)
 
-		protocols.CheckUDP(userIP, tranIP, udp)
+		CheckUDP(userIP, tranIP, udp)
 
 		// 会话数累加
 		capture.SessionCount++

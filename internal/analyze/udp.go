@@ -1,4 +1,4 @@
-package protocols
+package analyze
 
 import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
