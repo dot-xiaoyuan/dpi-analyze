@@ -44,15 +44,16 @@ func Increment(f types.Feature) {
 	cacheLock.Lock()
 	defer cacheLock.Unlock()
 
+	now := time.Now()
 	// 获取当前特征的列表
 	featureList, exists := featureSet.Features[f.Field]
 	if !exists {
 		// 如果该字段没有数据，则初始化列表
 		featureSet.Features[f.Field] = []types.FeatureData{
-			{LastSeen: time.Now(), Value: f.Value, Count: 1},
+			{LastSeen: now, Value: f.Value, Count: 1},
 		}
 		featureSet.Total = append(featureSet.Total, types.Chart{
-			Date:       time.Now(),
+			Date:       featureSet.LastSeen,
 			Industry:   f.Field,
 			Unemployed: 1,
 		})
@@ -63,7 +64,7 @@ func Increment(f types.Feature) {
 	for i, feature := range featureList {
 		if feature.Value == f.Value {
 			// 如果找到相同的 Value，则更新 LastSeen 时间
-			featureList[i].LastSeen = time.Now()
+			featureList[i].LastSeen = now
 			featureList[i].Count++
 
 			// 更新 Total 中的 Chart 数据
@@ -75,7 +76,7 @@ func Increment(f types.Feature) {
 	// 如果没有相同的 Value，则追加新的特征数据
 	featureSet.Features[f.Field] = append(
 		featureList,
-		types.FeatureData{LastSeen: time.Now(), Value: f.Value, Count: 1},
+		types.FeatureData{LastSeen: now, Value: f.Value, Count: 1},
 	)
 }
 
@@ -117,7 +118,7 @@ func updateChart(featureSet *types.FeatureSet, industry types.FeatureType, newCo
 	}
 	// 如果没有找到相应的 Chart，则添加新的
 	featureSet.Total = append(featureSet.Total, types.Chart{
-		Date:       time.Now(),
+		Date:       featureSet.LastSeen,
 		Industry:   industry,
 		Unemployed: newCount,
 	})
@@ -163,6 +164,7 @@ func batchInsertToMongo(docs []interface{}) error {
 	return nil
 }
 
+// EnsureIndexOnce 设置索引
 func EnsureIndexOnce() {
 	indexOnce.Do(func() {
 		if err := ensureIndex(); err != nil {
