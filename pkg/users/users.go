@@ -67,9 +67,6 @@ func FindUser(ip string) types.User {
 
 // ExitsUser 用户是否存在
 func ExitsUser(ip string) bool {
-	if ip == "192.168.1.25" {
-		return true
-	}
 	_, ok := OnlineUsers.Load(ip)
 	return ok
 }

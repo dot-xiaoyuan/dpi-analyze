@@ -6,6 +6,7 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/member"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/users"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/reassembly"
@@ -26,10 +27,18 @@ func (f *Factory) New(netFlow, tcpFlow gopacket.Flow, tcp *layers.TCP, ac reasse
 	// 会话数累加
 	capture.SessionCount++
 
+	// 根据在线用户进行缓存
+	srcIP, dstIP := netFlow.Src().String(), netFlow.Dst().String()
+	var userIP, tranIP string
+	if users.ExitsUser(srcIP) {
+		userIP, tranIP = srcIP, dstIP
+	} else if users.ExitsUser(dstIP) {
+		userIP, tranIP = dstIP, srcIP
+	}
 	member.Increment(types.Feature{ // 会话数
-		IP:    netFlow.Src().String(),
+		IP:    userIP,
 		Field: types.Session,
-		Value: netFlow.Dst().String(),
+		Value: tranIP,
 	})
 
 	stream := &Stream{
@@ -41,8 +50,8 @@ func (f *Factory) New(netFlow, tcpFlow gopacket.Flow, tcp *layers.TCP, ac reasse
 		Ident:        fmt.Sprintf("%s:%s", netFlow, tcpFlow),
 		PacketsCount: 1,
 		OptChecker:   reassembly.NewTCPOptionCheck(),
-		SrcIP:        netFlow.Src().String(),
-		DstIP:        netFlow.Dst().String(),
+		SrcIP:        srcIP,
+		DstIP:        dstIP,
 		ProtocolFlags: types.ProtocolFlags{
 			TCP: types.TCPFlags{
 				SYN: tcp.SYN,
@@ -65,8 +74,8 @@ func (f *Factory) New(netFlow, tcpFlow gopacket.Flow, tcp *layers.TCP, ac reasse
 		Ident:    fmt.Sprintf("%s %s", netFlow, tcpFlow),
 		Parent:   stream,
 		IsClient: true,
-		SrcPort:  tcpFlow.Src().String(),
-		DstPort:  tcpFlow.Dst().String(),
+		SrcPort:  srcIP,
+		DstPort:  dstIP,
 		Handlers: map[protocols.ProtocolType]protocols.ProtocolHandler{
 			protocols.HTTP: &protocols.HTTPHandler{},
 			protocols.TLS:  &protocols.TLSHandler{},
