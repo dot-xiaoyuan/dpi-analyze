@@ -37,6 +37,16 @@ func GetFeatureSet(ip string) *types.FeatureSet {
 	return featureSet
 }
 
+func DelFeatureSet(ip string) {
+	cacheLock.RLock()
+	_, exists := featureCaches[ip]
+	cacheLock.RUnlock()
+
+	if exists {
+		delete(featureCaches, ip)
+	}
+}
+
 // Increment 增量统计特征访问频率
 func Increment(f types.Feature) {
 	featureSet := GetFeatureSet(f.IP)

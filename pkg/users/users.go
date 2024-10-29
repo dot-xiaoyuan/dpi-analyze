@@ -3,6 +3,7 @@ package users
 import (
 	"context"
 	"fmt"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/observer"
 	mongodb "github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/redis"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/i18n"
@@ -54,6 +55,9 @@ func DropUser(ip string) {
 	ctx := context.TODO()
 
 	rdb.ZRem(ctx, types.ZSetOnlineUsers, ip).Val()
+	observer.TTLObserver.DeleteRedis(ip)
+	observer.MacObserver.DeleteRedis(ip)
+	observer.UaObserver.DeleteRedis(ip)
 }
 
 // FindUser 查找用户

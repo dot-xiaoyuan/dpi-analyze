@@ -127,11 +127,11 @@ func storeHash2Redis(ip string, property types.Property, value any) {
 	})
 	// info hash
 	rdb.HSet(ctx, key, string(property), value).Val()
-	rdb.Expire(ctx, key, time.Hour)
+	rdb.Expire(ctx, key, time.Hour).Val()
 }
 
 func CleanUp() {
 	rdb := redis.GetRedisClient()
 	ctx := context.TODO()
-	rdb.Del(ctx, types.ZSetIP)
+	rdb.Del(ctx, types.ZSetIP).Val()
 }

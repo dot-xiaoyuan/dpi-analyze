@@ -155,7 +155,11 @@ func (ob *Observer[T]) Store2Redis(ip string) {
 	rdb.ZAdd(ctx, ob.Table, v9.Z{
 		Score:  float64(time.Now().Unix()),
 		Member: ip,
-	})
+	}).Val()
+}
+
+func (ob *Observer[T]) DeleteRedis(ip string) {
+	redis.GetRedisClient().ZRem(context.TODO(), ob.Table, ip).Val()
 }
 
 // WatchChange 观察事件channel
@@ -217,7 +221,7 @@ func Setup() {
 }
 
 func CleanUp() {
-	redis.GetRedisClient().Del(context.TODO(), types.ZSetObserverTTL)
-	redis.GetRedisClient().Del(context.TODO(), types.ZSetObserverMac)
-	redis.GetRedisClient().Del(context.TODO(), types.ZSetObserverUa)
+	redis.GetRedisClient().Del(context.TODO(), types.ZSetObserverTTL).Val()
+	redis.GetRedisClient().Del(context.TODO(), types.ZSetObserverMac).Val()
+	redis.GetRedisClient().Del(context.TODO(), types.ZSetObserverUa).Val()
 }
