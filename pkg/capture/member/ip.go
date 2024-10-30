@@ -10,11 +10,12 @@ import (
 // IP 相关的核心逻辑
 
 var (
-	TTLCache sync.Map
-	MacCache sync.Map
-	UaCache  sync.Map
-	Mutex    sync.Map
-	Events   = make(chan PropertyChangeEvent, 100)
+	TTLCache    sync.Map
+	MacCache    sync.Map
+	UaCache     sync.Map
+	DeviceCache sync.Map
+	Mutex       sync.Map
+	Events      = make(chan PropertyChangeEvent, 100)
 )
 
 // IP锁
@@ -66,6 +67,15 @@ var handlers = map[types.Property]func(e PropertyChangeEvent){
 		//zap.L().Debug("UA Changed", zap.String("IP", event.IP), zap.Any("old", event.OldValue), zap.Any("new", event.NewValue))
 		// 发送到 Ua 观察者 Channel
 		observer.UaEvents <- observer.ChangeObserverEvent[string]{
+			IP:   event.IP,
+			Prev: event.OldValue.(string),
+			Curr: event.NewValue.(string),
+		}
+	},
+	types.Device: func(event PropertyChangeEvent) {
+		//zap.L().Debug("UA Changed", zap.String("IP", event.IP), zap.Any("old", event.OldValue), zap.Any("new", event.NewValue))
+		// 发送到 Ua 观察者 Channel
+		observer.DeviceEvents <- observer.ChangeObserverEvent[string]{
 			IP:   event.IP,
 			Prev: event.OldValue.(string),
 			Curr: event.NewValue.(string),

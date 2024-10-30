@@ -6,13 +6,16 @@ log_level: info
 debug: true
 # geo2ip 数据文件
 geo2ip: /Users/yuantong/Documents/GeoIP2-City.mmdb
-# 是否开启mongodb
-use_mongo: true
 # 仅关注在线用户
 follow_only_online_users: true
+# 是否开启mongodb
+use_mongo: true
+# 是否分析TTL
 use_ttl: true
 # 是否分析user-agent
 use_ua: true
+# 是否分析应用特征
+use_feature: true
 # 捕获子命令相关配置
 capture:
   # 离线数据包文件
@@ -26,6 +29,8 @@ web:
 # 忽略域名特征
 ignore_feature:
   - com.cn
+  - weixin.qq
+  - qq.com
 # 权重
 feature:
   sni:
@@ -43,11 +48,11 @@ redis:
     password: ""
   # 4k 在线表, 用于dpi同步在线用户与ip对应关系以及获取控制策略
   online:
-    host: 192.168.0.174
-    port: 16380
-    password: "srun_3000@redis"
+    host: 127.0.0.1
+    port: 6379
+    password: ""
   # 4k cache, 在线表同步接口，用于接收用户上下线事件来同步dpi的在线表
   cache:
-    host: 192.168.0.174
-    port: 16384
-    password: "srun_3000@redis"
+    host: 127.0.0.1
+    port: 6379
+    password: ""

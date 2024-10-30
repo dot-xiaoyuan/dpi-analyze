@@ -39,6 +39,10 @@ func Store(i interface{}) {
 		m = &UaCache
 		v = uaparser.Parse(hash.Value.(string))
 		break
+	case types.Device:
+		m = &DeviceCache
+		v = hash.Value.(string)
+		break
 	}
 
 	mutex := getIPMutex(hash.IP)
@@ -124,7 +128,7 @@ func storeHash2Redis(ip string, property types.Property, value any) {
 	rdb.ZAdd(ctx, types.ZSetIP, v9.Z{
 		Score:  float64(time.Now().Unix()),
 		Member: ip,
-	})
+	}).Val()
 	// info hash
 	rdb.HSet(ctx, key, string(property), value).Val()
 	rdb.Expire(ctx, key, time.Hour).Val()

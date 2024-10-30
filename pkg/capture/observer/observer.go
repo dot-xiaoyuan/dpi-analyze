@@ -21,13 +21,15 @@ const (
 var (
 	cacheMutex sync.Mutex
 
-	TTLObserver = NewObserver[uint8](types.ZSetObserverTTL, MaxTTLCount)
-	MacObserver = NewObserver[string](types.ZSetObserverMac, MaxMacCount)
-	UaObserver  = NewObserver[string](types.ZSetObserverUa, MaxUaCount)
+	TTLObserver    = NewObserver[uint8](types.ZSetObserverTTL, MaxTTLCount)
+	MacObserver    = NewObserver[string](types.ZSetObserverMac, MaxMacCount)
+	UaObserver     = NewObserver[string](types.ZSetObserverUa, MaxUaCount)
+	DeviceObserver = NewObserver[string](types.ZSetObserverDevice, MaxMacCount)
 
-	TTLEvents = make(chan ChangeObserverEvent[uint8], 100)
-	MacEvents = make(chan ChangeObserverEvent[string], 100)
-	UaEvents  = make(chan ChangeObserverEvent[string], 100)
+	TTLEvents    = make(chan ChangeObserverEvent[uint8], 100)
+	MacEvents    = make(chan ChangeObserverEvent[string], 100)
+	UaEvents     = make(chan ChangeObserverEvent[string], 100)
+	DeviceEvents = make(chan ChangeObserverEvent[string], 100)
 )
 
 // ChangeObserverEvent 观察事件
@@ -218,6 +220,7 @@ func Setup() {
 	go TTLObserver.WatchChange(TTLEvents)
 	go MacObserver.WatchChange(MacEvents)
 	go UaObserver.WatchChange(UaEvents)
+	go DeviceObserver.WatchChange(DeviceEvents)
 }
 
 func CleanUp() {

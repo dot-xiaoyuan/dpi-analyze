@@ -15,13 +15,14 @@ var (
 )
 
 const (
-	ZSetApplication = "z_set:application"
-	ZSetIP          = "z_set:ip"
-	ZSetObserverTTL = "z_set:observer:ttl"
-	ZSetObserverMac = "z_set:observer:mac"
-	ZSetObserverUa  = "z_set:observer:ua"
-	ZSetOnlineUsers = "z_set:online:users"
-	HashAnalyzeIP   = "hash:analyze:ip:%s"
+	ZSetApplication    = "z_set:application"
+	ZSetIP             = "z_set:ip"
+	ZSetObserverTTL    = "z_set:observer:ttl"
+	ZSetObserverMac    = "z_set:observer:mac"
+	ZSetObserverUa     = "z_set:observer:ua"
+	ZSetObserverDevice = "z_set:observer:device"
+	ZSetOnlineUsers    = "z_set:online:users"
+	HashAnalyzeIP      = "hash:analyze:ip:%s"
 )
 
 // Ethernet 以太网

@@ -8,6 +8,7 @@ const (
 	TTL       Property = "ttl"
 	Mac       Property = "mac"
 	UserAgent Property = "user_agent"
+	Device    Property = "device"
 )
 
 type FeatureType string

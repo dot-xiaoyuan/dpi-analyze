@@ -118,6 +118,9 @@ func (sr *StreamReader) SetTlsInfo(sni, version, cipherSuite string) {
 			if ok, feature := features.Match(sni); ok {
 				sr.Parent.Metadata.ApplicationInfo.AppName = feature.Name
 				sr.Parent.Metadata.ApplicationInfo.AppCategory = feature.Category
+			} else {
+				sr.Parent.Metadata.ApplicationInfo.AppName = sni
+				sr.Parent.Metadata.ApplicationInfo.AppCategory = "unknown"
 			}
 			sr.Parent.Metadata.ApplicationInfo.AddUp()
 		}
@@ -196,6 +199,9 @@ func (sr *StreamReader) SetHttpInfo(host, userAgent, contentType, upgrade string
 		if ok, feature := features.Match(host); ok {
 			sr.Parent.Metadata.ApplicationInfo.AppName = feature.Name
 			sr.Parent.Metadata.ApplicationInfo.AppCategory = feature.Category
+		} else {
+			sr.Parent.Metadata.ApplicationInfo.AppName = host
+			sr.Parent.Metadata.ApplicationInfo.AppCategory = "unknown"
 		}
 		sr.Parent.Metadata.ApplicationInfo.AddUp()
 	}

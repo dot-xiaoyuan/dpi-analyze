@@ -24,7 +24,6 @@ var (
 
 var (
 	Home                  string
-	Signal                string
 	Cfg                   *Yaml
 	Language              string
 	LogLevel              string
@@ -39,6 +38,7 @@ var (
 	FollowOnlyOnlineUsers bool
 	UseTTL                bool
 	UseUA                 bool
+	UseFeature            bool
 	WebPort               uint
 	Detach                bool
 	TimeWindow            int
@@ -57,6 +57,7 @@ type Yaml struct {
 	FollowOnlyOnlineUsers bool    `mapstructure:"follow_only_online_users"`
 	UseTTL                bool    `mapstructure:"use_ttl"`
 	UseUA                 bool    `mapstructure:"use_ua"`
+	UseFeature            bool    `mapstructure:"use_feature"`
 	Capture               Capture `mapstructure:"capture"`
 	Mongodb               Mongodb `mapstructure:"mongodb"`
 	Redis                 Redis   `mapstructure:"redis"`
