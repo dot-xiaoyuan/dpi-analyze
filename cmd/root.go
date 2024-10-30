@@ -12,15 +12,17 @@ import (
 )
 
 const (
-	CliName    = "dpi"
-	CliVersion = "1.0.0"
+	CliName     = "dpi"
+	Description = "dpi CLI"
+	CliVersion  = "1.0.0.241030_beta"
 )
 
 var rootCmd = &cobra.Command{
-	Use:    CliName,
-	Short:  CliVersion,
-	PreRun: PreFunc,
-	Run:    RunFunc,
+	Use:     CliName,
+	Short:   Description,
+	PreRun:  rootPreFunc,
+	Run:     rootRunFunc,
+	Version: CliVersion,
 	PersistentPreRun: func(c *cobra.Command, args []string) {
 		// 加载日志组件
 		logger := &logger.Logger{}
@@ -43,22 +45,23 @@ func init() {
 		}
 	}()
 
-	// define flags
-	rootCmd.PersistentFlags().StringVarP(&config.Language, "language", "l", config.Cfg.Language, "language")
-	rootCmd.PersistentFlags().StringVar(&config.LogLevel, "log-level", config.Cfg.LogLevel, "log level")
+	// Global Flags
+	//rootCmd.PersistentFlags().StringVarP(&config.Language, "language", "l", config.Cfg.Language, "language")
+	rootCmd.PersistentFlags().StringVarP(&config.LogLevel, "log-level", "l", config.Cfg.LogLevel, "Set the logging level (\"debug\", \"info\", \"warn\", \"error\", \"fatal\") (default \"info\")")
 	rootCmd.PersistentFlags().BoolVarP(&config.Debug, "debug", "D", config.Cfg.Debug, "Enable debug mode")
-	rootCmd.PersistentFlags().StringVarP(&config.Signal, "signal", "s", "", "send signal to a master process: stop, quit, reopen, reload")
 
-	// define sub command
-	rootCmd.AddCommand(CaptureCmd)
-	rootCmd.AddCommand(WebCmd)
+	rootCmd.AddCommand(RunCmd)
+	rootCmd.AddCommand(PsCmd)
+	rootCmd.AddCommand(StopCmd)
+	rootCmd.AddCommand(StatusCmd)
+	rootCmd.AddCommand(RestartCmd)
 }
 
-func RunFunc(c *cobra.Command, args []string) {
-
+func rootRunFunc(c *cobra.Command, args []string) {
+	//fmt.Println(args)
 }
 
-func PreFunc(c *cobra.Command, args []string) {
+func rootPreFunc(c *cobra.Command, args []string) {
 	// 初始化翻译
 	c.Flags().VisitAll(func(flag *pflag.Flag) {
 		flag.Usage = i18n.T(flag.Usage)
@@ -69,7 +72,22 @@ func PreFunc(c *cobra.Command, args []string) {
 	}
 }
 
+// 自定义 Help 模板
+var customHelpTemplate = `Usage:
+  {{.UseLine}}
+
+{{if .Commands}}Common Commands:
+{{range .Commands}}{{.Name | printf "  %-11s"}} {{.Short}}
+{{end}}{{end}}
+
+Flags:
+{{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}
+
+Use "{{.CommandPath}} [command] --help" for more information about a command.
+`
+
 func Execute() {
+	//rootCmd.SetHelpTemplate(customHelpTemplate) // 设置自定义模板
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)

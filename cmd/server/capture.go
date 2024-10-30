@@ -1,4 +1,4 @@
-package cmd
+package server
 
 import (
 	"context"
@@ -13,7 +13,6 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/features"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/i18n"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/maxmind"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/uaparser"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/socket"
@@ -36,11 +35,25 @@ import (
 var sp = spinner.New(spinner.CharSets[36], 100*time.Millisecond)
 var cron = v3.New()
 
-var CaptureCmd = &cobra.Command{
-	Use:    "capture",
-	Short:  "capture commands",
-	PreRun: CaptureRreFunc,
-	Run:    CaptureRun,
+func NewCaptureServer() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:    "capture",
+		Short:  "capture commands",
+		PreRun: captureRreFunc,
+		Run:    captureCmdRun,
+	}
+	cmd.Flags().StringVar(&config.CaptureNic, "nic", config.Cfg.Capture.NIC, "capture nic")
+	cmd.Flags().StringVar(&config.CapturePcap, "pcap", config.Cfg.Capture.OfflineFile, "capture pcap file")
+	cmd.Flags().BoolVar(&config.UseMongo, "use-mongo", config.Cfg.UseMongo, "use mongo db")
+	cmd.Flags().BoolVar(&config.ParseFeature, "feature", config.Cfg.ParseFeature, "use parse application")
+	cmd.Flags().StringVar(&config.BerkeleyPacketFilter, "bpf", config.Cfg.BerkeleyPacketFilter, "Berkeley packet filter")
+	cmd.Flags().BoolVar(&config.IgnoreMissing, "ignore-missing", config.Cfg.IgnoreMissing, "ignore missing packet")
+	cmd.Flags().BoolVar(&config.FollowOnlyOnlineUsers, "follow-online-users", config.Cfg.FollowOnlyOnlineUsers, "follow only online users")
+	cmd.Flags().BoolVar(&config.UseTTL, "use-ttl", config.Cfg.UseTTL, "save TTL for IP")
+	cmd.Flags().BoolVar(&config.UseUA, "use-ua", config.Cfg.UseUA, "use ua parser")
+	cmd.Flags().StringVar(&config.Geo2IP, "geo2ip", config.Cfg.Geo2IP, "geo2ip")
+	cmd.Flags().BoolVarP(&config.Detach, "detach", "d", config.Cfg.Detach, "Run server in background and print PID")
+	return cmd
 }
 
 var captureDaemon = &utils.Daemon{
@@ -56,42 +69,18 @@ var captureDaemon = &utils.Daemon{
 	},
 }
 
-// TODO 流量总览 总流量、总会话数、TCP/UDP会话比列、每秒请求量(RPS)
-// TODO IP活动监控 访问量最多的IP、异常TTL改变监控、UA变化趋势、Mac地址变化趋势
-// TODO 协议统计 应用层协议分布、TLS版本与加密套件分布
 // TODO 流量来源与目的地 源IP和目标IP热图（MaxMind GeoIP）、最频繁访问目标IP
-// 初始化Flag
-func init() {
-	// 初始化加载组件
-	// define flag
-	CaptureCmd.Flags().StringVar(&config.CaptureNic, "nic", config.Cfg.Capture.NIC, "capture nic")
-	CaptureCmd.Flags().StringVar(&config.CapturePcap, "pcap", config.Cfg.Capture.OfflineFile, "capture pcap file")
-	CaptureCmd.Flags().BoolVar(&config.UseMongo, "use-mongo", config.Cfg.UseMongo, "use mongo db")
-	CaptureCmd.Flags().BoolVar(&config.ParseFeature, "feature", config.Cfg.ParseFeature, "use parse application")
-	CaptureCmd.Flags().StringVar(&config.BerkeleyPacketFilter, "bpf", config.Cfg.BerkeleyPacketFilter, "Berkeley packet filter")
-	CaptureCmd.Flags().BoolVar(&config.IgnoreMissing, "ignore-missing", config.Cfg.IgnoreMissing, "ignore missing packet")
-	CaptureCmd.Flags().BoolVar(&config.FollowOnlyOnlineUsers, "follow-online-users", config.Cfg.FollowOnlyOnlineUsers, "follow only online users")
-	CaptureCmd.Flags().BoolVar(&config.UseTTL, "use-ttl", config.Cfg.UseTTL, "save TTL for IP")
-	CaptureCmd.Flags().BoolVar(&config.UseUA, "use-ua", config.Cfg.UseUA, "use ua parser")
-	CaptureCmd.Flags().StringVar(&config.Geo2IP, "geo2ip", config.Cfg.Geo2IP, "geo2ip")
-}
 
-// CaptureRreFunc 捕获前置方法
-func CaptureRreFunc(c *cobra.Command, args []string) {
-
+// captureRreFunc 捕获前置方法
+func captureRreFunc(c *cobra.Command, args []string) {
 	c.Short = i18n.T(c.Short)
 	c.Flags().VisitAll(func(flag *pflag.Flag) {
 		flag.Usage = i18n.T(flag.Usage)
 	})
-
-	if len(args) == 0 && c.Flags().NFlag() == 0 {
-		_ = c.Help()
-		os.Exit(0)
-	}
 }
 
-// CaptureRun 捕获子命令入口
-func CaptureRun(*cobra.Command, []string) {
+// captureCmdRun 捕获子命令入口
+func captureCmdRun(cmd *cobra.Command, args []string) {
 	defer func() {
 		if err := recover(); err != nil {
 			log.Printf("PANIC : %v", err)
@@ -100,28 +89,28 @@ func CaptureRun(*cobra.Command, []string) {
 		}
 	}()
 
-	if config.Signal != "" {
-		switch config.Signal {
-		case types.STOP:
-			captureDaemon.Stop()
-		case types.START:
+	switch cmd.Parent().Name() {
+	case "stop":
+		captureDaemon.Stop()
+		break
+	case "status":
+		captureDaemon.Status()
+		break
+	case "restart":
+		captureDaemon.Restart(webRun)
+		break
+	default:
+		if config.Detach {
 			captureDaemon.Start(captureRun)
-		case types.STATUS:
-			captureDaemon.Status()
-		case types.RESTART:
-			captureDaemon.Restart(captureRun)
-		default:
-			fmt.Println("Usage: [start|stop|status|restart]")
+			break
 		}
-		os.Exit(0)
+		captureRun()
+		break
 	}
-	if config.Detach {
-		captureDaemon.Start(captureRun)
-		return
-	}
-	captureRun()
+	return
 }
 
+// 捕获开始
 func captureRun() {
 	// 创建上下文
 	ctx, cancel := context.WithCancel(context.Background())

@@ -113,6 +113,7 @@ func init() {
 
 	viper.SetConfigType("yaml")
 	Home = os.Getenv("DPI_HOME")
+	// 未设置环境变量
 	if Home == "" {
 		dir, _ := os.Getwd()
 		Home = filepath.Join(dir, "dev_home")

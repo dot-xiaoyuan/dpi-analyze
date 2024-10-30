@@ -1,10 +1,9 @@
-package cmd
+package server
 
 import (
 	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/web"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/i18n"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/utils"
 	"github.com/sevlyar/go-daemon"
@@ -16,11 +15,16 @@ import (
 
 // 统计cli
 
-var WebCmd = &cobra.Command{
-	Use:    "web",
-	Short:  "web commands",
-	PreRun: WebRreFunc,
-	Run:    WebRun,
+func NewWebServer() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:    "web",
+		Short:  "web commands",
+		PreRun: webRreFunc,
+		Run:    webCmdRun,
+	}
+	cmd.Flags().UintVar(&config.WebPort, "port", 8088, "web port to listen on")
+	cmd.Flags().BoolVarP(&config.Detach, "detach", "d", config.Cfg.Detach, "Run server in background and print PID")
+	return cmd
 }
 
 var webDaemon = &utils.Daemon{
@@ -36,20 +40,14 @@ var webDaemon = &utils.Daemon{
 	},
 }
 
-func init() {
-	// define flag
-	WebCmd.Flags().UintVar(&config.WebPort, "port", 8088, "web port to listen on")
-	WebCmd.Flags().BoolVarP(&config.Detach, "detach", "d", config.Cfg.Detach, "Run web in background and print process ID")
-}
-
-func WebRreFunc(c *cobra.Command, args []string) {
+func webRreFunc(c *cobra.Command, args []string) {
 	c.Short = i18n.T(c.Short)
 	c.Flags().VisitAll(func(flag *pflag.Flag) {
 		flag.Usage = i18n.T(flag.Usage)
 	})
 }
 
-func WebRun(*cobra.Command, []string) {
+func webCmdRun(cmd *cobra.Command, args []string) {
 	defer func() {
 		if err := recover(); err != nil {
 			log.Printf("PANIC : %v", err)
@@ -58,26 +56,23 @@ func WebRun(*cobra.Command, []string) {
 		}
 	}()
 
-	if config.Signal != "" {
-		switch config.Signal {
-		case types.STOP:
-			webDaemon.Stop()
-		case types.START:
+	switch cmd.Parent().Name() {
+	case "stop":
+		webDaemon.Stop()
+		break
+	case "status":
+		webDaemon.Status()
+		break
+	case "restart":
+		webDaemon.Restart(webRun)
+		break
+	default:
+		if config.Detach {
 			webDaemon.Start(webRun)
-		case types.STATUS:
-			webDaemon.Status()
-		case types.RESTART:
-			webDaemon.Restart(webRun)
-		default:
-			fmt.Println("Usage: [start|stop|status|restart]")
+			return
 		}
-		os.Exit(0)
+		webRun()
 	}
-	if config.Detach {
-		webDaemon.Start(webRun)
-		return
-	}
-	webRun()
 }
 
 func webRun() {
