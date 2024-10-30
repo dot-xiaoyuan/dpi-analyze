@@ -11,12 +11,30 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 	"net/http"
+	"strconv"
 	"time"
 )
 
+type QueryData struct {
+	Collection string `json:"collection"`
+	Condition  string `json:"condition"`
+	HttpInfo   bool   `json:"http_info"`
+	Page       int    `json:"page"`
+	PageSize   int    `json:"pageSize"`
+	SortField  string `json:"sortField"`
+	SortOrder  string `json:"sortOrder"`
+}
+
 func StreamList() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		pagination := utils.NewPagination(c.Query("page"), c.Query("page_size"))
+		var query QueryData
+		if err := c.BindJSON(&query); err != nil {
+			common.ErrorResponse(c, http.StatusBadRequest, "Invalid request body")
+			return
+		}
+		zap.L().Debug("query", zap.Any("params", query))
+
+		pagination := utils.NewPagination(strconv.Itoa(query.Page), strconv.Itoa(query.PageSize))
 
 		collection := c.DefaultQuery("collection", time.Now().Format("stream-06-01-02-15"))
 		sortField := c.DefaultQuery("sortField", "_id")
@@ -29,16 +47,24 @@ func StreamList() gin.HandlerFunc {
 		}
 		// skip
 		skip := (pagination.Page - 1) * pagination.Limit
-		zap.L().Info("query",
-			zap.String("collection", collection),
-			zap.Int64("page", pagination.Page),
-			zap.Int64("limit", pagination.Limit),
-			zap.Int64("skip", skip),
-			zap.String("sortField", sortField),
-			zap.String("sortOrder", sortOrder),
-		)
+
 		matchStage := bson.D{
 			{"$match", bson.D{}},
+		}
+
+		// 解析 Condition 字符串为 BSON
+		var condition bson.M
+		if err := bson.UnmarshalExtJSON([]byte(query.Condition), true, &condition); err != nil {
+			zap.L().Error("Invalid condition format", zap.Error(err))
+			common.ErrorResponse(c, http.StatusBadRequest, "Invalid condition format")
+			return
+		}
+
+		zap.L().Debug("condition", zap.Any("condition", condition), zap.Int("len", len(condition)))
+		if len(condition) > 0 {
+			matchStage = bson.D{
+				{"$match", condition},
+			}
 		}
 		//groupStage := bson.D{
 		//	{"$group", bson.D{}},
@@ -78,7 +104,7 @@ func StreamList() gin.HandlerFunc {
 		}
 
 		pagination.Result = result
-		pagination.TotalCount, err = coll.CountDocuments(context.Background(), bson.D{})
+		pagination.TotalCount, err = coll.CountDocuments(context.Background(), condition)
 		if err != nil {
 			zap.L().Error("mongodb.cursor", zap.Error(err))
 			common.ErrorResponse(c, http.StatusBadRequest, err.Error())

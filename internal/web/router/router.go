@@ -13,7 +13,7 @@ func Register(r *gin.Engine) {
 	v1.GET("/ip/list", controllers.IPList())
 	v1.GET("/ip/detail", controllers.IPDetail())
 	// stream log
-	v1.GET("/stream/list", controllers.StreamList())
+	v1.Match([]string{"GET", "POST"}, "/stream/list", controllers.StreamList())
 	// observer
 	v1.GET("/observer/ttl", controllers.ObserverTTL())
 	v1.GET("/observer/mac", controllers.ObserverMac())
