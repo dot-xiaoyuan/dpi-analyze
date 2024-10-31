@@ -74,8 +74,8 @@ func (f *Factory) New(netFlow, tcpFlow gopacket.Flow, tcp *layers.TCP, ac reasse
 		Ident:    fmt.Sprintf("%s %s", netFlow, tcpFlow),
 		Parent:   stream,
 		IsClient: true,
-		SrcPort:  srcIP,
-		DstPort:  dstIP,
+		SrcPort:  tcpFlow.Reverse().Src().String(),
+		DstPort:  tcpFlow.Reverse().Dst().String(),
 		Handlers: map[protocols.ProtocolType]protocols.ProtocolHandler{
 			protocols.HTTP: &protocols.HTTPHandler{},
 			protocols.TLS:  &protocols.TLSHandler{},
