@@ -216,7 +216,7 @@ func loadComponents() {
 		}
 	}
 
-	if config.ParseFeature {
+	if config.UseFeature {
 		if err = features.Setup(); err != nil {
 			os.Exit(1)
 		}
