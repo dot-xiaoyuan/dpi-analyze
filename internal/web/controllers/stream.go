@@ -12,7 +12,6 @@ import (
 	"go.uber.org/zap"
 	"net/http"
 	"strconv"
-	"time"
 )
 
 type QueryData struct {
@@ -36,9 +35,9 @@ func StreamList() gin.HandlerFunc {
 
 		pagination := utils.NewPagination(strconv.Itoa(query.Page), strconv.Itoa(query.PageSize))
 
-		collection := c.DefaultQuery("collection", time.Now().Format("stream-06-01-02-15"))
-		sortField := c.DefaultQuery("sortField", "_id")
-		sortOrder := c.DefaultQuery("sortOrder", "descend")
+		collection := query.Collection
+		sortField := query.SortField
+		sortOrder := query.SortOrder
 		var orderBy int
 		if sortOrder == "descend" {
 			orderBy = -1
@@ -60,12 +59,12 @@ func StreamList() gin.HandlerFunc {
 			return
 		}
 
-		zap.L().Debug("condition", zap.Any("condition", condition), zap.Int("len", len(condition)))
 		if len(condition) > 0 {
 			matchStage = bson.D{
 				{"$match", condition},
 			}
 		}
+		zap.L().Debug("condition", zap.Any("condition", condition), zap.Any("match", matchStage))
 		//groupStage := bson.D{
 		//	{"$group", bson.D{}},
 		//}

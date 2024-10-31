@@ -2,6 +2,7 @@ package web
 
 import (
 	"context"
+	"embed"
 	"errors"
 	"fmt"
 	"github.com/briandowns/spinner"
@@ -11,6 +12,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
+	"io/fs"
 	"net/http"
 	"os"
 	"os/signal"
@@ -19,6 +21,9 @@ import (
 )
 
 // web server
+
+//go:embed dist
+var dist embed.FS
 
 var (
 	web *gin.Engine
@@ -39,6 +44,7 @@ func NewWebServer(c Config) {
 	sp.Stop()
 	zap.L().Info(i18n.T("Starting Web Server"))
 	web = gin.Default()
+	web.Use(ServerStatic("dist", dist))
 	// cors
 	web.Use(cors.Default())
 	web.Use(cors.New(cors.Config{
@@ -77,4 +83,24 @@ func NewWebServer(c Config) {
 		zap.L().Fatal(i18n.T("Failed to shutdown Web Server"), zap.Error(err))
 	}
 	zap.L().Info(i18n.T("Shut down Web Server"))
+}
+
+func ServerStatic(prefix string, embedFs embed.FS) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		// 去掉前缀
+		fsys, err := fs.Sub(embedFs, prefix)
+		if err != nil {
+			panic(err)
+		}
+		fs2 := http.FS(fsys)
+		f, err := fs2.Open(ctx.Request.URL.Path)
+		if err != nil {
+			// 判断文件不存在，退出交给其他路由函数
+			ctx.Next()
+			return
+		}
+		defer f.Close()
+		http.FileServer(fs2).ServeHTTP(ctx.Writer, ctx.Request)
+		ctx.Abort()
+	}
 }

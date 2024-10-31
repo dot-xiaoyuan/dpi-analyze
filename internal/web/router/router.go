@@ -8,17 +8,17 @@ import (
 // define route
 
 func Register(r *gin.Engine) {
-	v1 := r.Group("/v1")
-	v1.GET("/dashboard", controllers.Dashboard())
-	v1.GET("/ip/list", controllers.IPList())
-	v1.GET("/ip/detail", controllers.IPDetail())
+	api := r.Group("/api")
+	api.GET("/dashboard", controllers.Dashboard())
+	api.GET("/ip/list", controllers.IPList())
+	api.GET("/ip/detail", controllers.IPDetail())
 	// stream log
-	v1.Match([]string{"GET", "POST"}, "/stream/list", controllers.StreamList())
+	api.Match([]string{"GET", "POST"}, "/stream/list", controllers.StreamList())
 	// observer
-	v1.GET("/observer/ttl", controllers.ObserverTTL())
-	v1.GET("/observer/mac", controllers.ObserverMac())
-	v1.GET("/observer/ua", controllers.ObserverUa())
+	api.GET("/observer/ttl", controllers.ObserverTTL())
+	api.GET("/observer/mac", controllers.ObserverMac())
+	api.GET("/observer/ua", controllers.ObserverUa())
 	// users
-	v1.GET("/users/list", controllers.UserList())
-	v1.GET("/users/events/log", controllers.UserEventsLog())
+	api.GET("/users/list", controllers.UserList())
+	api.GET("/users/events/log", controllers.UserEventsLog())
 }
