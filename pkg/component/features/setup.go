@@ -14,7 +14,7 @@ import (
 	"sync"
 )
 
-//go:embed feature.cfg
+//go:embed feature2.0_cn_24.10.14-plus.cfg
 var FeatureCfg []byte
 
 var (

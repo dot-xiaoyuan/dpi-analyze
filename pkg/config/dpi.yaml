@@ -31,6 +31,7 @@ ignore_feature:
   - com.cn
   - weixin.qq
   - qq.com
+  - baidu.com
 # 权重
 feature:
   sni:
