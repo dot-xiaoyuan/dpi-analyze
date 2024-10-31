@@ -5,7 +5,6 @@ import (
 	"embed"
 	"errors"
 	"fmt"
-	"github.com/briandowns/spinner"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/web/router"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/i18n"
@@ -35,15 +34,13 @@ type Config struct {
 
 func NewWebServer(c Config) {
 	zap.L().Info(i18n.T("Start Load Mongodb Component"))
-	sp := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
-	sp.Start()
 	if err := mongo.Setup(); err != nil {
-		sp.Stop()
 		os.Exit(1)
 	}
-	sp.Stop()
 	zap.L().Info(i18n.T("Starting Web Server"))
 	web = gin.Default()
+	// 注册路由
+	router.Register(web)
 	web.Use(ServerStatic("dist", dist))
 	// cors
 	web.Use(cors.Default())
@@ -55,8 +52,7 @@ func NewWebServer(c Config) {
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
-	// 注册路由
-	router.Register(web)
+
 	// 日志中间件
 	//web.Use(logger.GinLogger())
 	// 服务
@@ -94,11 +90,27 @@ func ServerStatic(prefix string, embedFs embed.FS) gin.HandlerFunc {
 		}
 		fs2 := http.FS(fsys)
 		f, err := fs2.Open(ctx.Request.URL.Path)
+
 		if err != nil {
-			// 判断文件不存在，退出交给其他路由函数
+			// 文件不存在，尝试返回 index.html
+			if errors.Is(err, fs.ErrNotExist) {
+				// 读取 index.html 文件
+				indexFile, err := fs2.Open("/index.html") // 注意：这里的路径可能需要根据你的项目结构调整
+				if err != nil {
+					// 如果 index.html 也不存在，返回 404
+					ctx.String(http.StatusNotFound, "404 page not found")
+					return
+				}
+				defer indexFile.Close()
+				http.ServeContent(ctx.Writer, ctx.Request, "index.html", time.Now(), indexFile)
+				ctx.Abort()
+				return
+			}
+			// 如果是其他错误，继续调用下一个处理程序
 			ctx.Next()
 			return
 		}
+
 		defer f.Close()
 		http.FileServer(fs2).ServeHTTP(ctx.Writer, ctx.Request)
 		ctx.Abort()
