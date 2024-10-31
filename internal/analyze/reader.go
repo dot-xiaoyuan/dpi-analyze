@@ -195,7 +195,7 @@ func (sr *StreamReader) SetHttpInfo(host, userAgent, contentType, upgrade string
 		})
 	}
 	// 如果特征库加载 进行域名分析
-	if features.AhoCorasick != nil && host != "" {
+	if features.AhoCorasick != nil && host != "" && !strings.HasPrefix(host, "/") {
 		if ok, feature := features.Match(host); ok {
 			sr.Parent.Metadata.ApplicationInfo.AppName = feature.Name
 			sr.Parent.Metadata.ApplicationInfo.AppCategory = feature.Category
