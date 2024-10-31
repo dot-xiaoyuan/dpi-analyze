@@ -21,8 +21,8 @@ import (
 
 // web server
 
-//go:embed dist
-var dist embed.FS
+//go:embed build
+var build embed.FS
 
 var (
 	web *gin.Engine
@@ -39,9 +39,6 @@ func NewWebServer(c Config) {
 	}
 	zap.L().Info(i18n.T("Starting Web Server"))
 	web = gin.Default()
-	// 注册路由
-	router.Register(web)
-	web.Use(ServerStatic("dist", dist))
 	// cors
 	web.Use(cors.Default())
 	web.Use(cors.New(cors.Config{
@@ -52,7 +49,9 @@ func NewWebServer(c Config) {
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
-
+	// 注册路由
+	router.Register(web)
+	web.Use(ServerStatic("build", build))
 	// 日志中间件
 	//web.Use(logger.GinLogger())
 	// 服务
