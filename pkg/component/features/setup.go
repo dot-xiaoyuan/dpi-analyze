@@ -109,7 +109,7 @@ func Match(s string) (ok bool, feature Feature) {
 		//zap.L().Info("匹配到域名信息", zap.String("hostname", h), zap.String("name", name), zap.String("domain", DomainMap[hits[0]]))
 		return true, feature
 	}
-	return false, Feature{}
+	return false, feature
 }
 
 // 解析单行特征配置

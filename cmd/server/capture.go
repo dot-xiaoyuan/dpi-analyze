@@ -220,6 +220,7 @@ func loadComponents() {
 		if err = features.Setup(); err != nil {
 			os.Exit(1)
 		}
+		features.LoadMobile2Ac()
 	}
 
 	if config.UseUA {

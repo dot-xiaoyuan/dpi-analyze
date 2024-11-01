@@ -37,6 +37,52 @@ feature:
   sni:
     time_window: 60
     count_size: 10
+# 移动设备握手特征
+mobile_device_feature:
+  huawei:
+    domains:
+      - "huawei.com"
+      - "hicloud.com"
+      - "myhuaweicloud.cn"
+    icon: "icon-huawei"
+  xiaomi:
+    domains:
+      - "xiaomi.com"
+      - "miui.com"
+    icon: "icon-xiaomi"
+  oppo:
+    domains:
+      - "oppo.com"
+    icon: "icon-oppo"
+  vivo:
+    domains:
+      - "vivo.com"
+    icon: "icon-vivo"
+  samsung:
+    domains:
+      - "samsung.com"
+    icon: "icon-samsung"
+  apple:
+    domains:
+      - "apple.com"
+    icon: "icon-apple"
+  meizu:
+    domains:
+      - "meizu.com"
+    icon: "icon-meizu"
+  honor:
+    domains:
+      - "honor.com"
+    icon: "icon-rongyao"
+  oneplus:
+    domains:
+      - "oneplus.com"
+    icon: "icon-OP_LU_Reg_1L_RGB_red_copy-01"
+  realme:
+    domains:
+      - "realme.com"
+      - "realmeui.com"
+    icon: "icon-zhenworealme_logo"
 # mongodb，用于流分析持久化存储与查询
 mongodb:
   host: 127.0.0.1

@@ -32,7 +32,6 @@ var (
 	CaptureNic            string
 	CapturePcap           string
 	UseMongo              bool
-	ParseFeature          bool
 	BerkeleyPacketFilter  string
 	IgnoreMissing         bool
 	FollowOnlyOnlineUsers bool
@@ -41,7 +40,6 @@ var (
 	UseFeature            bool
 	WebPort               uint
 	Detach                bool
-	TimeWindow            int
 )
 
 type Yaml struct {
@@ -51,7 +49,6 @@ type Yaml struct {
 	Detach                bool    `mapstructure:"detach"`
 	Geo2IP                string  `mapstructure:"geo2ip"`
 	UseMongo              bool    `mapstructure:"use_mongo"`
-	ParseFeature          bool    `mapstructure:"parse_app"`
 	BerkeleyPacketFilter  string  `mapstructure:"berkeley_packet_filter"`
 	IgnoreMissing         bool    `mapstructure:"ignore_missing"`
 	FollowOnlyOnlineUsers bool    `mapstructure:"follow_only_online_users"`
@@ -64,6 +61,7 @@ type Yaml struct {
 	Web                   Web
 	IgnoreFeature         []string `mapstructure:"ignore_feature"`
 	Feature               Feature
+	MobileDeviceFeature   map[string]MobileDeviceFeature `mapstructure:"mobile_device_feature"`
 }
 
 type Capture struct {
@@ -83,6 +81,11 @@ type Feature struct {
 type FeatureConfig struct {
 	TimeWindow time.Duration `mapstructure:"time_window"`
 	CountSize  int           `mapstructure:"count_size"`
+}
+
+type MobileDeviceFeature struct {
+	Domains []string `mapstructure:"domains"`
+	Icon    string   `mapstructure:"icon"`
 }
 
 type Mongodb struct {

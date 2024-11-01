@@ -115,6 +115,16 @@ func (sr *StreamReader) SetTlsInfo(sni, version, cipherSuite string) {
 				Value: utils.FormatDomain(sni),
 			})
 		})
+		// 移动设备匹配
+		if features.MobileAhoCorasick != nil {
+			if ok, mf := features.DeviceMatch(sni); ok {
+				member.Store(member.Hash{
+					IP:    sr.Parent.SrcIP,
+					Field: types.Device,
+					Value: mf.Name,
+				})
+			}
+		}
 		// 如果特征库加载 进行域名分析
 		if features.AhoCorasick != nil {
 			if ok, feature := features.Match(sni); ok {
