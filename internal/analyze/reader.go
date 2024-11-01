@@ -17,6 +17,7 @@ import (
 // Stream Reader
 
 type StreamReader struct {
+	isSaved  bool
 	Ident    string
 	Parent   *Stream
 	IsClient bool
@@ -45,6 +46,13 @@ func (sr *StreamReader) Read(p []byte) (n int, err error) {
 func (sr *StreamReader) Run(wg *sync.WaitGroup) {
 	sr.Parent.Wg.Add(1)
 	defer wg.Done()
+	defer func() {
+		// 确保退出时只调用一次 Save
+		if !sr.isSaved {
+			sr.Parent.Save()
+			sr.isSaved = true
+		}
+	}()
 	b := bufio.NewReader(sr)
 
 	buffer := make([]byte, 0, 4096)
@@ -59,13 +67,10 @@ func (sr *StreamReader) Run(wg *sync.WaitGroup) {
 		n, err := b.Read(data)
 		if err != nil {
 			if err == io.EOF {
-				go func() {
-					defer sr.Parent.Wg.Done()
-					// zap.L().Debug("Stream EOF", zap.String("Ident", sr.Ident))
-					sr.Parent.Save()
-				}()
+				// 如果遇到 EOF，直接跳出循环
 				break
 			}
+			// 如果发生其他错误，则继续
 			continue
 		}
 		// push读取的数据
