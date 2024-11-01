@@ -17,7 +17,7 @@ type Charts struct {
 
 func Dashboard(raw json.RawMessage) any {
 	tcpCount := atomic.LoadInt64(&capture.TCPCount)
-	udpCount := atomic.LoadInt64(&capture.TCPCount)
+	udpCount := atomic.LoadInt64(&capture.UDPCount)
 
 	transportCharts := []Charts{
 		{Name: "TCP", Value: tcpCount},
