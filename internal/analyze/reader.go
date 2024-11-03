@@ -117,11 +117,11 @@ func (sr *StreamReader) SetTlsInfo(sni, version, cipherSuite string) {
 		})
 		// 移动设备匹配
 		if features.MobileAhoCorasick != nil {
-			if ok, mf := features.DeviceMatch(sni); ok {
+			if counter, mf := features.GetDeviceCounter(sr.Parent.SrcIP, sni); counter >= 5 {
 				member.Store(member.Hash{
 					IP:    sr.Parent.SrcIP,
 					Field: types.Device,
-					Value: mf.Name,
+					Value: mf.String(),
 				})
 			}
 		}
