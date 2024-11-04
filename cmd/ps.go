@@ -89,7 +89,15 @@ func getProcessInfo(pid int) []string {
 		return nil // 没有有效的信息
 	}
 
-	return strings.Fields(lines[1]) // 返回第二行（进程信息）
+	// 分割输出信息并将 args 合并为一个字符串
+	fields := strings.Fields(lines[1])
+	if len(fields) > 7 { // 确保 args 存在
+		args := strings.Join(fields[2:len(fields)-5], " ") // 合并 args 列，但不包括最后 5 列
+		prefix := append(fields[:2], args)                 // 将合并后的 args 放回切片
+		fields = append(prefix, fields[len(fields)-5:]...) // 添加剩下的列
+	}
+
+	return fields
 }
 
 func displayProcesses(processes [][]string) {
