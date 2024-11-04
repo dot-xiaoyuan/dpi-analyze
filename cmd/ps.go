@@ -69,9 +69,9 @@ func getProcessInfo(pid int) []string {
 
 	// 根据操作系统选择命令
 	if runtime.GOOS == "linux" {
-		cmd = exec.Command("ps", "-p", strconv.Itoa(pid), "-o", "pid,comm,state,user,time,%mem,%cpu")
+		cmd = exec.Command("ps", "-p", strconv.Itoa(pid), "-o", "pid,comm,args,state,user,time,%mem,%cpu")
 	} else if runtime.GOOS == "darwin" { // macOS
-		cmd = exec.Command("ps", "-p", strconv.Itoa(pid), "-o", "pid,comm,state,user,time,pmem,pcpu")
+		cmd = exec.Command("ps", "-p", strconv.Itoa(pid), "-o", "pid,comm,args,state,user,time,pmem,pcpu")
 	} else {
 		fmt.Println("Unsupported OS")
 		return nil
@@ -94,7 +94,7 @@ func getProcessInfo(pid int) []string {
 
 func displayProcesses(processes [][]string) {
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"PID", "Command", "State", "User", "Time", "Memory", "CPU"})
+	table.SetHeader([]string{"PID", "Command", "Args", "State", "User", "Time", "Memory", "CPU"})
 
 	for _, process := range processes {
 		table.Append(process)
