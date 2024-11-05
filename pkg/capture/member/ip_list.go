@@ -23,6 +23,7 @@ type InfoJson struct {
 	Mac      string `json:"mac"`
 	TTL      string `json:"ttl"`
 	UA       string `json:"ua"`
+	Device   string `json:"device"`
 	LastSeen string `json:"last_seen"`
 }
 
@@ -76,6 +77,7 @@ func TraversalIP(startTime, endTime int64, page, pageSize int64) (result Tables,
 			TTL:      info["ttl"],
 			UA:       info["ua"],
 			Mac:      info["mac"],
+			Device:   info["device"],
 			LastSeen: time.Unix(int64(ips[i].Score), 0).Format("2006/01/02 15:04:05"),
 		}
 		ipDetails = append(ipDetails, detail)
