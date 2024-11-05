@@ -122,13 +122,16 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 	}
 	trafficMap.Update(transmission)
 
-	_ = ants.Submit(func() { // 插入 IP hash TTL表
-		member.Store(member.Hash{
-			IP:    userIP,
-			Field: types.TTL,
-			Value: internet.TTL,
+	if config.UseTTL {
+		_ = ants.Submit(func() { // 插入 IP hash TTL表
+			member.Store(member.Hash{
+				IP:    userIP,
+				Field: types.TTL,
+				Value: internet.TTL,
+			})
 		})
-	})
+	}
+
 	_ = ants.Submit(func() { // 插入 IP hash Mac表
 		member.Store(member.Hash{
 			IP:    userIP,

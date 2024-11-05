@@ -56,7 +56,7 @@ func NewWebServer(c Config) {
 	//web.Use(logger.GinLogger())
 	// 服务
 	server := &http.Server{
-		Addr:    fmt.Sprintf(":%d", c.Port),
+		Addr:    fmt.Sprintf("0.0.0.0:%d", c.Port),
 		Handler: web,
 	}
 

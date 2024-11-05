@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	CliName     = "dpi"
+	CliName     = "dpi-analyze"
 	Description = "dpi CLI"
-	CliVersion  = "1.0.0.241030_beta"
+	CliVersion  = "1.0.1.241105_beta"
 )
 
 var rootCmd = &cobra.Command{
@@ -46,8 +46,8 @@ func init() {
 	}()
 
 	// Global Flags
-	//rootCmd.PersistentFlags().StringVarP(&config.Language, "language", "l", config.Cfg.Language, "language")
-	rootCmd.PersistentFlags().StringVarP(&config.LogLevel, "log-level", "l", config.Cfg.LogLevel, "Set the logging level (\"debug\", \"info\", \"warn\", \"error\", \"fatal\") (default \"info\")")
+	rootCmd.PersistentFlags().StringVar(&config.Language, "lang", config.Cfg.Language, "language")
+	rootCmd.PersistentFlags().StringVarP(&config.LogLevel, "log-level", "l", config.Cfg.LogLevel, "Set the logging level ('debug', 'info', 'warn', 'error', 'fatal')")
 	rootCmd.PersistentFlags().BoolVarP(&config.Debug, "debug", "D", config.Cfg.Debug, "Enable debug mode")
 
 	rootCmd.AddCommand(RunCmd)
@@ -58,7 +58,7 @@ func init() {
 }
 
 func rootRunFunc(c *cobra.Command, args []string) {
-	//fmt.Println(args)
+
 }
 
 func rootPreFunc(c *cobra.Command, args []string) {
@@ -87,7 +87,6 @@ Use "{{.CommandPath}} [command] --help" for more information about a command.
 `
 
 func Execute() {
-	//rootCmd.SetHelpTemplate(customHelpTemplate) // 设置自定义模板
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
