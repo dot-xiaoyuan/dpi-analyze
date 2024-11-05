@@ -91,11 +91,11 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 		return
 	}
 	// user_ip 转储缓存
-	var userIP, tranIP string
+	var userIP, tranIP, userMac string
 	if users.ExitsUser(ip) {
-		userIP, tranIP = ip, dip
+		userIP, tranIP, userMac = ip, dip, ethernet.SrcMac
 	} else if users.ExitsUser(dip) {
-		userIP, tranIP = dip, ip
+		userIP, tranIP, userMac = dip, ip, ethernet.DstMac
 	}
 	if userIP == "" {
 		return
@@ -136,7 +136,7 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 		member.Store(member.Hash{
 			IP:    userIP,
 			Field: types.Mac,
-			Value: ethernet.SrcMac,
+			Value: userMac,
 		})
 	})
 
