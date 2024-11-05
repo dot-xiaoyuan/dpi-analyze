@@ -12,6 +12,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"io/fs"
+	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -55,11 +57,24 @@ func NewWebServer(c Config) {
 	// 日志中间件
 	//web.Use(logger.GinLogger())
 	// 服务
+	addr := fmt.Sprintf(":%d", c.Port)
 	server := &http.Server{
-		Addr:    fmt.Sprintf("0.0.0.0:%d", c.Port),
+		Addr:    addr,
 		Handler: web,
 	}
 
+	ln, err := net.Listen("tcp4", addr)
+	if err != nil {
+		panic(err)
+	}
+	type tcpKeepAliveListener struct {
+		*net.TCPListener
+	}
+	erred := server.Serve(tcpKeepAliveListener{ln.(*net.TCPListener)})
+	log.Println("server start success", erred)
+	if erred != nil {
+		panic(err)
+	}
 	go func() {
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			zap.L().Fatal(i18n.T("Failed to start Web Server"), zap.Error(err))
