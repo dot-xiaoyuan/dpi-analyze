@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/ua-parser/uap-go/uaparser"
 	"go.uber.org/zap"
+	"regexp"
 	"sync"
 )
 
@@ -57,4 +58,18 @@ func Parse(ua string) string {
 	os, _ := UaParser.Parse(ua)
 	zap.L().Debug("Parsed ua from UA", zap.String("ua", ua), zap.String("os", os.ToString()))
 	return os.ToString()
+}
+
+// Filter 过滤ua
+func Filter(host string) bool {
+	// 要过滤的域名的正则表达式
+	filterPattern := `(?:ajax\.googleapis\.com|ajax\.microsoft\.com|cdnjs\.cloudflare\.com|code\.jquery\.com|google-analytics\.com|analytics\.google\.com|doubleclick\.net|googlesyndication\.com|ads\.linkedin\.com|facebook\.com|fbcdn\.net|connect\.facebook\.net|twitter\.com|t\.co|login\.live\.com|accounts\.google\.com|chrome\.google\.com|crashlytics\.com|safebrowsing\.googleapis\.com)`
+
+	// 编译正则表达式
+	filterRegex, err := regexp.Compile(filterPattern)
+	if err != nil {
+		fmt.Println("Failed to compile regex:", err)
+		return false
+	}
+	return !filterRegex.MatchString(host)
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/member"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/features"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/uaparser"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/utils"
 	"io"
@@ -187,7 +188,7 @@ func (sr *StreamReader) SetHttpInfo(host, userAgent, contentType, upgrade string
 		Urls:        sr.GetUrls(),
 	}
 	// 如果ua有效
-	if userAgent != "" {
+	if userAgent != "" && uaparser.Filter(host) {
 		_ = ants.Submit(func() { // 统计UA
 			member.Store(member.Hash{
 				IP:    sr.Parent.SrcIP,
