@@ -14,7 +14,7 @@ import (
 const (
 	CliName     = "dpi-analyze"
 	Description = "dpi CLI"
-	CliVersion  = "1.0.1.241105_beta"
+	CliVersion  = "1.0.2.241105_beta"
 )
 
 var rootCmd = &cobra.Command{
