@@ -63,8 +63,8 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 	// 链路层
 	ethernet := types.Ethernet{}
 	if packet.LinkLayer() != nil {
-		ethernet.SrcMac = packet.LinkLayer().LinkFlow().Dst().String()
-		ethernet.DstMac = packet.LinkLayer().LinkFlow().Src().String()
+		ethernet.SrcMac = packet.LinkLayer().LinkFlow().Src().String()
+		ethernet.DstMac = packet.LinkLayer().LinkFlow().Dst().String()
 	}
 	// 网络层
 	internet := types.Internet{}
