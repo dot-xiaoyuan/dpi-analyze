@@ -60,7 +60,14 @@ func Parse(ua string) string {
 	if client.Os.ToString() == "Other" || client.Os.ToVersionString() == "" {
 		return ""
 	}
-	zap.L().Debug(i18n.T("Parsing results"), zap.String("os", client.Os.Family), zap.String("version", client.Os.ToVersionString()), zap.String("brand", client.Device.Brand), zap.String("model", client.Device.Model))
+	zap.L().Debug("origin useragent", zap.String("ua", ua))
+	zap.L().Debug(i18n.T("Parsing results"),
+		zap.String("os", client.Os.ToString()),
+		zap.String("useragent", client.UserAgent.ToString()),
+		zap.String("family", client.Device.Family),
+		zap.String("brand", client.Device.Brand),
+		zap.String("model", client.Device.Model),
+	)
 	return fmt.Sprintf("%s-%s", client.Os.Family, client.Os.ToVersionString())
 }
 
