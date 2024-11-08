@@ -3,6 +3,7 @@ package uaparser
 import (
 	_ "embed"
 	"fmt"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/i18n"
 	"github.com/ua-parser/uap-go/uaparser"
 	"go.uber.org/zap"
 	"regexp"
@@ -43,21 +44,24 @@ func (u *uaParser) Setup() error {
 	return setupErr
 }
 
-func (u *uaParser) Parse(ua string) (*uaparser.Os, error) {
+func (u *uaParser) Parse(ua string) (*uaparser.Client, error) {
 	if u.Parser == nil {
 		if err := u.Setup(); err != nil {
 			return nil, err
 		}
 	}
-	os := u.Parser.ParseOs(ua)
-	return os, nil
+	client := u.Parser.Parse(ua)
+	return client, nil
 
 }
 
 func Parse(ua string) string {
-	os, _ := UaParser.Parse(ua)
-	zap.L().Debug("Parsed ua from UA", zap.String("ua", ua), zap.String("os", os.ToString()))
-	return os.ToString()
+	client, _ := UaParser.Parse(ua)
+	if client.Os.ToString() == "Other" || client.Os.ToVersionString() == "" {
+		return ""
+	}
+	zap.L().Debug(i18n.T("Parsing results"), zap.String("os", client.Os.Family), zap.String("version", client.Os.ToVersionString()), zap.String("brand", client.Device.Brand), zap.String("model", client.Device.Model))
+	return fmt.Sprintf("%s-%s", client.Os.Family, client.Os.ToVersionString())
 }
 
 // Filter 过滤ua
@@ -72,4 +76,8 @@ func Filter(host string) bool {
 		return false
 	}
 	return !filterRegex.MatchString(host)
+}
+
+func DeviceMatch(os string) {
+
 }

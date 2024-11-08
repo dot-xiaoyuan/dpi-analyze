@@ -189,13 +189,15 @@ func (sr *StreamReader) SetHttpInfo(host, userAgent, contentType, upgrade string
 	}
 	// 如果ua有效
 	if userAgent != "" && uaparser.Filter(host) {
-		_ = ants.Submit(func() { // 统计UA
-			member.Store(member.Hash{
-				IP:    sr.Parent.SrcIP,
-				Field: types.UserAgent,
-				Value: userAgent,
+		if os := uaparser.Parse(userAgent); len(os) > 0 {
+			_ = ants.Submit(func() { // 统计UA
+				member.Store(member.Hash{
+					IP:    sr.Parent.SrcIP,
+					Field: types.UserAgent,
+					Value: os,
+				})
 			})
-		})
+		}
 	}
 	// host
 	if host != "" && host != "<no-request-seen>" && !strings.HasPrefix(host, "/") {

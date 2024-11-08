@@ -227,4 +227,5 @@ func CleanUp() {
 	redis.GetRedisClient().Del(context.TODO(), types.ZSetObserverTTL).Val()
 	redis.GetRedisClient().Del(context.TODO(), types.ZSetObserverMac).Val()
 	redis.GetRedisClient().Del(context.TODO(), types.ZSetObserverUa).Val()
+	redis.GetRedisClient().Del(context.TODO(), types.ZSetObserverDevice).Val()
 }

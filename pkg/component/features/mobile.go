@@ -73,7 +73,6 @@ func GetDeviceCounter(ip, sni string) (counter int, mf Manufacturer) {
 	count := 0
 	if err == nil {
 		count, _ = strconv.Atoi(string(entry))
-		zap.L().Debug("entry", zap.ByteString("entry", entry), zap.Int("count", count))
 	}
 	// 计数加 1
 	count++

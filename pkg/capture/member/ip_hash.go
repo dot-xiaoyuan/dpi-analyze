@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/redis"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/uaparser"
 	v9 "github.com/redis/go-redis/v9"
 	"sync"
 	"time"
@@ -37,7 +36,7 @@ func Store(i interface{}) {
 		break
 	case types.UserAgent:
 		m = &UaCache
-		v = uaparser.Parse(hash.Value.(string))
+		v = hash.Value.(string)
 		break
 	case types.Device:
 		m = &DeviceCache
@@ -131,7 +130,7 @@ func storeHash2Redis(ip string, property types.Property, value any) {
 	}).Val()
 	// info hash
 	rdb.HSet(ctx, key, string(property), value).Val()
-	rdb.Expire(ctx, key, time.Hour).Val()
+	rdb.Expire(ctx, key, time.Minute*15).Val()
 }
 
 func CleanUp() {

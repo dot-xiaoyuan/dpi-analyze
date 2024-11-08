@@ -58,6 +58,7 @@ func DropUser(ip string) {
 	observer.TTLObserver.DeleteRedis(ip)
 	observer.MacObserver.DeleteRedis(ip)
 	observer.UaObserver.DeleteRedis(ip)
+	observer.DeviceObserver.DeleteRedis(ip)
 }
 
 // FindUser 查找用户

@@ -86,10 +86,6 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 		ip = ipv6.SrcIP.String()
 		dip = ipv6.DstIP.String()
 	}
-	// 仅关注在线用户 如果在线用户中不存在该IP跳过该数据包
-	if config.FollowOnlyOnlineUsers && !users.ExitsUser(ip) && !users.ExitsUser(dip) {
-		return
-	}
 	// user_ip 转储缓存
 	var userIP, tranIP, userMac string
 	if users.ExitsUser(ip) {
@@ -97,7 +93,8 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 	} else if users.ExitsUser(dip) {
 		userIP, tranIP, userMac = dip, ip, ethernet.DstMac
 	}
-	if userIP == "" {
+	// 仅关注在线用户 如果在线用户中不存在该IP跳过该数据包
+	if userIP == "" && config.FollowOnlyOnlineUsers {
 		return
 	}
 	// 如果 TTL = 255，跳过该数据包
@@ -132,13 +129,15 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 		})
 	}
 
-	_ = ants.Submit(func() { // 插入 IP hash Mac表
-		member.Store(member.Hash{
-			IP:    userIP,
-			Field: types.Mac,
-			Value: userMac,
+	if len(userMac) > 0 {
+		_ = ants.Submit(func() { // 插入 IP hash Mac表
+			member.Store(member.Hash{
+				IP:    userIP,
+				Field: types.Mac,
+				Value: userMac,
+			})
 		})
-	})
+	}
 
 	// analyze TCP
 	if tcpLayer := packet.Layer(layers.LayerTypeTCP); tcpLayer != nil {
@@ -166,7 +165,7 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 		})
 	}
 
-	if capture.PacketsCount%1000 == 0 {
+	if capture.PacketsCount%10000 == 0 {
 		zap.L().Debug(i18n.T("capture packet"), zap.Int("count", capture.PacketsCount))
 		ref := packet.Metadata().Timestamp
 		_, _ = a.Assembler.FlushWithOptions(reassembly.FlushOptions{

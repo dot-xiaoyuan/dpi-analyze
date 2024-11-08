@@ -1,18 +1,25 @@
-# zh-CN.toml
-"Configure related commands" = "配置相关命令"
-"language" = "语言"
-"log level" = "日志等级"
-"Capture nic" = "捕获网卡"
-"debug mode" = "调试模式"
-"capture commands" = "捕获数据包"
-"help for dpi" = "帮助"
+"Enable debug mode" = "开启debug模式"
+"help for dpi-analyze" = "获取帮助"
+"language" = "语言设置"
+"Set the logging level ('debug', 'info', 'warn', 'error', 'fatal')" = "设置日志等级 (debug、info、warn、error、fatal)"
+"version for dpi-analyze" = "版本信息"
+
+"Create and run server" = "创建并运行一个服务"
+# capture
+"Berkeley packet filter" = "数据包过滤规则"
+"Run server in background and print PID" = "后台运行服务并打印 PID"
+"use parse application" = "使用解析应用特征"
+"follow only online users" = "仅关注在线用户"
+"geo2ip" = "geo2ip 数据库文件"
+"help for capture" = "获取捕获帮助"
+"save TTL for IP" = "记录IP TTL变化"
+"use ua parser" = "使用user-agent 解析"
 
 # Capture Flags
 "parse application" = "是否解析应用"
 "capture nic" = "指定捕获网卡"
 "capture pcap file" = "指定离线数据包"
 "use mongo db" = "是否使用mongo存储"
-"Berkeley packet filter" = "Berkeley 数据包过滤器"
 "Berkeley packet filter set" = "数据包过滤设置:[ {{.bpf}} ]"
 "Packets Channel Closed" = "数据包通道已关闭"
 "ignore missing packet" = "是否允许忽略 乱序/丢包/重传数据包统计"
@@ -72,6 +79,7 @@
 # ua parser
 "Start Load User-Agent Parser Component" = "开始加载ua解析组件"
 "ua parser component initialized!" = "ua解析组件加载完成"
+"Parsing results" = "解析结果"
 
 # user
 "Listen user events" = "监听用户事件"
