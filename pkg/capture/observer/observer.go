@@ -2,6 +2,7 @@ package observer
 
 import (
 	"context"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/redis"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/provider"
@@ -24,23 +25,23 @@ var (
 	TTLObserver    = NewObserver[uint8](types.ZSetObserverTTL, MaxTTLCount)
 	MacObserver    = NewObserver[string](types.ZSetObserverMac, MaxMacCount)
 	UaObserver     = NewObserver[string](types.ZSetObserverUa, MaxUaCount)
-	DeviceObserver = NewObserver[string](types.ZSetObserverDevice, MaxMacCount)
+	DeviceObserver = NewObserver[types.DeviceRecord](types.ZSetObserverDevice, MaxMacCount)
 
 	TTLEvents    = make(chan ChangeObserverEvent[uint8], 100)
 	MacEvents    = make(chan ChangeObserverEvent[string], 100)
 	UaEvents     = make(chan ChangeObserverEvent[string], 100)
-	DeviceEvents = make(chan ChangeObserverEvent[string], 100)
+	DeviceEvents = make(chan ChangeObserverEvent[types.DeviceRecord], 100)
 )
 
 // ChangeObserverEvent 观察事件
-type ChangeObserverEvent[T string | uint8] struct {
+type ChangeObserverEvent[T any] struct {
 	IP   string
 	Prev T
 	Curr T
 }
 
 // ChangeHistory 变化历史记录
-type ChangeHistory[T string | uint8] struct {
+type ChangeHistory[T any] struct {
 	Changes       []ChangeRecord[T] `json:"origin_changes"`
 	ValueChanges  []uint            `json:"value_changes"`
 	MovingAverage []float64         `json:"moving_average"`
@@ -48,20 +49,20 @@ type ChangeHistory[T string | uint8] struct {
 }
 
 // ChangeRecord 记录每次变化的数据
-type ChangeRecord[T string | uint8] struct {
+type ChangeRecord[T any] struct {
 	Time  time.Time `json:"time"`
 	Value T         `json:"value"`
 }
 
 // Observer 观察者
-type Observer[T string | uint8] struct {
+type Observer[T any] struct {
 	HistoryCache map[string]*ChangeHistory[T]
 	MaxCount     int
 	Table        string
 }
 
 // NewObserver 创建一个观察者
-func NewObserver[T uint8 | string](table string, maxCount int) *Observer[T] {
+func NewObserver[T any](table string, maxCount int) *Observer[T] {
 	return &Observer[T]{
 		HistoryCache: make(map[string]*ChangeHistory[T]),
 		MaxCount:     maxCount,
@@ -105,6 +106,9 @@ func (ob *Observer[T]) RecordChange(ip string, value T) {
 			history.ValueChanges = num
 			history.MovingAverage, history.IsProxy = detectProxyUsingSMA(num, 3, 3)
 		}
+	}
+	if ob.Table == types.ZSetObserverDevice {
+		_, _ = mongo.GetMongoClient().Database(string(types.Device)).Collection("record").InsertOne(mongo.Context, value)
 	}
 }
 
@@ -171,7 +175,7 @@ func (ob *Observer[T]) WatchChange(events <-chan ChangeObserverEvent[T]) {
 	}
 }
 
-type WebResult[T uint8 | string] struct {
+type WebResult[T any] struct {
 	IP      string           `json:"ip"`
 	History ChangeHistory[T] `json:"history"`
 }
@@ -212,6 +216,12 @@ func (ob *Observer[T]) Traversal(c provider.Condition) (int64, interface{}, erro
 		result = append(result, wr)
 	}
 	return count, result, nil
+}
+
+func (ob *Observer[T]) triggerAfterStore() {
+	switch ob.Table == types.ZSetObserverDevice {
+
+	}
 }
 
 func Setup() {

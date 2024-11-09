@@ -96,11 +96,11 @@ redis:
     password: ""
   # 4k 在线表, 用于dpi同步在线用户与ip对应关系以及获取控制策略
   online:
-    host: 127.0.0.1
-    port: 6379
-    password: ""
+    host: 192.168.0.174
+    port: 16380
+    password: "srun_3000@redis"
   # 4k cache, 在线表同步接口，用于接收用户上下线事件来同步dpi的在线表
   cache:
-    host: 127.0.0.1
-    port: 6379
-    password: ""
+    host: 192.168.0.174
+    port: 16384
+    password: "srun_3000@redis"

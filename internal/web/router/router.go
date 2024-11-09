@@ -18,6 +18,7 @@ func Register(r *gin.Engine) {
 	api.GET("/observer/ttl", controllers.ObserverTTL())
 	api.GET("/observer/mac", controllers.ObserverMac())
 	api.GET("/observer/ua", controllers.ObserverUa())
+	api.GET("/observer/device", controllers.ObserverDevice())
 	// users
 	api.GET("/users/list", controllers.UserList())
 	api.GET("/users/events/log", controllers.UserEventsLog())

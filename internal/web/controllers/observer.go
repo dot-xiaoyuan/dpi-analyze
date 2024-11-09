@@ -48,3 +48,7 @@ func ObserverMac() gin.HandlerFunc {
 func ObserverUa() gin.HandlerFunc {
 	return ObserverHandler(types.UserAgent)
 }
+
+func ObserverDevice() gin.HandlerFunc {
+	return ObserverHandler(types.Device)
+}

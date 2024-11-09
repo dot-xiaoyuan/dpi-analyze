@@ -20,10 +20,10 @@ type Tables struct {
 
 type InfoJson struct {
 	IP       string `json:"ip"`
-	Mac      string `json:"mac"`
-	TTL      string `json:"ttl"`
-	UA       string `json:"ua"`
-	Device   string `json:"device"`
+	Mac      string `json:"mac,omitempty"`
+	TTL      string `json:"ttl,omitempty"`
+	UA       string `json:"user_agent,omitempty"`
+	Device   string `json:"device,omitempty"`
 	LastSeen string `json:"last_seen"`
 }
 
@@ -75,7 +75,7 @@ func TraversalIP(startTime, endTime int64, page, pageSize int64) (result Tables,
 		detail := InfoJson{
 			IP:       ips[i].Member.(string),
 			TTL:      info["ttl"],
-			UA:       info["ua"],
+			UA:       info["user_agent"],
 			Mac:      info["mac"],
 			Device:   info["device"],
 			LastSeen: time.Unix(int64(ips[i].Score), 0).Format("2006/01/02 15:04:05"),

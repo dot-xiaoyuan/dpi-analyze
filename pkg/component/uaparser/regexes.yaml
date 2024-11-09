@@ -4871,9 +4871,9 @@ device_parsers:
   # @ref: http://vivo.cn/
   #########
   - regex: '(Vivo|V[0-9]{4,5}[A-Za-z]?)(?:Browser)?'
-    device_replacement: '$1 $2'
+    device_replacement: 'Vivo'
     brand_replacement: 'vivo'
-    model_replacement: '$2'
+    model_replacement: '$1'
 
   #########
   # Vodafone (Operator Branded Devices)
@@ -4968,21 +4968,29 @@ device_parsers:
   # @ref: http://www.xiaomi.com/event/buyphone
   #########
   - regex: '; {0,2}((Mi|MI|HM|MI-ONE|Redmi)[ -](NOTE |Note |)[^;/]*) (Build|MIUI)/'
-    device_replacement: 'XiaoMi $1'
-    brand_replacement: 'XiaoMi'
+    device_replacement: 'Xiaomi $1'
+    brand_replacement: 'Xiaomi'
     model_replacement: '$1'
   - regex: '; {0,2}((Mi|MI|HM|MI-ONE|Redmi)[ -](NOTE |Note |)[^;/\)]*)'
-    device_replacement: 'XiaoMi $1'
-    brand_replacement: 'XiaoMi'
+    device_replacement: 'Xiaomi $1'
+    brand_replacement: 'Xiaomi'
     model_replacement: '$1'
   - regex: '; {0,2}(MIX) (Build|MIUI)/'
-    device_replacement: 'XiaoMi $1'
-    brand_replacement: 'XiaoMi'
+    device_replacement: 'Xiaomi $1'
+    brand_replacement: 'Xiaomi'
     model_replacement: '$1'
   - regex: '; {0,2}((MIX) ([^;/]*)) (Build|MIUI)/'
-    device_replacement: 'XiaoMi $1'
-    brand_replacement: 'XiaoMi'
+    device_replacement: 'Xiaomi $1'
+    brand_replacement: 'Xiaomi'
     model_replacement: '$1'
+  - regex: '; {0,2}([^\s;/]+)(?: Build/).*XiaoMi'
+    device_replacement: 'Xiaomi $1'
+    brand_replacement: 'Xiaomi'
+    model_replacement: '$1'
+  - regex: '; {0,2}(2211133C)(?: Build/)'
+    device_replacement: 'Xiaomi 13'
+    brand_replacement: 'Xiaomi'
+    model_replacement: '13'
 
   #########
   # Xolo

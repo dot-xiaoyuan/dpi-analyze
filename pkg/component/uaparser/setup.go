@@ -55,24 +55,23 @@ func (u *uaParser) Parse(ua string) (*uaparser.Client, error) {
 
 }
 
-func Parse(ua string) string {
-	client, _ := UaParser.Parse(ua)
-	if client.Os.ToString() == "Other" || client.Os.ToVersionString() == "" {
-		return ""
+func Analyze(ua, host string) *uaparser.Client {
+	if filter(host) {
+		return nil
 	}
-	zap.L().Debug("origin useragent", zap.String("ua", ua))
-	zap.L().Debug(i18n.T("Parsing results"),
-		zap.String("os", client.Os.ToString()),
-		zap.String("useragent", client.UserAgent.ToString()),
-		zap.String("family", client.Device.Family),
-		zap.String("brand", client.Device.Brand),
-		zap.String("model", client.Device.Model),
-	)
-	return fmt.Sprintf("%s-%s", client.Os.Family, client.Os.ToVersionString())
+
+	client, _ := UaParser.Parse(ua)
+	if client.Os.Family == "Other" {
+		return nil
+	}
+
+	zap.L().Debug(i18n.T("Origin UserAgent"), zap.String("ua", ua), zap.String("host", host))
+	zap.L().Debug(i18n.T("Parsing results"), zap.Any("client", client))
+	return client
 }
 
-// Filter 过滤ua
-func Filter(host string) bool {
+// filter 过滤ua
+func filter(host string) bool {
 	// 要过滤的域名的正则表达式
 	filterPattern := `(?:ajax\.googleapis\.com|ajax\.microsoft\.com|cdnjs\.cloudflare\.com|code\.jquery\.com|google-analytics\.com|analytics\.google\.com|doubleclick\.net|googlesyndication\.com|ads\.linkedin\.com|facebook\.com|fbcdn\.net|connect\.facebook\.net|twitter\.com|t\.co|login\.live\.com|accounts\.google\.com|chrome\.google\.com|crashlytics\.com|safebrowsing\.googleapis\.com)`
 
@@ -82,7 +81,7 @@ func Filter(host string) bool {
 		fmt.Println("Failed to compile regex:", err)
 		return false
 	}
-	return !filterRegex.MatchString(host)
+	return filterRegex.MatchString(host)
 }
 
 func DeviceMatch(os string) {

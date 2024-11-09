@@ -40,7 +40,7 @@ func Store(i interface{}) {
 		break
 	case types.Device:
 		m = &DeviceCache
-		v = hash.Value.(string)
+		v = hash.Value.(types.DeviceRecord)
 		break
 	}
 

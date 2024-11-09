@@ -4,9 +4,10 @@ import (
 	"bufio"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/member"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/resolve"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/features"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/uaparser"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/utils"
 	"io"
@@ -122,7 +123,17 @@ func (sr *StreamReader) SetTlsInfo(sni, version, cipherSuite string) {
 				member.Store(member.Hash{
 					IP:    sr.Parent.SrcIP,
 					Field: types.Device,
-					Value: mf.String(),
+					Value: types.DeviceRecord{
+						IP:           sr.Parent.SrcIP,
+						OriginChanel: types.Device,
+						OriginValue:  sni,
+						Os:           "",
+						Version:      "",
+						Device:       "",
+						Brand:        mf.String(),
+						Model:        "",
+						Icon:         mf.Icon,
+					},
 				})
 			}
 		}
@@ -187,17 +198,11 @@ func (sr *StreamReader) SetHttpInfo(host, userAgent, contentType, upgrade string
 		Upgrade:     upgrade,
 		Urls:        sr.GetUrls(),
 	}
-	// 如果ua有效
-	if userAgent != "" && uaparser.Filter(host) {
-		if os := uaparser.Parse(userAgent); len(os) > 0 {
-			_ = ants.Submit(func() { // 统计UA
-				member.Store(member.Hash{
-					IP:    sr.Parent.SrcIP,
-					Field: types.UserAgent,
-					Value: os,
-				})
-			})
-		}
+	// 如果UserAgent不为空且开启了ua分析
+	if len(userAgent) > 0 && config.UseUA {
+		_ = ants.Submit(func() {
+			resolve.AnalyzeByUserAgent(sr.Parent.SrcIP, userAgent, host)
+		})
 	}
 	// host
 	if host != "" && host != "<no-request-seen>" && !strings.HasPrefix(host, "/") {

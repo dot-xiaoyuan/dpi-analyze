@@ -75,10 +75,10 @@ var handlers = map[types.Property]func(e PropertyChangeEvent){
 	types.Device: func(event PropertyChangeEvent) {
 		//zap.L().Debug("UA Changed", zap.String("IP", event.IP), zap.Any("old", event.OldValue), zap.Any("new", event.NewValue))
 		// 发送到 Ua 观察者 Channel
-		observer.DeviceEvents <- observer.ChangeObserverEvent[string]{
+		observer.DeviceEvents <- observer.ChangeObserverEvent[types.DeviceRecord]{
 			IP:   event.IP,
-			Prev: event.OldValue.(string),
-			Curr: event.NewValue.(string),
+			Prev: event.OldValue.(types.DeviceRecord),
+			Curr: event.NewValue.(types.DeviceRecord),
 		}
 	},
 }

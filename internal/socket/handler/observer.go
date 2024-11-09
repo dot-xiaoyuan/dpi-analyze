@@ -25,6 +25,8 @@ func Observer(raw json.RawMessage) any {
 	case types.UserAgent:
 		res.TotalCount, res.Result, _ = observer.UaObserver.Traversal(p)
 		break
+	case types.Device:
+		res.TotalCount, res.Result, _ = observer.DeviceObserver.Traversal(p)
 	}
 	return res
 }
