@@ -218,12 +218,6 @@ func (ob *Observer[T]) Traversal(c provider.Condition) (int64, interface{}, erro
 	return count, result, nil
 }
 
-func (ob *Observer[T]) triggerAfterStore() {
-	switch ob.Table == types.ZSetObserverDevice {
-
-	}
-}
-
 func Setup() {
 	// 程序运行前清空有序集合
 	CleanUp()

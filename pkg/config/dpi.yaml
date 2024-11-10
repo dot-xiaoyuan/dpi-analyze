@@ -84,6 +84,11 @@ mobile_device_feature:
       - "realme.com"
       - "realmeui.com"
     icon: "icon-zhenworealme_logo"
+  lenovo:
+    domains:
+      - "lenovomm.com"
+      - "thinkpad.com"
+    icon: "icon-lenovo"
 # mongodb，用于流分析持久化存储与查询
 mongodb:
   host: 127.0.0.1

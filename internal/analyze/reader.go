@@ -14,6 +14,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"time"
 )
 
 // Stream Reader
@@ -119,6 +120,7 @@ func (sr *StreamReader) SetTlsInfo(sni, version, cipherSuite string) {
 		})
 		// 移动设备匹配
 		if features.MobileAhoCorasick != nil {
+			// TODO 只统计一次
 			if counter, mf := features.GetDeviceCounter(sr.Parent.SrcIP, sni); counter >= 5 {
 				member.Store(member.Hash{
 					IP:    sr.Parent.SrcIP,
@@ -130,9 +132,10 @@ func (sr *StreamReader) SetTlsInfo(sni, version, cipherSuite string) {
 						Os:           "",
 						Version:      "",
 						Device:       "",
-						Brand:        mf.String(),
+						Brand:        mf.Name,
 						Model:        "",
 						Icon:         mf.Icon,
+						LastSeen:     time.Now(),
 					},
 				})
 			}
