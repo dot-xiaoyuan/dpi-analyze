@@ -5,7 +5,6 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/member"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/uaparser"
-	"time"
 )
 
 func AnalyzeByUserAgent(ip, ua, host string) {
@@ -36,21 +35,22 @@ func AnalyzeByUserAgent(ip, ua, host string) {
 		Value: fmt.Sprintf("%s %s", UserAgent.Os, UserAgent.Version),
 	})
 
-	member.Store(member.Hash{
-		IP:    ip,
-		Field: types.Device,
-		Value: types.DeviceRecord{
-			IP:           ip,
-			OriginChanel: types.UserAgent,
-			OriginValue:  ua,
-			Os:           client.Os.Family,
-			Version:      client.Os.ToVersionString(),
-			Device:       client.Device.Family,
-			Brand:        client.Device.Brand,
-			Model:        client.Device.Model,
-			Icon:         "", // TODO 通过配置加载
-			LastSeen:     time.Now(),
-		},
-	})
+	ProcessRequest(ip, client.Device.Brand, client.Os.Family, client.Device.Model)
+	//member.Store(member.Hash{
+	//	IP:    ip,
+	//	Field: types.Device,
+	//	Value: types.DeviceRecord{
+	//		IP:           ip,
+	//		OriginChanel: types.UserAgent,
+	//		OriginValue:  ua,
+	//		Os:           client.Os.Family,
+	//		Version:      client.Os.ToVersionString(),
+	//		Device:       client.Device.Family,
+	//		Brand:        client.Device.Brand,
+	//		Model:        client.Device.Model,
+	//		Icon:         "", // TODO 通过配置加载
+	//		LastSeen:     time.Now(),
+	//	},
+	//})
 	//zap.L().Debug("UserAgent", zap.Any("UserAgent", UserAgent))
 }
