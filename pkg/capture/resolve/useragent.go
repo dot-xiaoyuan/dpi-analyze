@@ -5,7 +5,6 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/member"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/uaparser"
-	"go.uber.org/zap"
 	"time"
 )
 
@@ -53,5 +52,5 @@ func AnalyzeByUserAgent(ip, ua, host string) {
 			LastSeen:     time.Now(),
 		},
 	})
-	zap.L().Debug("UserAgent", zap.Any("UserAgent", UserAgent))
+	//zap.L().Debug("UserAgent", zap.Any("UserAgent", UserAgent))
 }

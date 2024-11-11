@@ -104,6 +104,11 @@ redis:
     host: 192.168.0.174
     port: 16380
     password: "srun_3000@redis"
+  # 4k user表, 用于dpi同步产品信息和控制策略信息
+  user:
+    host: 192.168.0.174
+    port: 16382
+    password: "srun_3000@redis"
   # 4k cache, 在线表同步接口，用于接收用户上下线事件来同步dpi的在线表
   cache:
     host: 192.168.0.174

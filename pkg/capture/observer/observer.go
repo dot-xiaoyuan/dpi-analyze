@@ -2,7 +2,6 @@ package observer
 
 import (
 	"context"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/redis"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/provider"
@@ -22,10 +21,10 @@ const (
 var (
 	cacheMutex sync.Mutex
 
-	TTLObserver    = NewObserver[uint8](types.ZSetObserverTTL, MaxTTLCount)
-	MacObserver    = NewObserver[string](types.ZSetObserverMac, MaxMacCount)
-	UaObserver     = NewObserver[string](types.ZSetObserverUa, MaxUaCount)
-	DeviceObserver = NewObserver[types.DeviceRecord](types.ZSetObserverDevice, MaxMacCount)
+	TTLObserver    = newObserver[uint8](types.ZSetObserverTTL, MaxTTLCount, false)
+	MacObserver    = newObserver[string](types.ZSetObserverMac, MaxMacCount, true)
+	UaObserver     = newObserver[string](types.ZSetObserverUa, MaxUaCount, true)
+	DeviceObserver = newObserver[types.DeviceRecord](types.ZSetObserverDevice, MaxMacCount, true)
 
 	TTLEvents    = make(chan ChangeObserverEvent[uint8], 100)
 	MacEvents    = make(chan ChangeObserverEvent[string], 100)
@@ -40,51 +39,54 @@ type ChangeObserverEvent[T any] struct {
 	Curr T
 }
 
-// ChangeHistory 变化历史记录
-type ChangeHistory[T any] struct {
-	Changes       []ChangeRecord[T] `json:"origin_changes"`
+// changeHistory 变化历史记录
+type changeHistory[T any] struct {
+	Changes       []changeRecord[T] `json:"origin_changes"`
 	ValueChanges  []uint            `json:"value_changes"`
 	MovingAverage []float64         `json:"moving_average"`
 	IsProxy       bool              `json:"is_proxy"`
 }
 
-// ChangeRecord 记录每次变化的数据
-type ChangeRecord[T any] struct {
+// changeRecord 记录每次变化的数据
+type changeRecord[T any] struct {
 	Time  time.Time `json:"time"`
 	Value T         `json:"value"`
 }
 
-// Observer 观察者
-type Observer[T any] struct {
-	HistoryCache map[string]*ChangeHistory[T]
-	MaxCount     int
-	Table        string
+// observer 观察者
+type observer[T any] struct {
+	HistoryCache           map[string]*changeHistory[T]
+	MaxCount               int
+	Table                  string
+	FocusOnlyOnDifferences bool
 }
 
-// NewObserver 创建一个观察者
-func NewObserver[T any](table string, maxCount int) *Observer[T] {
-	return &Observer[T]{
-		HistoryCache: make(map[string]*ChangeHistory[T]),
-		MaxCount:     maxCount,
-		Table:        table,
+// newObserver 创建一个观察者
+func newObserver[T any](table string, maxCount int, focusOnlyOnDifference bool) *observer[T] {
+	return &observer[T]{
+		HistoryCache:           make(map[string]*changeHistory[T]),
+		MaxCount:               maxCount,
+		Table:                  table,
+		FocusOnlyOnDifferences: focusOnlyOnDifference,
 	}
 }
 
-// RecordChange 记录变化
-func (ob *Observer[T]) RecordChange(ip string, value T) {
+// recordChange 记录变化
+func (ob *observer[T]) recordChange(e ChangeObserverEvent[T]) {
 	cacheMutex.Lock()
 	defer cacheMutex.Unlock()
 
-	history, ok := ob.HistoryCache[ip]
+	history, ok := ob.HistoryCache[e.IP]
 	if !ok {
-		ob.Store2Redis(ip)
-		history = &ChangeHistory[T]{
-			Changes:      make([]ChangeRecord[T], 0, ob.MaxCount),
+		ob.store2Redis(e.IP)
+		history = &changeHistory[T]{
+			Changes:      make([]changeRecord[T], 0, ob.MaxCount),
 			ValueChanges: make([]uint, 0, ob.MaxCount),
 		}
-		ob.HistoryCache[ip] = history
+		ob.HistoryCache[e.IP] = history
 	}
 
+	//if !ob.FocusOnlyOnDifferences {
 	if len(history.Changes) == ob.MaxCount {
 		history.Changes = history.Changes[1:]
 	}
@@ -94,21 +96,18 @@ func (ob *Observer[T]) RecordChange(ip string, value T) {
 	if len(history.ValueChanges) == ob.MaxCount {
 		history.ValueChanges = history.ValueChanges[1:]
 	}
-
-	history.Changes = append(history.Changes, ChangeRecord[T]{
+	history.Changes = append(history.Changes, changeRecord[T]{
 		Time:  time.Now(),
-		Value: value,
+		Value: e.Curr,
 	})
+	//}
 
 	if ob.Table == types.ZSetObserverTTL {
-		if v, ok := any(value).(uint8); ok {
+		if v, ok := any(e.Curr).(uint8); ok {
 			num := append(history.ValueChanges, uint(v))
 			history.ValueChanges = num
 			history.MovingAverage, history.IsProxy = detectProxyUsingSMA(num, 3, 3)
 		}
-	}
-	if ob.Table == types.ZSetObserverDevice {
-		_, _ = mongo.GetMongoClient().Database(string(types.Device)).Collection("record").InsertOne(mongo.Context, value)
 	}
 }
 
@@ -143,7 +142,7 @@ func movingAverage(num []uint, windowSize int) []float64 {
 }
 
 // GetHistory 获取变化历史记录
-func (ob *Observer[T]) GetHistory(ip string) *ChangeHistory[T] {
+func (ob *observer[T]) GetHistory(ip string) *changeHistory[T] {
 	cacheMutex.Lock()
 	defer cacheMutex.Unlock()
 
@@ -153,8 +152,8 @@ func (ob *Observer[T]) GetHistory(ip string) *ChangeHistory[T] {
 	return nil
 }
 
-// Store2Redis 保存IP到Redis
-func (ob *Observer[T]) Store2Redis(ip string) {
+// store2Redis 保存IP到Redis
+func (ob *observer[T]) store2Redis(ip string) {
 	rdb := redis.GetRedisClient()
 	ctx := context.TODO()
 
@@ -164,31 +163,31 @@ func (ob *Observer[T]) Store2Redis(ip string) {
 	}).Val()
 }
 
-func (ob *Observer[T]) DeleteRedis(ip string) {
+func (ob *observer[T]) DeleteRedis(ip string) {
 	redis.GetRedisClient().ZRem(context.TODO(), ob.Table, ip).Val()
 }
 
-// WatchChange 观察事件channel
-func (ob *Observer[T]) WatchChange(events <-chan ChangeObserverEvent[T]) {
+// watchChange 观察事件channel
+func (ob *observer[T]) watchChange(events <-chan ChangeObserverEvent[T]) {
 	for e := range events {
-		ob.RecordChange(e.IP, e.Curr)
+		ob.recordChange(e)
 	}
 }
 
 type WebResult[T any] struct {
 	IP      string           `json:"ip"`
-	History ChangeHistory[T] `json:"history"`
+	History changeHistory[T] `json:"history"`
 }
 
 // Traversal 遍历
-func (ob *Observer[T]) Traversal(c provider.Condition) (int64, interface{}, error) {
+func (ob *observer[T]) Traversal(c provider.Condition) (int64, interface{}, error) {
 	rdb := redis.GetRedisClient()
 	ctx := context.TODO()
 
 	// 分页的起止索引
 	start := (c.Page - 1) * c.PageSize
 
-	zap.L().Debug("Observer 偏移量", zap.Int64("start", start), zap.Int64("page", c.Page), zap.Int64("size", c.PageSize))
+	zap.L().Debug("observer 偏移量", zap.Int64("start", start), zap.Int64("page", c.Page), zap.Int64("size", c.PageSize))
 	// Pipeline 批量查询
 	pipe := rdb.Pipeline()
 	count := rdb.ZCount(ctx, ob.Table, c.Min, c.Max).Val()
@@ -221,10 +220,10 @@ func (ob *Observer[T]) Traversal(c provider.Condition) (int64, interface{}, erro
 func Setup() {
 	// 程序运行前清空有序集合
 	CleanUp()
-	go TTLObserver.WatchChange(TTLEvents)
-	go MacObserver.WatchChange(MacEvents)
-	go UaObserver.WatchChange(UaEvents)
-	go DeviceObserver.WatchChange(DeviceEvents)
+	go TTLObserver.watchChange(TTLEvents)
+	go MacObserver.watchChange(MacEvents)
+	go UaObserver.watchChange(UaEvents)
+	go DeviceObserver.watchChange(DeviceEvents)
 }
 
 func CleanUp() {
