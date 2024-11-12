@@ -19,7 +19,7 @@ func AnalyzeByUserAgent(ip, ua, host string) {
 	if len(client.Os.Family) == 0 {
 		return
 	}
-	if client.Os.ToString() == "Other" {
+	if client.Os.ToString() == "Other" || client.UserAgent.Family == "IE" {
 		return
 	}
 	UserAgent := types.DeviceRecord{
@@ -35,7 +35,7 @@ func AnalyzeByUserAgent(ip, ua, host string) {
 		Value: fmt.Sprintf("%s %s", UserAgent.Os, UserAgent.Version),
 	})
 
-	ProcessRequest(ip, client.Device.Brand, client.Os.Family, client.Device.Model)
+	ProcessRequest(ip, client.Device.Brand, client.Os.ToString(), client.Device.Model, client.Os.ToVersionString())
 	//member.Store(member.Hash{
 	//	IP:    ip,
 	//	Field: types.Device,

@@ -17,6 +17,7 @@ import (
 type Device struct {
 	Manufacturer string `json:"brand"`
 	OS           string `json:"os"`
+	Version      string `json:"version"`
 	Model        string `json:"model"`
 }
 
@@ -54,10 +55,17 @@ func checkSet(ip string, device Device) {
 		}
 
 		// 如果该品牌的信息已存在且操作系统为 unknown，则更新
-		if d.Manufacturer == strings.ToLower(device.Manufacturer) && d.OS == "unknown" {
+		if d.Manufacturer == strings.ToLower(device.Manufacturer) {
 			// 更新操作系统和型号
-			d.OS = device.OS
-			d.Model = device.Model
+			if len(device.OS) > 0 || device.OS != "unknown" {
+				d.OS = device.OS
+			}
+			if len(device.Model) > 0 || device.Model != "unknown" {
+				d.Model = device.Model
+			}
+			if len(device.Version) > 0 || device.Version != "unknown" {
+				d.Version = device.Version
+			}
 
 			// 从集合中删除旧的设备信息
 			rdb.SRem(ctx, key, data)
@@ -76,6 +84,7 @@ func checkSet(ip string, device Device) {
 			Manufacturer: strings.ToLower(device.Manufacturer),
 			OS:           device.OS,
 			Model:        device.Model,
+			Version:      device.Version,
 		}
 		storeDevice(rdb, ip, newDevice)
 	}
@@ -127,15 +136,17 @@ func handleSNI(ip string, brand string) {
 		Manufacturer: strings.ToLower(brand),
 		OS:           "unknown",
 		Model:        "unknown",
+		Version:      "unknown",
 	})
 }
 
 // 处理 UA 解析结果（更新操作系统和设备型号）
-func handleUA(ip string, brand string, os string, model string) {
+func handleUA(ip, brand, os, model, version string) {
 	checkSet(ip, Device{
 		Manufacturer: strings.ToLower(brand),
 		OS:           os,
 		Model:        model,
+		Version:      version,
 	})
 }
 
@@ -165,12 +176,12 @@ func getDevicesByIP(ip string) ([]Device, error) {
 }
 
 // ProcessRequest 处理请求，SNI 和 UA 解析结果的入口
-func ProcessRequest(ip string, brand string, os string, model string) {
+func ProcessRequest(ip, brand, os, model, version string) {
 	// 如果只有厂商信息（SNI解析）
 	if os == "" && model == "" {
 		handleSNI(ip, brand)
 	} else {
 		// 如果有完整的 UA 信息
-		handleUA(ip, brand, os, model)
+		handleUA(ip, brand, os, model, version)
 	}
 }
