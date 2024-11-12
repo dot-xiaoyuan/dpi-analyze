@@ -57,13 +57,13 @@ func checkSet(ip string, device Device) {
 		// 如果该品牌的信息已存在且操作系统为 unknown，则更新
 		if d.Manufacturer == strings.ToLower(device.Manufacturer) {
 			// 更新操作系统和型号
-			if len(device.OS) > 0 || device.OS != "unknown" {
+			if len(device.OS) > 0 && device.OS != "unknown" {
 				d.OS = device.OS
 			}
-			if len(device.Model) > 0 || device.Model != "unknown" {
+			if len(device.Model) > 0 && device.Model != "unknown" {
 				d.Model = device.Model
 			}
-			if len(device.Version) > 0 || device.Version != "unknown" {
+			if len(device.Version) > 0 && device.Version != "unknown" {
 				d.Version = device.Version
 			}
 
