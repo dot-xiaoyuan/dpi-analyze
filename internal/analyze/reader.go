@@ -121,23 +121,7 @@ func (sr *StreamReader) SetTlsInfo(sni, version, cipherSuite string) {
 		if features.MobileAhoCorasick != nil {
 			// TODO 只统计一次
 			if counter, mf := features.GetDeviceCounter(sr.Parent.SrcIP, sni); counter >= 5 {
-				resolve.ProcessRequest(sr.Parent.SrcIP, mf.Name, "", "")
-				//member.Store(member.Hash{
-				//	IP:    sr.Parent.SrcIP,
-				//	Field: types.Device,
-				//	Value: types.DeviceRecord{
-				//		IP:           sr.Parent.SrcIP,
-				//		OriginChanel: types.Device,
-				//		OriginValue:  sni,
-				//		Os:           "",
-				//		Version:      "",
-				//		Device:       "",
-				//		Brand:        mf.Name,
-				//		Model:        "",
-				//		Icon:         mf.Icon,
-				//		LastSeen:     time.Now(),
-				//	},
-				//})
+				resolve.ProcessRequest(sr.Parent.SrcIP, mf.Name, "", "", "")
 			}
 		}
 		// 如果特征库加载 进行域名分析
