@@ -83,7 +83,3 @@ func filter(host string) bool {
 	}
 	return filterRegex.MatchString(host)
 }
-
-func DeviceMatch(os string) {
-
-}

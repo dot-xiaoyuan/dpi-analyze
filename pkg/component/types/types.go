@@ -23,6 +23,7 @@ const (
 	ZSetObserverDevice = "z_set:observer:device"
 	ZSetOnlineUsers    = "z_set:online:users"
 	HashAnalyzeIP      = "hash:analyze:ip:%s"
+	SetIPDevices       = "set:ip:devices:%s"
 )
 
 // Ethernet 以太网

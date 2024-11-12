@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/redis"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
+	v9 "github.com/redis/go-redis/v9"
+	"go.uber.org/zap"
 	"log"
 	"strings"
 	"time"
@@ -28,18 +31,67 @@ func serializeDevice(device Device) string {
 }
 
 // 存储设备信息到 Redis 集合中，并检查设备数量是否超过 1
-func storeDeviceInSet(ip string, device Device) {
+func checkSet(ip string, device Device) {
 	rdb := redis.GetRedisClient()
 	ctx := context.Background()
+	key := fmt.Sprintf(types.SetIPDevices, ip)
+
+	// 获取该 IP 下所有设备信息
+	deviceData, err := rdb.SMembers(ctx, key).Result()
+	if err != nil {
+		zap.L().Error("Error getting device data from Redis: %v", zap.Error(err))
+		return
+	}
+
+	// 查看是否已存在该品牌的信息
+	updated := false
+	for _, data := range deviceData {
+		var d Device
+		err = json.Unmarshal([]byte(data), &d)
+		if err != nil {
+			zap.L().Error("Error deserializing device data: %v", zap.Error(err))
+			continue
+		}
+
+		// 如果该品牌的信息已存在且操作系统为 unknown，则更新
+		if d.Manufacturer == strings.ToLower(device.Manufacturer) && d.OS == "unknown" {
+			// 更新操作系统和型号
+			d.OS = device.OS
+			d.Model = device.Model
+
+			// 从集合中删除旧的设备信息
+			rdb.SRem(ctx, key, data)
+
+			// 存储更新后的设备信息
+			storeDevice(rdb, ip, d)
+
+			updated = true
+			break
+		}
+	}
+
+	// 如果该 IP 下没有该品牌的信息，直接存储新的设备信息
+	if !updated {
+		newDevice := Device{
+			Manufacturer: strings.ToLower(device.Manufacturer),
+			OS:           device.OS,
+			Model:        device.Model,
+		}
+		storeDevice(rdb, ip, newDevice)
+	}
+}
+
+func storeDevice(rdb *v9.Client, ip string, device Device) {
+	key := fmt.Sprintf(types.SetIPDevices, ip)
 
 	// 将设备信息序列化
 	deviceData := serializeDevice(device)
 
 	// 将设备信息添加到该 IP 对应的设备集合中
-	rdb.SAdd(ctx, ip, deviceData)
+	rdb.SAdd(context.TODO(), key, deviceData)
 
 	// 设置过期时间（如 24 小时后过期）
-	rdb.Expire(ctx, ip, 24*time.Hour)
+	rdb.Expire(context.TODO(), key, 24*time.Hour)
 
 	// 检查设备数量是否超过 1，触发事件
 	checkAndTriggerEvent(ip)
@@ -47,19 +99,19 @@ func storeDeviceInSet(ip string, device Device) {
 
 // 触发事件函数
 func triggerEvent(ip string) {
-	// 这里可以是记录日志、发送通知或其他自定义处理逻辑
-	log.Printf("Event Triggered: Multiple devices detected for IP %s", ip)
+	zap.L().Warn("Event Triggered: Multiple devices detected for IP ", zap.String("ip", ip))
 }
 
 // 检查设备数量，并在满足条件时触发事件
 func checkAndTriggerEvent(ip string) {
 	rdb := redis.GetRedisClient()
 	ctx := context.Background()
+	key := fmt.Sprintf(types.SetIPDevices, ip)
 
 	// 获取该 IP 下的设备数量
-	deviceCount, err := rdb.SCard(ctx, ip).Result()
+	deviceCount, err := rdb.SCard(ctx, key).Result()
 	if err != nil {
-		log.Printf("Error getting device count for IP %s: %v", ip, err)
+		zap.L().Error("Error getting device count for IP %s: %v", zap.String("key", key), zap.Error(err))
 		return
 	}
 
@@ -71,65 +123,20 @@ func checkAndTriggerEvent(ip string) {
 
 // 处理 SNI 解析结果（只存储厂商信息）
 func handleSNI(ip string, brand string) {
-	// 假设操作系统和型号信息未知
-	device := Device{
+	checkSet(ip, Device{
 		Manufacturer: strings.ToLower(brand),
 		OS:           "unknown",
 		Model:        "unknown",
-	}
-
-	// 存储设备信息到 Redis 集合中
-	storeDeviceInSet(ip, device)
+	})
 }
 
 // 处理 UA 解析结果（更新操作系统和设备型号）
 func handleUA(ip string, brand string, os string, model string) {
-	rdb := redis.GetRedisClient()
-	ctx := context.Background()
-
-	// 获取该 IP 下所有设备信息
-	deviceData, err := rdb.SMembers(ctx, ip).Result()
-	if err != nil {
-		log.Printf("Error getting device data from Redis: %v", err)
-		return
-	}
-
-	// 查看是否已存在该品牌的信息
-	updated := false
-	for _, data := range deviceData {
-		var device Device
-		err := json.Unmarshal([]byte(data), &device)
-		if err != nil {
-			log.Printf("Error deserializing device data: %v", err)
-			continue
-		}
-
-		// 如果该品牌的信息已存在且操作系统为 unknown，则更新
-		if device.Manufacturer == strings.ToLower(brand) && device.OS == "unknown" {
-			// 更新操作系统和型号
-			device.OS = os
-			device.Model = model
-
-			// 从集合中删除旧的设备信息
-			rdb.SRem(ctx, ip, data)
-
-			// 存储更新后的设备信息
-			storeDeviceInSet(ip, device)
-
-			updated = true
-			break
-		}
-	}
-
-	// 如果该 IP 下没有该品牌的信息，直接存储新的设备信息
-	if !updated {
-		newDevice := Device{
-			Manufacturer: brand,
-			OS:           os,
-			Model:        model,
-		}
-		storeDeviceInSet(ip, newDevice)
-	}
+	checkSet(ip, Device{
+		Manufacturer: strings.ToLower(brand),
+		OS:           os,
+		Model:        model,
+	})
 }
 
 // 获取某个 IP 下的所有设备信息
