@@ -230,9 +230,9 @@ func loadComponents() {
 	}
 
 	if config.Geo2IP != "" {
-		maxmind.MaxMind.Filename = config.Geo2IP
+		maxmind.MaxMind.Filename = fmt.Sprintf("%s/%s", config.EtcDir, config.Geo2IP)
 		if err = maxmind.MaxMind.Setup(); err != nil {
-			os.Exit(1)
+			//os.Exit(1)
 		}
 	}
 	// 注册unix路由

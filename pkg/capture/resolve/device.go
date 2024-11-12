@@ -135,6 +135,9 @@ func DeviceHandle(device types.DeviceRecord) {
 			// 更新操作系统和型号
 			d.Os = device.Os
 			d.Version = device.Version
+			if device.Device != "unknown" && d.Device == "unknown" {
+				d.Device = device.Device
+			}
 			if device.Model != "unknown" && d.Model == "unknown" {
 				d.Model = device.Model
 			}

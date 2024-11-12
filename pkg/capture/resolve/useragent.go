@@ -5,6 +5,7 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/member"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/uaparser"
+	"strings"
 	"time"
 )
 
@@ -27,7 +28,7 @@ func AnalyzeByUserAgent(ip, ua, host string) {
 		Os:           client.Os.Family,
 		Version:      client.Os.ToVersionString(),
 		Device:       client.Device.ToString(),
-		Brand:        client.Device.Brand,
+		Brand:        strings.ToLower(client.Device.Brand),
 		Model:        client.Device.Model,
 		LastSeen:     time.Now(),
 	}
