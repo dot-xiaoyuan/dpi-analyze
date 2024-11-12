@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/member"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/redis"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	v9 "github.com/redis/go-redis/v9"
@@ -13,16 +15,8 @@ import (
 	"time"
 )
 
-// Device 设备信息结构体
-type Device struct {
-	Manufacturer string `json:"brand"`
-	OS           string `json:"os"`
-	Version      string `json:"version"`
-	Model        string `json:"model"`
-}
-
 // 将设备信息序列化为 JSON 字符串
-func serializeDevice(device Device) string {
+func serializeDevice(device types.DeviceRecord) string {
 	data, err := json.Marshal(device)
 	if err != nil {
 		log.Printf("Error serializing device: %v", err)
@@ -31,67 +25,8 @@ func serializeDevice(device Device) string {
 	return string(data)
 }
 
-// 存储设备信息到 Redis 集合中，并检查设备数量是否超过 1
-func checkSet(ip string, device Device) {
-	rdb := redis.GetRedisClient()
-	ctx := context.Background()
-	key := fmt.Sprintf(types.SetIPDevices, ip)
-
-	// 获取该 IP 下所有设备信息
-	deviceData, err := rdb.SMembers(ctx, key).Result()
-	if err != nil {
-		zap.L().Error("Error getting device data from Redis: %v", zap.Error(err))
-		return
-	}
-
-	// 查看是否已存在该品牌的信息
-	updated := false
-	for _, data := range deviceData {
-		var d Device
-		err = json.Unmarshal([]byte(data), &d)
-		if err != nil {
-			zap.L().Error("Error deserializing device data: %v", zap.Error(err))
-			continue
-		}
-
-		// 如果该品牌的信息已存在且操作系统为 unknown，则更新
-		if d.Manufacturer == strings.ToLower(device.Manufacturer) {
-			// 更新操作系统和型号
-			if len(device.OS) > 0 && device.OS != "unknown" {
-				d.OS = device.OS
-			}
-			if len(device.Model) > 0 && device.Model != "unknown" {
-				d.Model = device.Model
-			}
-			if len(device.Version) > 0 && device.Version != "unknown" {
-				d.Version = device.Version
-			}
-
-			// 从集合中删除旧的设备信息
-			rdb.SRem(ctx, key, data)
-
-			// 存储更新后的设备信息
-			storeDevice(rdb, ip, d)
-
-			updated = true
-			break
-		}
-	}
-
-	// 如果该 IP 下没有该品牌的信息，直接存储新的设备信息
-	if !updated {
-		newDevice := Device{
-			Manufacturer: strings.ToLower(device.Manufacturer),
-			OS:           device.OS,
-			Model:        device.Model,
-			Version:      device.Version,
-		}
-		storeDevice(rdb, ip, newDevice)
-	}
-}
-
-func storeDevice(rdb *v9.Client, ip string, device Device) {
-	key := fmt.Sprintf(types.SetIPDevices, ip)
+func storeDevice(rdb *v9.Client, device types.DeviceRecord) {
+	key := fmt.Sprintf(types.SetIPDevices, device.IP)
 
 	// 将设备信息序列化
 	deviceData := serializeDevice(device)
@@ -102,8 +37,16 @@ func storeDevice(rdb *v9.Client, ip string, device Device) {
 	// 设置过期时间（如 24 小时后过期）
 	rdb.Expire(context.TODO(), key, 24*time.Hour)
 
+	// 设置hash
+	member.AppendDevice2Redis(device.IP, types.Device, strings.ToLower(device.Brand))
+
+	storeMongo(device)
 	// 检查设备数量是否超过 1，触发事件
-	checkAndTriggerEvent(ip)
+	checkAndTriggerEvent(device.IP)
+}
+
+func storeMongo(device types.DeviceRecord) {
+	_, _ = mongo.GetMongoClient().Database(string(types.Device)).Collection("record").InsertOne(context.TODO(), device)
 }
 
 // 触发事件函数
@@ -130,28 +73,8 @@ func checkAndTriggerEvent(ip string) {
 	}
 }
 
-// 处理 SNI 解析结果（只存储厂商信息）
-func handleSNI(ip string, brand string) {
-	checkSet(ip, Device{
-		Manufacturer: strings.ToLower(brand),
-		OS:           "unknown",
-		Model:        "unknown",
-		Version:      "unknown",
-	})
-}
-
-// 处理 UA 解析结果（更新操作系统和设备型号）
-func handleUA(ip, brand, os, model, version string) {
-	checkSet(ip, Device{
-		Manufacturer: strings.ToLower(brand),
-		OS:           os,
-		Model:        model,
-		Version:      version,
-	})
-}
-
 // 获取某个 IP 下的所有设备信息
-func getDevicesByIP(ip string) ([]Device, error) {
+func getDevicesByIP(ip string) ([]types.DeviceRecord, error) {
 	rdb := redis.GetRedisClient()
 	ctx := context.Background()
 
@@ -161,10 +84,10 @@ func getDevicesByIP(ip string) ([]Device, error) {
 		return nil, fmt.Errorf("failed to get devices for IP %s: %v", ip, err)
 	}
 
-	var devices []Device
+	var devices []types.DeviceRecord
 	for _, data := range deviceData {
-		var device Device
-		err := json.Unmarshal([]byte(data), &device)
+		var device types.DeviceRecord
+		err = json.Unmarshal([]byte(data), &device)
 		if err != nil {
 			log.Printf("Error deserializing device data: %v", err)
 			continue
@@ -175,13 +98,60 @@ func getDevicesByIP(ip string) ([]Device, error) {
 	return devices, nil
 }
 
-// ProcessRequest 处理请求，SNI 和 UA 解析结果的入口
-func ProcessRequest(ip, brand, os, model, version string) {
-	// 如果只有厂商信息（SNI解析）
-	if os == "" && model == "" {
-		handleSNI(ip, brand)
-	} else {
-		// 如果有完整的 UA 信息
-		handleUA(ip, brand, os, model, version)
+// DeviceHandle 设备handle
+func DeviceHandle(device types.DeviceRecord) {
+	rdb := redis.GetRedisClient()
+	ctx := context.Background()
+	key := fmt.Sprintf(types.SetIPDevices, device.IP)
+
+	// 获取该 IP 下所有设备信息
+	deviceData, err := rdb.SMembers(ctx, key).Result()
+	if err != nil {
+		zap.L().Error("Error getting device data from Redis: %v", zap.Error(err))
+		return
+	}
+
+	// 查看是否已存在该品牌的信息
+	updated := false
+	for _, data := range deviceData {
+		var d types.DeviceRecord
+		err = json.Unmarshal([]byte(data), &d)
+		if err != nil {
+			zap.L().Error("Error deserializing device data: %v", zap.Error(err))
+			continue
+		}
+		// 如果该品牌的信息已存在且操作系统为 unknown，则更新
+		if d.Brand == strings.ToLower(device.Brand) {
+			if device.Os == "unknown" || device.Version == "unknown" {
+				// 重复的unknown跳过
+				updated = true
+				break
+			}
+			if device.Version == d.Version {
+				// 相同版本跳过
+				updated = true
+				break
+			}
+			// 更新操作系统和型号
+			d.Os = device.Os
+			d.Version = device.Version
+			if device.Model != "unknown" && d.Model == "unknown" {
+				d.Model = device.Model
+			}
+
+			// 从集合中删除旧的设备信息
+			rdb.SRem(ctx, key, data)
+
+			// 存储更新后的设备信息
+			storeDevice(rdb, d)
+
+			updated = true
+			break
+		}
+	}
+
+	// 如果该 IP 下没有该品牌的信息，直接存储新的设备信息
+	if !updated {
+		storeDevice(rdb, device)
 	}
 }

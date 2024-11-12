@@ -24,8 +24,8 @@ var (
 )
 
 type Manufacturer struct {
-	Name string
-	Icon string
+	Name string `json:"name"`
+	Icon string `json:"icon"`
 }
 
 func (mf Manufacturer) String() string {
@@ -83,4 +83,17 @@ func GetDeviceCounter(ip, sni string) (counter int, mf Manufacturer) {
 	zap.L().Debug("device", zap.String("sni", sni), zap.Int("count", count))
 	_ = deviceCache.Set(cacheKey, []byte(strconv.Itoa(count)))
 	return count, mf
+}
+
+func GetMfByBrand(brand string) Manufacturer {
+	ok, mf := DeviceMatch(brand + ".com")
+	if !ok {
+		zap.L().Warn("mobile icon not found", zap.String("brand", brand))
+		mf = Manufacturer{
+			Name: brand,
+			Icon: fmt.Sprintf("icon-%s", brand),
+		}
+	}
+
+	return mf
 }
