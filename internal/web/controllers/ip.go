@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/web/common"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/member"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/resolve"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/socket"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/socket/models"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/zap"
 	"log"
 	"net/http"
@@ -50,6 +52,8 @@ func IPDetail() gin.HandlerFunc {
 		var res models.IPDetail
 		_ = json.Unmarshal(bytes, &res)
 		res.Features, err = getFeature(ip)
+		res.Devices, err = resolve.GetDevicesByIP(ip)
+		res.DevicesLogs, err = getDevicesLogs(ip)
 		common.SuccessResponse(c, res)
 	}
 }
@@ -73,4 +77,21 @@ func getFeature(ip string) (any, error) {
 		charts = append(charts, result.Total...)
 	}
 	return charts, nil
+}
+
+func getDevicesLogs(ip string) (any, error) {
+	collection := mongo.GetMongoClient().Database(string(types.Device)).Collection(types.MongoDevicesRecord)
+
+	// 查询条件
+	filter := bson.D{{"ip", ip}}
+	// 执行查询
+	cursor, err := collection.Find(mongo.Context, filter, options.Find().SetSort(bson.D{{"last_seen", -1}}))
+	if err != nil {
+		return nil, err
+	}
+	var results []types.DeviceRecordByFront
+	if err = cursor.All(mongo.Context, &results); err != nil {
+		log.Fatal(err)
+	}
+	return results, nil
 }

@@ -54,7 +54,11 @@ func DropUser(ip string) {
 	rdb := redis.GetRedisClient()
 	ctx := context.TODO()
 
+	rdb.ZRem(ctx, types.ZSetIP, ip).Val()
 	rdb.ZRem(ctx, types.ZSetOnlineUsers, ip).Val()
+	rdb.Del(ctx, fmt.Sprintf(types.HashRadOnline, ip)).Val()
+	rdb.Del(ctx, fmt.Sprintf(types.SetIPDevices, ip)).Val()
+
 	observer.TTLObserver.DeleteRedis(ip)
 	observer.MacObserver.DeleteRedis(ip)
 	observer.UaObserver.DeleteRedis(ip)

@@ -6,6 +6,8 @@ log_level: info
 debug: true
 # geo2ip 数据文件
 geo2ip: GeoIP2-City.mmdb
+# ua regular
+ua_regular: regexes.yaml
 # 仅关注在线用户
 follow_only_online_users: true
 # 是否开启mongodb

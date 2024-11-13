@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/i18n"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"github.com/ua-parser/uap-go/uaparser"
 	"go.uber.org/zap"
 	"regexp"
@@ -33,7 +34,7 @@ func (u *uaParser) Setup() error {
 			return
 		}
 		var err error
-		u.Parser, err = uaparser.NewFromBytes(regexes)
+		u.Parser, err = uaparser.New(fmt.Sprintf("%s/%s", config.EtcDir, config.UaRegular))
 		if err != nil {
 			zap.L().Error("Failed to initialize ua parser", zap.Error(err))
 			setupErr = err

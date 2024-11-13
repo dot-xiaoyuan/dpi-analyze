@@ -38,9 +38,14 @@ func storeDevice(rdb *v9.Client, device types.DeviceRecord) {
 	rdb.Expire(context.TODO(), key, 24*time.Hour)
 
 	// 设置hash
-	member.AppendDevice2Redis(device.IP, types.Device, strings.ToLower(device.Brand))
+	var str string
+	if len(device.Brand) == 0 || device.Brand == "unknown" {
+		str = strings.ToLower(device.Os)
+	} else {
+		str = strings.ToLower(device.Brand)
+	}
+	member.AppendDevice2Redis(device.IP, types.Device, str)
 
-	storeMongo(device)
 	// 检查设备数量是否超过 1，触发事件
 	checkAndTriggerEvent(device.IP)
 }
@@ -73,13 +78,13 @@ func checkAndTriggerEvent(ip string) {
 	}
 }
 
-// 获取某个 IP 下的所有设备信息
-func getDevicesByIP(ip string) ([]types.DeviceRecord, error) {
+// GetDevicesByIP 获取某个 IP 下的所有设备信息
+func GetDevicesByIP(ip string) ([]types.DeviceRecord, error) {
 	rdb := redis.GetRedisClient()
 	ctx := context.Background()
 
 	// 获取该 IP 对应的所有设备信息
-	deviceData, err := rdb.SMembers(ctx, ip).Result()
+	deviceData, err := rdb.SMembers(ctx, fmt.Sprintf(types.SetIPDevices, ip)).Result()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get devices for IP %s: %v", ip, err)
 	}
@@ -135,6 +140,11 @@ func DeviceHandle(device types.DeviceRecord) {
 			// 更新操作系统和型号
 			d.Os = device.Os
 			d.Version = device.Version
+
+			d.OriginChanel = device.OriginChanel
+			d.OriginValue = device.OriginValue
+			d.LastSeen = device.LastSeen
+
 			if device.Device != "unknown" && d.Device == "unknown" {
 				d.Device = device.Device
 			}
@@ -156,5 +166,6 @@ func DeviceHandle(device types.DeviceRecord) {
 	// 如果该 IP 下没有该品牌的信息，直接存储新的设备信息
 	if !updated {
 		storeDevice(rdb, device)
+		storeMongo(device)
 	}
 }

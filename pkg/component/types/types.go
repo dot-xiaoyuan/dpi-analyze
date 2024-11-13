@@ -24,6 +24,7 @@ const (
 	ZSetOnlineUsers    = "z_set:online:users"
 	HashAnalyzeIP      = "hash:analyze:ip:%s"
 	SetIPDevices       = "set:ip:devices:%s"
+	MongoDevicesRecord = "record"
 )
 
 // Ethernet 以太网

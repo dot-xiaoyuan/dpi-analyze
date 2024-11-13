@@ -53,6 +53,7 @@ func NewCaptureServer() *cobra.Command {
 	cmd.Flags().BoolVar(&config.UseUA, "use-ua", config.Cfg.UseUA, "use ua parser")
 	cmd.Flags().StringVar(&config.Geo2IP, "geo2ip", config.Cfg.Geo2IP, "geo2ip")
 	cmd.Flags().BoolVarP(&config.Detach, "detach", "d", config.Cfg.Detach, "Run server in background and print PID")
+	cmd.Flags().StringVar(&config.UaRegular, "ua_regular", config.Cfg.UaRegular, "UserAgent Regular YAML File")
 	return cmd
 }
 

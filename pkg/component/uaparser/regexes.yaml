@@ -3066,6 +3066,10 @@ device_parsers:
     device_replacement: 'Honor $1'
     brand_replacement: 'Honor'
     model_replacement: 'Honor $1'
+  - regex: '; {0,2}([^;]{1,200}) Build/(HONORRMO-|Honorrmo-)'
+    device_replacement: 'Honor $1'
+    brand_replacement: 'Honor'
+    model_replacement: 'Honor $1'
 
   #########
   # HTC

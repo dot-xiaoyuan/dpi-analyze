@@ -29,6 +29,7 @@ var (
 	LogLevel              string
 	Debug                 bool
 	Geo2IP                string
+	UaRegular             string
 	CaptureNic            string
 	CapturePcap           string
 	UseMongo              bool
@@ -48,6 +49,7 @@ type Yaml struct {
 	Debug                 bool    `mapstructure:"debug"`
 	Detach                bool    `mapstructure:"detach"`
 	Geo2IP                string  `mapstructure:"geo2ip"`
+	UaRegular             string  `mapstructure:"ua_regular"`
 	UseMongo              bool    `mapstructure:"use_mongo"`
 	BerkeleyPacketFilter  string  `mapstructure:"berkeley_packet_filter"`
 	IgnoreMissing         bool    `mapstructure:"ignore_missing"`
