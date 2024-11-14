@@ -21,6 +21,11 @@ func AnalyzeByUserAgent(ip, ua, host string) {
 	if client.Os.ToString() == "Other" || client.UserAgent.Family == "IE" || client.Device.Brand == "Generic_Android" {
 		return
 	}
+	var brand, icon string
+	if len(client.Device.Brand) > 0 {
+		brand = strings.ToLower(client.Device.Brand)
+		icon = fmt.Sprintf("icon-%s", brand)
+	}
 	dr := types.DeviceRecord{
 		IP:           ip,
 		OriginChanel: types.UserAgent,
@@ -28,8 +33,10 @@ func AnalyzeByUserAgent(ip, ua, host string) {
 		Os:           client.Os.Family,
 		Version:      client.Os.ToVersionString(),
 		Device:       client.Device.ToString(),
-		Brand:        strings.ToLower(client.Device.Brand),
+		Brand:        brand,
 		Model:        client.Device.Model,
+		Icon:         icon,
+		Description:  "UserAgent 解析",
 		LastSeen:     time.Now(),
 	}
 	member.Store(member.Hash{

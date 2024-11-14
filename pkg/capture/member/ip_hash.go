@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/brands/match"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/redis"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/features"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	v9 "github.com/redis/go-redis/v9"
 	"sync"
@@ -141,15 +141,15 @@ func AppendDevice2Redis(ip string, property types.Property, value any) {
 	ctx := context.TODO()
 	key := fmt.Sprintf(types.HashAnalyzeIP, ip)
 
-	var devices []features.Manufacturer
+	var devices []types.Domain
 
-	mf := features.GetMfByBrand(value.(string))
+	mf := match.BrandMatch(value.(string), ip)
 	// info hash
 	old := rdb.HMGet(ctx, key, string(property)).Val()[0]
 	if old != nil {
 		_ = json.Unmarshal([]byte(old.(string)), &devices)
 		for _, device := range devices {
-			if device.Name == value {
+			if device.BrandName == value {
 				return
 			}
 		}

@@ -12,6 +12,7 @@ type DeviceRecord struct {
 	Brand        string    `json:"brand" bson:"brand,omitempty"`
 	Model        string    `json:"model" bson:"model,omitempty"`
 	Icon         string    `json:"icon" bson:"icon,omitempty"`
+	Description  string    `json:"description" bson:"description,omitempty"`
 	LastSeen     time.Time `json:"-" bson:"last_seen,omitempty"`
 }
 
@@ -25,5 +26,6 @@ type DeviceRecordByFront struct {
 	Brand        string    `json:"brand" bson:"brand,omitempty"`
 	Model        string    `json:"model" bson:"model,omitempty"`
 	Icon         string    `json:"icon" bson:"icon,omitempty"`
+	Description  string    `json:"description" bson:"description,omitempty"`
 	LastSeen     time.Time `json:"last_seen" bson:"last_seen,omitempty"`
 }

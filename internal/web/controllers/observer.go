@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/web/common"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/provider"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/socket"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/utils"
 	"github.com/gin-gonic/gin"
@@ -17,7 +16,7 @@ func ObserverHandler(property types.Property) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		pagination := utils.NewPagination(c.Query("page"), c.Query("pageSize"))
 
-		condition := provider.Condition{
+		condition := types.Condition{
 			Min:      strconv.FormatInt(time.Now().Add(-24*time.Hour).Unix(), 10),
 			Max:      strconv.FormatInt(time.Now().Add(time.Hour).Unix(), 10),
 			Page:     pagination.Page,

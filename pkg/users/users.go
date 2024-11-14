@@ -8,7 +8,6 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/redis"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/i18n"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/provider"
 	v9 "github.com/redis/go-redis/v9"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -80,7 +79,7 @@ func ExitsUser(ip string) bool {
 	return ok
 }
 
-func Traversal(c provider.Condition) (int64, interface{}, error) {
+func Traversal(c types.Condition) (int64, interface{}, error) {
 	rdb := redis.GetRedisClient()
 	ctx := context.TODO()
 
@@ -147,7 +146,7 @@ func (u *UserEvent) Save2Mongo() {
 	}
 }
 
-func UserEventQuery(c provider.UserEventCondition) (int64, any, error) {
+func UserEventQuery(c types.UserEventCondition) (int64, any, error) {
 	zap.L().Info(i18n.T("UserEventQuery"), zap.Any("Condition", c))
 	skip := (c.Page - 1) * c.PageSize
 	// 构建公共的 match 条件

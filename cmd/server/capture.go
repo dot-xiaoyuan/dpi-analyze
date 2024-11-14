@@ -8,11 +8,12 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/socket/handler"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/brands/full"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/brands/partial"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/redis"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/features"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/i18n"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/maxmind"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/uaparser"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/socket"
@@ -221,7 +222,6 @@ func loadComponents() {
 		if err = features.Setup(); err != nil {
 			os.Exit(1)
 		}
-		features.LoadMobile2Ac()
 	}
 
 	if config.UseUA {
@@ -230,11 +230,19 @@ func loadComponents() {
 		}
 	}
 
-	if config.Geo2IP != "" {
-		maxmind.MaxMind.Filename = fmt.Sprintf("%s/%s", config.EtcDir, config.Geo2IP)
-		if err = maxmind.MaxMind.Setup(); err != nil {
-			//os.Exit(1)
-		}
+	//if config.Geo2IP != "" {
+	//	maxmind.MaxMind.Filename = fmt.Sprintf("%s/%s", config.EtcDir, config.Geo2IP)
+	//	if err = maxmind.MaxMind.Setup(); err != nil {
+	//		//os.Exit(1)
+	//	}
+	//}
+	// 加载品牌精确匹配
+	if err = full.Brands.Setup(); err != nil {
+		os.Exit(1)
+	}
+	// 加载品牌部分匹配
+	if err = partial.Brands.Setup(); err != nil {
+		os.Exit(1)
 	}
 	// 注册unix路由
 	handler.InitHandlers()

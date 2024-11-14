@@ -3,7 +3,7 @@ package controllers
 import (
 	"encoding/json"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/web/common"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/provider"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/socket"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/users"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/utils"
@@ -18,7 +18,7 @@ func UserList() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		pagination := utils.NewPagination(c.Query("page"), c.Query("pageSize"))
 
-		condition := provider.Condition{
+		condition := types.Condition{
 			Min:      strconv.FormatInt(time.Now().Add(-24*time.Hour).Unix(), 10),
 			Max:      strconv.FormatInt(time.Now().Add(time.Hour).Unix(), 10),
 			Page:     pagination.Page,
@@ -42,7 +42,7 @@ func UserEventsLog() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		pagination := utils.NewPagination(c.Query("page"), c.Query("pageSize"))
 
-		condition := provider.UserEventCondition{
+		condition := types.UserEventCondition{
 			Page:      pagination.Page,
 			PageSize:  pagination.Limit,
 			Year:      c.DefaultQuery("year", time.Now().Format("06")),

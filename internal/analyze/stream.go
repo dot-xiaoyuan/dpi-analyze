@@ -1,7 +1,6 @@
 package analyze
 
 import (
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
@@ -157,35 +156,4 @@ func (s *Stream) ReassemblyComplete(ac reassembly.AssemblerContext) bool {
 	s.Wg.Wait()
 
 	return false
-}
-
-func (s *Stream) Save() {
-	if !config.UseMongo {
-		return
-	}
-	// TODO ignore empty host
-	sessionData := types.Sessions{
-		SessionId:           s.SessionID,
-		SrcIp:               s.SrcIP,
-		DstIp:               s.DstIP,
-		SrcPort:             s.Client.SrcPort,
-		DstPort:             s.Client.DstPort,
-		PacketCount:         s.PacketsCount,
-		ByteCount:           s.BytesCount,
-		Protocol:            "tcp",
-		MissBytes:           s.MissBytes,
-		OutOfOrderPackets:   s.OutOfOrderPackets,
-		OutOfOrderBytes:     s.OutOfOrderBytes,
-		OverlapBytes:        s.OverlapBytes,
-		OverlapPackets:      s.OverlapPackets,
-		StartTime:           s.StartTime,
-		EndTime:             time.Now(),
-		ProtocolFlags:       s.ProtocolFlags,
-		ApplicationProtocol: s.ApplicationProtocol,
-		Metadata:            s.Metadata,
-	}
-	err := mongo.Mongo.InsertOneStream("stream", sessionData)
-	if err != nil {
-		panic(err)
-	}
 }

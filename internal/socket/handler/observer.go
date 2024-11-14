@@ -4,12 +4,11 @@ import (
 	"encoding/json"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/observer"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/provider"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/utils"
 )
 
 func Observer(raw json.RawMessage) any {
-	var p provider.Condition
+	var p types.Condition
 	_ = json.Unmarshal(raw, &p)
 	res := utils.Pagination{
 		Page:  p.Page,

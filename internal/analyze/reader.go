@@ -5,6 +5,8 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/member"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/resolve"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/brands/match"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/features"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
@@ -27,6 +29,8 @@ type StreamReader struct {
 	Bytes    chan []byte
 	data     []byte
 	Protocol protocols.ProtocolType
+	SrcIP    string
+	DstIP    string
 	SrcPort  string
 	DstPort  string
 	Handlers map[protocols.ProtocolType]protocols.ProtocolHandler
@@ -65,10 +69,34 @@ func (sr *StreamReader) Run(wg *sync.WaitGroup) {
 			if err == io.EOF {
 				if !sr.isSaved {
 					sr.isSaved = true
-					sr.Parent.Save()
+					// save 2 mongo
+					sessionData := types.Sessions{
+						Ident:               sr.Ident,
+						SessionId:           sr.Parent.SessionID,
+						SrcIp:               sr.SrcIP,
+						DstIp:               sr.DstIP,
+						SrcPort:             sr.SrcPort,
+						DstPort:             sr.DstPort,
+						PacketCount:         sr.Parent.PacketsCount,
+						ByteCount:           sr.Parent.BytesCount,
+						Protocol:            "tcp",
+						MissBytes:           sr.Parent.MissBytes,
+						OutOfOrderPackets:   sr.Parent.OutOfOrderPackets,
+						OutOfOrderBytes:     sr.Parent.OutOfOrderBytes,
+						OverlapBytes:        sr.Parent.OverlapBytes,
+						OverlapPackets:      sr.Parent.OverlapPackets,
+						StartTime:           sr.Parent.StartTime,
+						EndTime:             time.Now(),
+						ProtocolFlags:       sr.Parent.ProtocolFlags,
+						ApplicationProtocol: sr.Parent.ApplicationProtocol,
+						Metadata:            sr.Parent.Metadata,
+					}
+					err = mongo.Mongo.InsertOneStream("stream", sessionData)
+					if err != nil {
+						panic(err)
+					}
 					sr.Parent.Wg.Done()
 				}
-				// zap.L().Debug("Stream EOF", zap.String("Ident", sr.Ident))
 				break
 			}
 			continue
@@ -118,23 +146,22 @@ func (sr *StreamReader) SetTlsInfo(sni, version, cipherSuite string) {
 				Value: utils.FormatDomain(sni),
 			})
 		})
-		// 移动设备匹配
-		if features.MobileAhoCorasick != nil {
-			// TODO 只统计一次
-			if counter, mf := features.GetDeviceCounter(sr.Parent.SrcIP, sni); counter >= 5 {
-				resolve.DeviceHandle(types.DeviceRecord{
-					IP:           sr.Parent.SrcIP,
-					OriginChanel: types.Device,
-					OriginValue:  sni,
-					Os:           "unknown",
-					Version:      "unknown",
-					Device:       "unknown",
-					Brand:        mf.Name,
-					Model:        "unknown",
-					Icon:         mf.Icon,
-					LastSeen:     time.Now(),
-				})
-			}
+		// 开始品牌匹配
+		// step.1 先进行精确匹配
+		if ok, domain := match.DomainMatch(sni, sr.Parent.SrcIP); ok {
+			resolve.DeviceHandle(types.DeviceRecord{
+				IP:           sr.Parent.SrcIP,
+				OriginChanel: types.Device,
+				OriginValue:  sni,
+				Os:           "unknown",
+				Version:      "unknown",
+				Device:       "unknown",
+				Brand:        domain.BrandName,
+				Model:        "unknown",
+				Description:  domain.Description,
+				Icon:         domain.Icon,
+				LastSeen:     time.Now(),
+			})
 		}
 		// 如果特征库加载 进行域名分析
 		if features.AhoCorasick != nil {

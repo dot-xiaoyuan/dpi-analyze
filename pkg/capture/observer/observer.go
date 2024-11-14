@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/redis"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/provider"
 	v9 "github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"math"
@@ -180,7 +179,7 @@ type WebResult[T any] struct {
 }
 
 // Traversal 遍历
-func (ob *observer[T]) Traversal(c provider.Condition) (int64, interface{}, error) {
+func (ob *observer[T]) Traversal(c types.Condition) (int64, interface{}, error) {
 	rdb := redis.GetRedisClient()
 	ctx := context.TODO()
 
