@@ -156,13 +156,3 @@ func (b *Brands) incrementIpCount(ip string) error {
 func (b *Brands) resetIpCount(ip string) {
 	b.ipCache.Set(ip, []byte("0")) // 重置为 0
 }
-
-// Match Match：先进行精确匹配，再进行部分匹配
-func (b *Brands) Match(origin string, ip string) (ok bool, domain types.Domain) {
-	// 先进行精确匹配
-	if ok, domain = b.ExactMatch(origin); ok {
-		return true, domain
-	}
-	// 精确匹配失败，再进行部分匹配
-	return b.PartialMatch(origin, ip)
-}

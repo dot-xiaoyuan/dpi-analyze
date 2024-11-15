@@ -9,6 +9,7 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/brands/full"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/brands/keywords"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/brands/partial"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/redis"
@@ -242,6 +243,10 @@ func loadComponents() {
 	}
 	// 加载品牌部分匹配
 	if err = partial.Brands.Setup(); err != nil {
+		os.Exit(1)
+	}
+	// 加载品牌关键词匹配
+	if err = keywords.Brands.Setup(); err != nil {
 		os.Exit(1)
 	}
 	// 注册unix路由

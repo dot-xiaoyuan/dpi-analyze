@@ -136,14 +136,14 @@ func storeHash2Redis(ip string, property types.Property, value any) {
 }
 
 // AppendDevice2Redis 追加设备信息到redis
-func AppendDevice2Redis(ip string, property types.Property, value any) {
+func AppendDevice2Redis(ip string, property types.Property, value any, model string) {
 	rdb := redis.GetRedisClient()
 	ctx := context.TODO()
 	key := fmt.Sprintf(types.HashAnalyzeIP, ip)
 
 	var devices []types.Domain
 
-	mf := match.BrandMatch(value.(string), ip)
+	mf := match.BrandMatch(value.(string), ip, model)
 	// info hash
 	old := rdb.HMGet(ctx, key, string(property)).Val()[0]
 	if old != nil {

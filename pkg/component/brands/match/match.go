@@ -1,10 +1,13 @@
 package match
 
 import (
+	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/brands/full"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/brands/keywords"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/brands/partial"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"go.uber.org/zap"
+	"strings"
 )
 
 func DomainMatch(origin, ip string) (ok bool, domain types.Domain) {
@@ -18,12 +21,26 @@ func DomainMatch(origin, ip string) (ok bool, domain types.Domain) {
 	return partial.Brands.PartialMatch(origin, ip)
 }
 
-func BrandMatch(brand, ip string) types.Domain {
+func BrandMatch(brand, ip, model string) types.Domain {
 	ok, domain := DomainMatch(brand+".com", ip)
 	if !ok {
 		zap.L().Warn("mobile icon not found", zap.String("brand", brand))
-		return types.Domain{}
+		// 域名未匹配到，进行关键词匹配
+		ok, domain = keywords.Brands.ExactMatch(brand)
+		if !ok {
+			return types.Domain{
+				Icon:        fmt.Sprintf("icon-%s", strings.ToLower(brand)),
+				BrandName:   brand,
+				DomainName:  "",
+				Description: "",
+			}
+		}
 	}
 
+	if domain.BrandName == "apple" {
+		if model == "Mac" {
+			domain.Icon = "icon-macos"
+		}
+	}
 	return domain
 }

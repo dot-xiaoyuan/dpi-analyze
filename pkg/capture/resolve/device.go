@@ -44,7 +44,8 @@ func storeDevice(rdb *v9.Client, device types.DeviceRecord) {
 	} else {
 		str = strings.ToLower(device.Brand)
 	}
-	member.AppendDevice2Redis(device.IP, types.Device, str)
+	zap.L().Debug("wait to save device", zap.String("key", key), zap.String("str", str))
+	member.AppendDevice2Redis(device.IP, types.Device, str, device.Model)
 
 	// 检查设备数量是否超过 1，触发事件
 	checkAndTriggerEvent(device.IP)
@@ -157,6 +158,8 @@ func DeviceHandle(device types.DeviceRecord) {
 
 			// 存储更新后的设备信息
 			storeDevice(rdb, d)
+			d.Remark = "updated device"
+			storeMongo(d)
 
 			updated = true
 			break
@@ -166,6 +169,7 @@ func DeviceHandle(device types.DeviceRecord) {
 	// 如果该 IP 下没有该品牌的信息，直接存储新的设备信息
 	if !updated {
 		storeDevice(rdb, device)
+		device.Remark = "saved device"
 		storeMongo(device)
 	}
 }
