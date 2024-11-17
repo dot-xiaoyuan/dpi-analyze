@@ -2,24 +2,57 @@ package router
 
 import (
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/web/controllers"
+	"github.com/dot-xiaoyuan/dpi-analyze/internal/web/midderware"
 	"github.com/gin-gonic/gin"
 )
 
 // define route
 
 func Register(r *gin.Engine) {
+	// 注册路由
 	api := r.Group("/api")
-	api.GET("/dashboard", controllers.Dashboard())
-	api.GET("/ip/list", controllers.IPList())
-	api.GET("/ip/detail", controllers.IPDetail())
-	// stream log
-	api.Match([]string{"GET", "POST"}, "/stream/list", controllers.StreamList())
-	// observer
-	api.GET("/observer/ttl", controllers.ObserverTTL())
-	api.GET("/observer/mac", controllers.ObserverMac())
-	api.GET("/observer/ua", controllers.ObserverUa())
-	api.GET("/observer/device", controllers.ObserverDevice())
-	// users
-	api.GET("/users/list", controllers.UserList())
-	api.GET("/users/events/log", controllers.UserEventsLog())
+	{
+		// 登录接口（无需认证）
+		auth := api.Group("/auth")
+		{
+			auth.POST("/login", controllers.Login()) // 登录接口
+		}
+
+		// 需要认证的 API 路由组
+		api.Use(midderware.AuthMiddleware()) // 启用认证中间件
+		{
+			api.GET("/me", controllers.GetCurrentUser())
+			// Dashboard
+			api.GET("/dashboard", controllers.Dashboard())
+
+			// IP 操作
+			api.GET("/ip/list", controllers.IPList())
+			api.GET("/ip/detail", controllers.IPDetail())
+
+			// Stream Log
+			api.Match([]string{"GET", "POST"}, "/stream/list", controllers.StreamList())
+
+			// Observer
+			observer := api.Group("/observer")
+			{
+				observer.GET("/ttl", controllers.ObserverTTL())
+				observer.GET("/mac", controllers.ObserverMac())
+				observer.GET("/ua", controllers.ObserverUa())
+				observer.GET("/device", controllers.ObserverDevice())
+			}
+
+			// Users
+			users := api.Group("/users")
+			{
+				users.GET("/list", controllers.UserList())
+				users.GET("/events/log", controllers.UserEventsLog())
+			}
+		}
+	}
+
+	// 默认路由（处理 404）
+	r.NoRoute(func(c *gin.Context) {
+		c.JSON(404, gin.H{"message": "route not found"})
+	})
+
 }

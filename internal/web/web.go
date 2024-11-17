@@ -42,9 +42,8 @@ func NewWebServer(c Config) {
 	zap.L().Info(i18n.T("Starting Web Server"))
 	web = gin.Default()
 	// cors
-	web.Use(cors.Default())
 	web.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"*"}, // 允许React前端所在的域名
+		AllowOrigins:     []string{"http://localhost:5173"}, // 允许React前端所在的域名
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
@@ -53,7 +52,7 @@ func NewWebServer(c Config) {
 	}))
 	// 注册路由
 	router.Register(web)
-	web.Use(ServerStatic("build", build))
+	//web.Use(ServerStatic("build", build))
 	// 日志中间件
 	//web.Use(logger.GinLogger())
 	// 服务
