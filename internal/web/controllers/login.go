@@ -1,10 +1,8 @@
 package controllers
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
-	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/web/midderware"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"net/http"
@@ -19,12 +17,12 @@ func Login() gin.HandlerFunc {
 			return
 		}
 
-		h := sha256.New()
-		h.Write([]byte("123123"))
-		sha := hex.EncodeToString(h.Sum(nil))
-		fmt.Println(sha)
-		if req.Username != "yuantong" || req.Password != sha {
-			c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid credentials"})
+		//h := sha256.New()
+		//h.Write([]byte("123123"))
+		//sha := hex.EncodeToString(h.Sum(nil))
+		//fmt.Println(sha)
+		if req.Username != config.Cfg.Username || req.Password != config.Cfg.Password {
+			c.JSON(http.StatusBadRequest, gin.H{"message": "账号或密码错误"})
 			return
 		}
 

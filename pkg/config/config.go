@@ -63,7 +63,8 @@ type Yaml struct {
 	Web                   Web
 	IgnoreFeature         []string `mapstructure:"ignore_feature"`
 	Feature               Feature
-	MobileDeviceFeature   map[string]MobileDeviceFeature `mapstructure:"mobile_device_feature"`
+	Username              string `mapstructure:"username"`
+	Password              string `mapstructure:"password"`
 }
 
 type Capture struct {

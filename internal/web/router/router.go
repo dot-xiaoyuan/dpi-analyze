@@ -25,6 +25,13 @@ func Register(r *gin.Engine) {
 			// Dashboard
 			api.GET("/dashboard", controllers.Dashboard())
 
+			// Terminal
+			terminal := api.Group("/terminal")
+			{
+				terminal.GET("/identification", controllers.Identification())
+				terminal.Any("/useragent", controllers.UseragentRecord())
+				terminal.Any("/application", controllers.Application())
+			}
 			// IP 操作
 			api.GET("/ip/list", controllers.IPList())
 			api.GET("/ip/detail", controllers.IPDetail())

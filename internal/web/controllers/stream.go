@@ -17,7 +17,6 @@ import (
 type QueryData struct {
 	Collection string `json:"collection"`
 	Condition  string `json:"condition"`
-	HttpInfo   bool   `json:"http_info"`
 	Page       int    `json:"page"`
 	PageSize   int    `json:"pageSize"`
 	SortField  string `json:"sortField"`

@@ -64,3 +64,5 @@ redis:
     host: 192.168.0.174
     port: 16384
     password: "srun_3000@redis"
+username: admin
+password: 0dbd5eb932052fabe695739f7b74e2846d1c6a63a90d1e34363ad432cf551af7

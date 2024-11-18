@@ -1,8 +1,10 @@
 package resolve
 
 import (
+	"context"
 	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/member"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/uaparser"
 	"strings"
@@ -18,6 +20,24 @@ func AnalyzeByUserAgent(ip, ua, host string) {
 	if len(client.Os.Family) == 0 {
 		return
 	}
+	// 记录mongodb
+	record := types.UserAgentRecord{
+		IP:        ip,
+		UserAgent: ua,
+		Host:      host,
+		Ua:        client.UserAgent.ToString(),
+		UaVersion: client.UserAgent.ToVersionString(),
+		Os:        client.Os.ToString(),
+		OsVersion: client.Os.ToVersionString(),
+		Device:    client.Device.ToString(),
+		Brand:     client.Device.Brand,
+		Model:     client.Device.Model,
+		LastSeen:  time.Now(),
+	}
+	_, _ = mongo.GetMongoClient().Database(types.MongoDatabaseRecord).
+		Collection(time.Now().Format("06_01_02_useragent")).
+		InsertOne(context.TODO(), record)
+
 	if client.Os.ToString() == "Other" || client.UserAgent.Family == "IE" || client.Device.Brand == "Generic_Android" {
 		return
 	}

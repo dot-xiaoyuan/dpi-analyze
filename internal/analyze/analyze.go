@@ -119,7 +119,7 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 	}
 	trafficMap.Update(transmission)
 
-	if config.UseTTL {
+	if config.UseTTL && userIP == ip {
 		_ = ants.Submit(func() { // 插入 IP hash TTL表
 			member.Store(member.Hash{
 				IP:    userIP,

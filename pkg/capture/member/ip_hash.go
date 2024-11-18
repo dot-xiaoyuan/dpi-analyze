@@ -132,7 +132,7 @@ func storeHash2Redis(ip string, property types.Property, value any) {
 	}).Val()
 	// info hash
 	rdb.HSet(ctx, key, string(property), value).Val()
-	rdb.Expire(ctx, key, time.Minute*15).Val()
+	//rdb.Expire(ctx, key, time.Minute*15).Val()
 }
 
 // AppendDevice2Redis 追加设备信息到redis
