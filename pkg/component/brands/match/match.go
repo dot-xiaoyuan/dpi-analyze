@@ -26,7 +26,7 @@ func BrandMatch(brand, ip, model string) types.Domain {
 	if !ok {
 		zap.L().Warn("mobile icon not found", zap.String("brand", brand))
 		// 域名未匹配到，进行关键词匹配
-		ok, domain = keywords.Brands.ExactMatch(brand)
+		ok, domain = keywords.Brands.PartialMatch(brand, ip)
 		if !ok {
 			return types.Domain{
 				Icon:        fmt.Sprintf("icon-%s", strings.ToLower(brand)),

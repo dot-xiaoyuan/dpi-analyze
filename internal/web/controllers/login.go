@@ -33,6 +33,7 @@ func Login() gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusOK, gin.H{"message": "Login successful", "token": token})
+		return
 	}
 }
 
@@ -40,6 +41,7 @@ func GetCurrentUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		username := c.MustGet("username").(string)
 		c.JSON(http.StatusOK, gin.H{"username": username})
+		return
 	}
 }
 

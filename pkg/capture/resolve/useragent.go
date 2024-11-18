@@ -7,6 +7,7 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/uaparser"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -21,9 +22,10 @@ func AnalyzeByUserAgent(ip, ua, host string) {
 		return
 	}
 	// 记录mongodb
+	uaStr, _ := url.QueryUnescape(ua)
 	record := types.UserAgentRecord{
 		IP:        ip,
-		UserAgent: ua,
+		UserAgent: uaStr,
 		Host:      host,
 		Ua:        client.UserAgent.ToString(),
 		UaVersion: client.UserAgent.ToVersionString(),

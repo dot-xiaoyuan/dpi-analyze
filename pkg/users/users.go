@@ -3,6 +3,7 @@ package users
 import (
 	"context"
 	"fmt"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/member"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/observer"
 	mongodb "github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/redis"
@@ -55,9 +56,10 @@ func DropUser(ip string) {
 
 	rdb.ZRem(ctx, types.ZSetIP, ip).Val()
 	rdb.ZRem(ctx, types.ZSetOnlineUsers, ip).Val()
-	rdb.Del(ctx, fmt.Sprintf(types.HashRadOnline, ip)).Val()
+	rdb.Del(ctx, fmt.Sprintf(types.HashAnalyzeIP, ip)).Val()
 	rdb.Del(ctx, fmt.Sprintf(types.SetIPDevices, ip)).Val()
 
+	member.DelMemory(ip)
 	observer.TTLObserver.DeleteRedis(ip)
 	observer.MacObserver.DeleteRedis(ip)
 	observer.UaObserver.DeleteRedis(ip)

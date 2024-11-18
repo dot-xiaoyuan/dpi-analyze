@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/redis"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	v9 "github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"strconv"
@@ -37,9 +38,15 @@ func TraversalIP(startTime, endTime int64, page, pageSize int64) (result Tables,
 
 	// Pipeline 批量查询
 	pipe := rdb.Pipeline()
-	result.TotalCount = rdb.ZCount(ctx, types.ZSetIP, strconv.FormatInt(startTime, 10), strconv.FormatInt(endTime, 10)).Val()
+	var setName string
+	if config.Cfg.FollowOnlyOnlineUsers {
+		setName = types.ZSetOnlineUsers
+	} else {
+		setName = types.ZSetIP
+	}
+	result.TotalCount = rdb.ZCount(ctx, setName, strconv.FormatInt(startTime, 10), strconv.FormatInt(endTime, 10)).Val()
 	// step1. 分页查询集合
-	zRangCmd := rdb.ZRevRangeByScoreWithScores(ctx, types.ZSetIP, &v9.ZRangeBy{
+	zRangCmd := rdb.ZRevRangeByScoreWithScores(ctx, setName, &v9.ZRangeBy{
 		Min:    strconv.FormatInt(startTime, 10), // 查询范围的最小时间戳
 		Max:    strconv.FormatInt(endTime, 10),   // 查询范围的最大时间戳
 		Offset: start,                            // 分页起始位置

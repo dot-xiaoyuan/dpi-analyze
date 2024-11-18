@@ -93,6 +93,13 @@ func putMemory(ip string, m *sync.Map, v any) {
 	m.Store(ip, v)
 }
 
+func DelMemory(ip string) {
+	TTLCache.Delete(ip)
+	UaCache.Delete(ip)
+	DeviceCache.Delete(ip)
+	MacCache.Delete(ip)
+}
+
 // 从redis获取属性
 func getPropertyForRedis(ip string, property types.Property) (any, bool) {
 	rdb := redis.GetRedisClient()

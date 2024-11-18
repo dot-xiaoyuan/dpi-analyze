@@ -28,9 +28,10 @@ func Register(r *gin.Engine) {
 			// Terminal
 			terminal := api.Group("/terminal")
 			{
-				terminal.GET("/identification", controllers.Identification())
+				terminal.POST("/identification", controllers.Identification())
 				terminal.Any("/useragent", controllers.UseragentRecord())
 				terminal.Any("/application", controllers.Application())
+				terminal.POST("/detail", controllers.Detail())
 			}
 			// IP 操作
 			api.GET("/ip/list", controllers.IPList())

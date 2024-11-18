@@ -2,10 +2,14 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/web/common"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/member"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/resolve"
 	mongodb "github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/socket"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/socket/models"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/utils"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
@@ -19,24 +23,28 @@ import (
 // Identification 终端列表
 func Identification() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		queryPage := c.DefaultQuery("page", "1")
-		querySize := c.DefaultQuery("pageSize", "20")
-
-		page, _ := strconv.ParseInt(queryPage, 10, 64)
-		pageSize, _ := strconv.ParseInt(querySize, 10, 64)
-
-		zap.L().Info("query", zap.Int64("page", page), zap.Int64("pageSize", pageSize))
-
+		var jsonData struct {
+			Page     int64 `json:"page"`
+			PageSize int64 `json:"pageSize"`
+		}
+		err := c.BindJSON(&jsonData)
+		if err != nil {
+			common.ErrorResponse(c, http.StatusBadRequest, err.Error())
+			return
+		}
+		zap.L().Info("query", zap.Int64("page", jsonData.Page), zap.Int64("pageSize", jsonData.PageSize))
 		now := time.Now()
-		result, err := member.TraversalIP(now.Add(-24*time.Hour).Unix(), now.Add(time.Hour).Unix(), page, pageSize)
+		result, err := member.TraversalIP(now.Add(-24*time.Hour).Unix(), now.Add(time.Hour).Unix(), jsonData.Page, jsonData.PageSize)
 		if err != nil {
 			common.ErrorResponse(c, http.StatusBadRequest, err.Error())
 			return
 		}
 		common.SuccessResponse(c, result)
+		return
 	}
 }
 
+// UseragentRecord ua识别
 func UseragentRecord() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var query QueryData
@@ -109,6 +117,7 @@ func UseragentRecord() gin.HandlerFunc {
 	}
 }
 
+// Application 应用识别
 func Application() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var query QueryData
@@ -187,5 +196,26 @@ func Application() gin.HandlerFunc {
 			return
 		}
 		common.SuccessResponse(c, pagination)
+	}
+}
+
+// Detail 详情
+func Detail() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var jsonData struct {
+			IP string `json:"ip"`
+		}
+		_ = c.ShouldBind(&jsonData)
+		bytes, err := socket.SendUnixMessage(socket.IPDetail, jsonData.IP)
+		if err != nil {
+			common.ErrorResponse(c, http.StatusBadRequest, err.Error())
+			return
+		}
+		var res models.IPDetail
+		_ = json.Unmarshal(bytes, &res)
+		res.Features, err = getFeature(jsonData.IP)
+		res.Devices, err = resolve.GetDevicesByIP(jsonData.IP)
+		res.DevicesLogs, err = getDevicesLogs(jsonData.IP)
+		common.SuccessResponse(c, res)
 	}
 }
