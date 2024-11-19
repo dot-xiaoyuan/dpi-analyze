@@ -40,13 +40,16 @@ func AnalyzeByUserAgent(ip, ua, host string) {
 		Collection(time.Now().Format("06_01_02_useragent")).
 		InsertOne(context.TODO(), record)
 
-	if client.Os.ToString() == "Other" || client.UserAgent.Family == "IE" || client.Device.Brand == "Generic_Android" {
+	if client.Os.ToString() == "Other" || client.UserAgent.Family == "IE" {
 		return
 	}
 	var brand, icon string
+	brand = client.Device.Brand
 	if len(client.Device.Brand) > 0 {
-		brand = strings.ToLower(client.Device.Brand)
-		icon = fmt.Sprintf("icon-%s", brand)
+		icon = fmt.Sprintf("icon-%s", strings.ToLower(client.Device.Brand))
+	} else if len(client.Os.Family) > 0 {
+		brand = strings.ToLower(client.Os.Family)
+		icon = fmt.Sprintf("icon-%s", strings.ToLower(client.Os.Family))
 	}
 	dr := types.DeviceRecord{
 		IP:           ip,

@@ -21,7 +21,7 @@ func DomainMatch(origin, ip string) (ok bool, domain types.Domain) {
 	return partial.Brands.PartialMatch(origin, ip)
 }
 
-func BrandMatch(brand, ip, model string) types.Domain {
+func BrandMatch(brand, ip string, dr types.DeviceRecord) types.Domain {
 	ok, domain := DomainMatch(brand+".com", ip)
 	if !ok {
 		zap.L().Warn("mobile icon not found", zap.String("brand", brand))
@@ -38,7 +38,7 @@ func BrandMatch(brand, ip, model string) types.Domain {
 	}
 
 	if domain.BrandName == "apple" {
-		if model == "Mac" {
+		if dr.Os == "Mac" {
 			domain.Icon = "icon-macos"
 		}
 	}

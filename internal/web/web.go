@@ -52,7 +52,7 @@ func NewWebServer(c Config) {
 	}))
 	// 注册路由
 	router.Register(web)
-	//web.Use(ServerStatic("build", build))
+	web.Use(ServerStatic("build", build))
 	// 日志中间件
 	//web.Use(logger.GinLogger())
 	// 服务

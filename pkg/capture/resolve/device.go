@@ -39,13 +39,13 @@ func storeDevice(rdb *v9.Client, device types.DeviceRecord) {
 
 	// 设置hash
 	var str string
-	if len(device.Brand) == 0 || device.Brand == "unknown" {
+	if len(device.Brand) == 0 {
 		str = strings.ToLower(device.Os)
 	} else {
 		str = strings.ToLower(device.Brand)
 	}
 	zap.L().Debug("wait to save device", zap.String("key", key), zap.String("str", str))
-	member.AppendDevice2Redis(device.IP, types.Device, str, device.Model)
+	member.AppendDevice2Redis(device.IP, types.Device, str, device)
 
 	// 检查设备数量是否超过 1，触发事件
 	checkAndTriggerEvent(device.IP)
@@ -128,7 +128,7 @@ func DeviceHandle(device types.DeviceRecord) {
 		}
 		// 如果该品牌的信息已存在且操作系统为 unknown，则更新
 		if d.Brand == strings.ToLower(device.Brand) {
-			if device.Os == "unknown" || device.Version == "unknown" {
+			if device.Os == "" || device.Version == "" {
 				// 重复的unknown跳过
 				updated = true
 				break
@@ -146,10 +146,10 @@ func DeviceHandle(device types.DeviceRecord) {
 			d.OriginValue = device.OriginValue
 			d.LastSeen = device.LastSeen
 
-			if device.Device != "unknown" && d.Device == "unknown" {
+			if device.Device != "" && d.Device == "" {
 				d.Device = device.Device
 			}
-			if device.Model != "unknown" && d.Model == "unknown" {
+			if device.Model != "" && d.Model == "" {
 				d.Model = device.Model
 			}
 

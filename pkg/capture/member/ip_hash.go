@@ -139,18 +139,17 @@ func storeHash2Redis(ip string, property types.Property, value any) {
 	}).Val()
 	// info hash
 	rdb.HSet(ctx, key, string(property), value).Val()
-	//rdb.Expire(ctx, key, time.Minute*15).Val()
 }
 
 // AppendDevice2Redis 追加设备信息到redis
-func AppendDevice2Redis(ip string, property types.Property, value any, model string) {
+func AppendDevice2Redis(ip string, property types.Property, value any, dr types.DeviceRecord) {
 	rdb := redis.GetRedisClient()
 	ctx := context.TODO()
 	key := fmt.Sprintf(types.HashAnalyzeIP, ip)
 
 	var devices []types.Domain
 
-	mf := match.BrandMatch(value.(string), ip, model)
+	mf := match.BrandMatch(value.(string), ip, dr)
 	// info hash
 	old := rdb.HMGet(ctx, key, string(property)).Val()[0]
 	if old != nil {
@@ -163,12 +162,10 @@ func AppendDevice2Redis(ip string, property types.Property, value any, model str
 		devices = append(devices, mf)
 		bytes, _ := json.Marshal(devices)
 		rdb.HSet(ctx, key, string(property), bytes).Val()
-		rdb.Expire(ctx, key, time.Minute*15).Val()
 	} else {
 		devices = append(devices, mf)
 		bytes, _ := json.Marshal(devices)
 		rdb.HSet(ctx, key, string(property), bytes).Val()
-		rdb.Expire(ctx, key, time.Minute*15).Val()
 	}
 }
 
