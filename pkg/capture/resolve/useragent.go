@@ -40,7 +40,7 @@ func AnalyzeByUserAgent(ip, ua, host string) {
 		Collection(time.Now().Format("06_01_02_useragent")).
 		InsertOne(context.TODO(), record)
 
-	if client.Os.ToString() == "Other" || client.UserAgent.Family == "IE" {
+	if client.Os.ToString() == "Other" || client.UserAgent.Family == "IE" || len(client.Os.ToVersionString()) == 0 {
 		return
 	}
 	var brand, icon string

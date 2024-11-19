@@ -8,6 +8,7 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/redis"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/proxy"
 	v9 "github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"log"
@@ -25,6 +26,7 @@ func serializeDevice(device types.DeviceRecord) string {
 	return string(data)
 }
 
+// 保存设备信息
 func storeDevice(rdb *v9.Client, device types.DeviceRecord) {
 	key := fmt.Sprintf(types.SetIPDevices, device.IP)
 
@@ -32,10 +34,10 @@ func storeDevice(rdb *v9.Client, device types.DeviceRecord) {
 	deviceData := serializeDevice(device)
 
 	// 将设备信息添加到该 IP 对应的设备集合中
-	rdb.SAdd(context.TODO(), key, deviceData)
+	rdb.SAdd(context.TODO(), key, deviceData).Val()
 
 	// 设置过期时间（如 24 小时后过期）
-	rdb.Expire(context.TODO(), key, 24*time.Hour)
+	rdb.Expire(context.TODO(), key, 24*time.Hour).Val()
 
 	// 设置hash
 	var str string
@@ -51,6 +53,7 @@ func storeDevice(rdb *v9.Client, device types.DeviceRecord) {
 	checkAndTriggerEvent(device.IP)
 }
 
+// 设备录入记录
 func storeMongo(device types.DeviceRecord) {
 	_, _ = mongo.GetMongoClient().Database(types.MongoDatabaseDevices).Collection("record").InsertOne(context.TODO(), device)
 }
@@ -58,7 +61,7 @@ func storeMongo(device types.DeviceRecord) {
 // 触发事件函数
 func triggerEvent(ip string) {
 	zap.L().Warn("Event Triggered: Multiple devices detected for IP ", zap.String("ip", ip))
-
+	proxy.Discover(ip)
 }
 
 // 检查设备数量，并在满足条件时触发事件
@@ -165,6 +168,11 @@ func DeviceHandle(device types.DeviceRecord) {
 			updated = true
 			break
 		}
+		// 忽略系统版本一致但是设备是 Other 或者 品牌是 android的
+		if d.Os == device.Os && d.Version == device.Version && (device.Device == "Other" || device.Brand == "android") {
+			updated = true
+			break
+		}
 	}
 
 	// 如果该 IP 下没有该品牌的信息，直接存储新的设备信息
@@ -173,4 +181,69 @@ func DeviceHandle(device types.DeviceRecord) {
 		device.Remark = "saved device"
 		storeMongo(device)
 	}
+}
+
+// 保存设备数
+func storeDeviceIncr(rdb *v9.Client, device types.DeviceRecord) {
+	// ALL ++
+	rdb.Incr(context.TODO(), fmt.Sprintf(types.KeyDevicesAllIP, device.IP)).Val()
+
+	if IsMobile(device) {
+		rdb.Incr(context.TODO(), fmt.Sprintf(types.KeyDevicesMobileIP, device.IP)).Val()
+	} else {
+		rdb.Incr(context.TODO(), fmt.Sprintf(types.KeyDevicesPcIP, device.IP))
+	}
+}
+
+// GetDeviceIncr 获取设备数量
+func GetDeviceIncr(ip string, rdb *v9.Client) (all, mobile, pc int) {
+	key := []string{fmt.Sprintf(types.KeyDevicesAllIP, ip), fmt.Sprintf(types.KeyDevicesMobileIP, ip), fmt.Sprintf(types.KeyDevicesPcIP, ip)}
+
+	values, err := rdb.MGet(context.TODO(), key...).Result()
+	if err != nil {
+		zap.L().Error("Error getting device incr", zap.String("ip", ip), zap.Error(err))
+		return 0, 0, 0
+	}
+	all = values[0].(int)
+	mobile = values[1].(int)
+	pc = values[2].(int)
+	return
+}
+
+// DelDeviceIncr 删除设备数量信息
+func DelDeviceIncr(ip string, rdb v9.Client) {
+	rdb.Del(context.TODO(), fmt.Sprintf(types.KeyDevicesAllIP, ip)).Val()
+	rdb.Del(context.TODO(), fmt.Sprintf(types.KeyDevicesMobileIP, ip)).Val()
+	rdb.Del(context.TODO(), fmt.Sprintf(types.KeyDevicesPcIP, ip)).Val()
+}
+
+// IsMobile 判断客户端是否为移动设备
+func IsMobile(device types.DeviceRecord) bool {
+	if device.Device != "" {
+		deviceFamily := strings.ToLower(device.Device)
+		// 判断 Device 家族是否包含常见移动设备标识
+		if strings.Contains(deviceFamily, "phone") || strings.Contains(deviceFamily, "mobile") {
+			return true
+		}
+	}
+
+	if device.Os != "" {
+		osFamily := strings.ToLower(device.Os)
+		// 判断 OS 是否为常见的移动操作系统
+		if strings.Contains(osFamily, "android") || strings.Contains(osFamily, "ios") {
+			return true
+		}
+	}
+
+	// UserAgent 通常作为辅助判断，可以补充更多规则
+	if device.OriginValue != "" {
+		uaFamily := strings.ToLower(device.OriginValue)
+		// 判断 UserAgent 是否明显表明是移动设备
+		if strings.Contains(uaFamily, "mobile") || strings.Contains(uaFamily, "phone") {
+			return true
+		}
+	}
+
+	// 默认返回 PC
+	return false
 }

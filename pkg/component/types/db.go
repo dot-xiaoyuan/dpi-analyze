@@ -6,4 +6,6 @@ const (
 	MongoDatabaseFeatures = "features"
 	MongoDatabaseEvents   = "events"
 	MongoDatabaseDevices  = "devices"
+	MongoDevicesRecord    = "record"
+	MongoDatabaseProxy    = "proxy"
 )

@@ -6,6 +6,7 @@ type DeviceRecord struct {
 	IP           string    `json:"ip" bson:"ip"`
 	OriginChanel Property  `json:"-" bson:"origin_chanel"`
 	OriginValue  string    `json:"-" bson:"origin_value"`
+	Type         string    `json:"type" bson:"type"`
 	Os           string    `json:"os" bson:"os,omitempty"`
 	Version      string    `json:"version" bson:"version,omitempty"`
 	Device       string    `json:"device" bson:"device,omitempty"`

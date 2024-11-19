@@ -113,6 +113,7 @@ func (b *Brands) PartialMatch(origin string, ip string) (ok bool, domain types.D
 			return false, types.Domain{}
 		}
 
+		zap.L().Debug("Partial match", zap.Int("count", count), zap.String("origin", origin), zap.String("ip", ip))
 		// 判断是否达到了 5 次
 		if count >= 5 {
 			// 达到阈值则返回成功

@@ -24,7 +24,10 @@ const (
 	ZSetOnlineUsers    = "z_set:online:users"
 	HashAnalyzeIP      = "hash:analyze:ip:%s"
 	SetIPDevices       = "set:ip:devices:%s"
-	MongoDevicesRecord = "record"
+	KeyDiscoverIP      = "key:discover:ip:%s"
+	KeyDevicesAllIP    = "key:devices:all:ip:%s"
+	KeyDevicesMobileIP = "key:devices:mobile:ip:%s"
+	KeyDevicesPcIP     = "key:devices:pc:ip:%s"
 )
 
 // Ethernet 以太网

@@ -33,6 +33,10 @@ func Register(r *gin.Engine) {
 				terminal.POST("/application", controllers.Application())
 				terminal.POST("/detail", controllers.Detail())
 			}
+			featureJudge := api.Group("/feature/judge")
+			{
+				featureJudge.POST("/realtime", controllers.JudgeRealtime())
+			}
 			// IP 操作
 			api.GET("/ip/list", controllers.IPList())
 			api.GET("/ip/detail", controllers.IPDetail())
