@@ -52,7 +52,7 @@ func storeDevice(rdb *v9.Client, device types.DeviceRecord) {
 }
 
 func storeMongo(device types.DeviceRecord) {
-	_, _ = mongo.GetMongoClient().Database(string(types.Device)).Collection("record").InsertOne(context.TODO(), device)
+	_, _ = mongo.GetMongoClient().Database(types.MongoDatabaseDevices).Collection("record").InsertOne(context.TODO(), device)
 }
 
 // 触发事件函数

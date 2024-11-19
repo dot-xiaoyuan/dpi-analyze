@@ -3,6 +3,7 @@ package mongo
 import (
 	"context"
 	"fmt"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -75,7 +76,7 @@ func (m *mongodb) InsertOneStream(c string, d interface{}) error {
 		return fmt.Errorf("mongodb Client Not Initialized")
 	}
 
-	collection := m.client.Database("dpi").Collection(time.Now().Format(c + "-06-01-02-15"))
+	collection := m.client.Database(types.MongoDatabaseStream).Collection(time.Now().Format(c + "-06-01-02-15"))
 	_, err := collection.InsertOne(Context, d)
 	if err != nil {
 		zap.L().Error("Mongodb InsertOneStream Error", zap.Error(err))

@@ -8,6 +8,7 @@ var (
 	ApplicationCount int64
 	HTTPCount        int64
 	TLSCount         int64
+	DNSCount         int64
 )
 
 // StreamReaderInterface 流Reader接口
@@ -45,6 +46,7 @@ func GenerateChartData() []Chart {
 	charts := []Chart{
 		{Name: HTTP, Value: httpCount},
 		{Name: TLS, Value: tlsCount},
+		{Name: DNS, Value: DNSCount},
 	}
 	return charts
 }

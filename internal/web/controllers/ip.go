@@ -59,7 +59,7 @@ func IPDetail() gin.HandlerFunc {
 }
 
 func getFeature(ip string) (any, error) {
-	collection := mongo.GetMongoClient().Database(types.Features).Collection(types.OnlineUsersFeature)
+	collection := mongo.GetMongoClient().Database(types.MongoDatabaseFeatures).Collection(types.OnlineUsersFeature)
 
 	// 查询条件
 	filter := bson.D{{"ip", ip}}
@@ -80,7 +80,7 @@ func getFeature(ip string) (any, error) {
 }
 
 func getDevicesLogs(ip string) (any, error) {
-	collection := mongo.GetMongoClient().Database(string(types.Device)).Collection(types.MongoDevicesRecord)
+	collection := mongo.GetMongoClient().Database(types.MongoDatabaseDevices).Collection(types.MongoDevicesRecord)
 
 	// 查询条件
 	filter := bson.D{{"ip", ip}}

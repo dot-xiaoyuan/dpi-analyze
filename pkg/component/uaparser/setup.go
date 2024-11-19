@@ -3,7 +3,6 @@ package uaparser
 import (
 	_ "embed"
 	"fmt"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/i18n"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"github.com/ua-parser/uap-go/uaparser"
 	"go.uber.org/zap"
@@ -66,8 +65,8 @@ func Analyze(ua, host string) *uaparser.Client {
 		return nil
 	}
 
-	zap.L().Debug(i18n.T("Origin UserAgent"), zap.String("ua", ua), zap.String("host", host))
-	zap.L().Debug(i18n.T("Parsing results"), zap.Any("client", client))
+	//zap.L().Debug(i18n.T("Origin UserAgent"), zap.String("ua", ua), zap.String("host", host))
+	//zap.L().Debug(i18n.T("Parsing results"), zap.Any("client", client))
 	return client
 }
 

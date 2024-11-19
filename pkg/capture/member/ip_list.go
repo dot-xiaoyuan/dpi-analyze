@@ -39,7 +39,7 @@ func TraversalIP(startTime, endTime int64, page, pageSize int64) (result Tables,
 	// Pipeline 批量查询
 	pipe := rdb.Pipeline()
 	var setName string
-	if config.Cfg.FollowOnlyOnlineUsers {
+	if config.FollowOnlyOnlineUsers {
 		setName = types.ZSetOnlineUsers
 	} else {
 		setName = types.ZSetIP

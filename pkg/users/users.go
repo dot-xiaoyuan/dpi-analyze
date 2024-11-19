@@ -141,7 +141,7 @@ func (u *UserEvent) DropEvent() {
 func (u *UserEvent) Save2Mongo() {
 	ctx := context.TODO()
 
-	_, err := mongodb.GetMongoClient().Database("events").Collection(time.Now().Format("user_event_06_01")).InsertOne(ctx, u)
+	_, err := mongodb.GetMongoClient().Database(types.MongoDatabaseEvents).Collection(time.Now().Format("user_event_06_01")).InsertOne(ctx, u)
 	if err != nil {
 		zap.L().Error(i18n.T("Error inserting event"), zap.Error(err))
 		os.Exit(1)
@@ -175,7 +175,7 @@ func UserEventQuery(c types.UserEventCondition) (int64, any, error) {
 	pipeline := mongo.Pipeline{matchStage, sortStage, limitStage, skipStage}
 
 	coll := mongodb.GetMongoClient().
-		Database("events").
+		Database(types.MongoDatabaseEvents).
 		Collection(fmt.Sprintf("user_event_%s_%s", c.Year, c.Month))
 	cursor, err := coll.
 		Aggregate(context.Background(), pipeline)

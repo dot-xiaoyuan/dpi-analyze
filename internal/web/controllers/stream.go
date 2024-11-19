@@ -84,7 +84,7 @@ func StreamList() gin.HandlerFunc {
 		}
 		pipeline := mongo.Pipeline{matchStage, sortStage, skipStage, limitStage}
 
-		coll := mongodb.GetMongoClient().Database("dpi").Collection(collection)
+		coll := mongodb.GetMongoClient().Database(types.MongoDatabaseStream).Collection(collection)
 		cursor, err := coll.Aggregate(context.Background(), pipeline)
 
 		var result []types.Sessions

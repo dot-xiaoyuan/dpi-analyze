@@ -25,6 +25,11 @@ func IdentifyProtocol(buffer []byte, srcPort, dstPort string) ProtocolType {
 		IncrementCount(&TLSCount)
 		return TLS
 	}
+	if srcPort == "53" || dstPort == "53" {
+		// 统计 DNS
+		IncrementCount(&DNSCount)
+		return DNS
+	}
 	return UNKNOWN
 }
 

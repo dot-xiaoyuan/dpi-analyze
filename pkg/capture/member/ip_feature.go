@@ -136,7 +136,7 @@ func updateChart(featureSet *types.FeatureSet, industry types.FeatureType, newCo
 
 // TTL索引
 func ensureIndex() error {
-	collection := mongo.GetMongoClient().Database(types.Features).Collection(types.OnlineUsersFeature)
+	collection := mongo.GetMongoClient().Database(types.MongoDatabaseFeatures).Collection(types.OnlineUsersFeature)
 	_, err :=
 		collection.Indexes().CreateMany(
 			mongo.Context,
@@ -155,7 +155,7 @@ func ensureIndex() error {
 
 // 批量插入到mongodb
 func batchInsertToMongo(docs []interface{}) error {
-	collection := mongo.GetMongoClient().Database(types.Features).Collection(types.OnlineUsersFeature)
+	collection := mongo.GetMongoClient().Database(types.MongoDatabaseFeatures).Collection(types.OnlineUsersFeature)
 
 	batchSize := 500
 	for i := 0; i < len(docs); i += batchSize {

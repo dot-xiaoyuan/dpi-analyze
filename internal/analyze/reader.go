@@ -70,6 +70,9 @@ func (sr *StreamReader) Run(wg *sync.WaitGroup) {
 				if !sr.isSaved {
 					sr.isSaved = true
 					// save 2 mongo
+					if sr.Protocol == "unknown" {
+						sr.Protocol = "tcp"
+					}
 					sessionData := types.Sessions{
 						Ident:               sr.Ident,
 						SessionId:           sr.Parent.SessionID,
@@ -79,7 +82,7 @@ func (sr *StreamReader) Run(wg *sync.WaitGroup) {
 						DstPort:             sr.DstPort,
 						PacketCount:         sr.Parent.PacketsCount,
 						ByteCount:           sr.Parent.BytesCount,
-						Protocol:            "tcp",
+						Protocol:            string(sr.Protocol),
 						MissBytes:           sr.Parent.MissBytes,
 						OutOfOrderPackets:   sr.Parent.OutOfOrderPackets,
 						OutOfOrderBytes:     sr.Parent.OutOfOrderBytes,
