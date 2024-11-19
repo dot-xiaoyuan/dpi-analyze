@@ -80,7 +80,7 @@ func getFeature(ip string) (any, error) {
 }
 
 func getDevicesLogs(ip string) (any, error) {
-	collection := mongo.GetMongoClient().Database(types.MongoDatabaseDevices).Collection(types.MongoDevicesRecord)
+	collection := mongo.GetMongoClient().Database(types.MongoDatabaseDevices).Collection(time.Now().Format("06_01_02"))
 
 	// 查询条件
 	filter := bson.D{{"ip", ip}}

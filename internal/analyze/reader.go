@@ -159,7 +159,7 @@ func (sr *StreamReader) SetTlsInfo(sni, version, cipherSuite string) {
 				Os:           "",
 				Version:      "",
 				Device:       "",
-				Brand:        domain.BrandName,
+				Brand:        strings.ToLower(domain.BrandName),
 				Model:        "",
 				Description:  domain.Description,
 				Icon:         domain.Icon,

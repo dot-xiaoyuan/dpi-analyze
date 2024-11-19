@@ -32,7 +32,7 @@ func AnalyzeByUserAgent(ip, ua, host string) {
 		Os:        client.Os.ToString(),
 		OsVersion: client.Os.ToVersionString(),
 		Device:    client.Device.ToString(),
-		Brand:     client.Device.Brand,
+		Brand:     strings.ToLower(client.Device.Brand),
 		Model:     client.Device.Model,
 		LastSeen:  time.Now(),
 	}
@@ -44,9 +44,9 @@ func AnalyzeByUserAgent(ip, ua, host string) {
 		return
 	}
 	var brand, icon string
-	brand = client.Device.Brand
-	if len(client.Device.Brand) > 0 {
-		icon = fmt.Sprintf("icon-%s", strings.ToLower(client.Device.Brand))
+	brand = strings.ToLower(client.Device.Brand)
+	if len(brand) > 0 {
+		icon = fmt.Sprintf("icon-%s", brand)
 	} else if len(client.Os.Family) > 0 {
 		brand = strings.ToLower(client.Os.Family)
 		icon = fmt.Sprintf("icon-%s", strings.ToLower(client.Os.Family))
