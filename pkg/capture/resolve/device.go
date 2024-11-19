@@ -39,10 +39,10 @@ func storeDevice(rdb *v9.Client, device types.DeviceRecord) {
 
 	// 设置hash
 	var str string
-	if len(device.Brand) == 0 {
-		str = strings.ToLower(device.Os)
-	} else {
+	if len(device.Brand) > 0 && device.Brand != "Generic_Android" {
 		str = strings.ToLower(device.Brand)
+	} else {
+		str = strings.ToLower(device.Os)
 	}
 	zap.L().Debug("wait to save device", zap.String("key", key), zap.String("str", str))
 	member.AppendDevice2Redis(device.IP, types.Device, str, device)
@@ -58,6 +58,7 @@ func storeMongo(device types.DeviceRecord) {
 // 触发事件函数
 func triggerEvent(ip string) {
 	zap.L().Warn("Event Triggered: Multiple devices detected for IP ", zap.String("ip", ip))
+
 }
 
 // 检查设备数量，并在满足条件时触发事件
