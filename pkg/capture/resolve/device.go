@@ -127,7 +127,7 @@ func DeviceHandle(device types.DeviceRecord) {
 			continue
 		}
 		// 如果该品牌的信息已存在且操作系统为 unknown，则更新
-		if d.Brand == strings.ToLower(device.Brand) {
+		if d.Brand == device.Brand {
 			if device.Os == "" || device.Version == "" {
 				// 重复的unknown跳过
 				updated = true
