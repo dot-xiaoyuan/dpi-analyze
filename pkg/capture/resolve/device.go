@@ -29,6 +29,7 @@ func serializeDevice(device types.DeviceRecord) string {
 func storeDevice(rdb *v9.Client, device types.DeviceRecord) {
 	key := fmt.Sprintf(types.SetIPDevices, device.IP)
 
+	storeDeviceIncr(rdb, device)
 	// 将设备信息序列化
 	deviceData := serializeDevice(device)
 

@@ -89,7 +89,7 @@ func UseragentRecord() gin.HandlerFunc {
 		}
 		pipeline := mongo.Pipeline{matchStage, sortStage, skipStage, limitStage}
 
-		coll := mongodb.GetMongoClient().Database(types.MongoDatabaseRecord).Collection(collection)
+		coll := mongodb.GetMongoClient().Database(types.MongoDatabaseUserAgent).Collection(collection)
 		cursor, err := coll.Aggregate(context.Background(), pipeline)
 
 		var result []types.UserAgentRecord

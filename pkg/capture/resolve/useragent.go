@@ -36,7 +36,7 @@ func AnalyzeByUserAgent(ip, ua, host string) {
 		Model:     client.Device.Model,
 		LastSeen:  time.Now(),
 	}
-	_, _ = mongo.GetMongoClient().Database(types.MongoDatabaseRecord).
+	_, _ = mongo.GetMongoClient().Database(types.MongoDatabaseUserAgent).
 		Collection(time.Now().Format("06_01_02_useragent")).
 		InsertOne(context.TODO(), record)
 
