@@ -1,9 +1,8 @@
-package proxy
+package resolve
 
 import (
 	"context"
 	"fmt"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/resolve"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/redis"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
@@ -55,13 +54,13 @@ func Discover(ip string) {
 	// 获取产品对应条件
 	conditionAll, conditionMobile, conditionPc := getStrategyByProduct(user.ProductsID)
 	// 获取设备信息
-	all, mobile, pc := resolve.GetDeviceIncr(ip, rdb)
+	all, mobile, pc := GetDeviceIncr(ip, rdb)
 	if all < conditionAll && mobile < conditionMobile && pc < conditionPc {
 		zap.L().Warn("设备数量不满足判定条件", zap.String("ip", ip), zap.Int("mobile", mobile), zap.Int("pc", pc), zap.Int("all", all))
 		return
 	}
 	// 满足代理条件
-	devices, err := resolve.GetDevicesByIP(ip)
+	devices, err := GetDevicesByIP(ip)
 	if err != nil {
 		zap.L().Error("获取用户设备信息失败")
 		afterDiscover(key, rdb)

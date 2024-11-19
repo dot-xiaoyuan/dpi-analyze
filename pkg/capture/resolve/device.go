@@ -8,7 +8,6 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/redis"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/proxy"
 	v9 "github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"log"
@@ -61,7 +60,7 @@ func storeMongo(device types.DeviceRecord) {
 // 触发事件函数
 func triggerEvent(ip string) {
 	zap.L().Warn("Event Triggered: Multiple devices detected for IP ", zap.String("ip", ip))
-	proxy.Discover(ip)
+	Discover(ip)
 }
 
 // 检查设备数量，并在满足条件时触发事件
