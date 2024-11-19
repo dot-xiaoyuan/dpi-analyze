@@ -46,6 +46,7 @@ func storeUser(ip string, user types.User) {
 		Score:  float64(user.AddTime),
 		Member: ip,
 	}).Val()
+	rdb.HMGet(ctx, fmt.Sprintf(types.HashAnalyzeIP, ip), "username", user.UserName, "mac", user.UserMac)
 }
 
 // DropUser 记录用户，下线删除在线表中的IP

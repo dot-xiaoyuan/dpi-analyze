@@ -39,7 +39,7 @@ func storeDevice(rdb *v9.Client, device types.DeviceRecord) {
 
 	// 设置hash
 	var str string
-	if len(device.Brand) > 0 && device.Brand != "Generic_Android" {
+	if len(device.Brand) > 0 && device.Brand != "Generic_Android" && device.Brand != "android" {
 		str = strings.ToLower(device.Brand)
 	} else {
 		str = strings.ToLower(device.Os)
