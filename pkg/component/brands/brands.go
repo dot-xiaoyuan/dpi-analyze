@@ -114,7 +114,7 @@ func (b *Brands) PartialMatch(origin string, ip string) (ok bool, domain types.D
 		}
 
 		// 判断是否达到了 5 次
-		if count >= 10 {
+		if count >= 5 {
 			// 达到阈值则返回成功
 			b.resetIpCount(ip) // 重置计数
 			return true, domain
