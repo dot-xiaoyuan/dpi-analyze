@@ -205,9 +205,15 @@ func GetDeviceIncr(ip string, rdb *v9.Client) (all, mobile, pc int) {
 		zap.L().Error("Error getting device incr", zap.String("ip", ip), zap.Error(err))
 		return 0, 0, 0
 	}
-	all, _ = strconv.Atoi(values[0].(string))
-	mobile, _ = strconv.Atoi(values[1].(string))
-	pc, _ = strconv.Atoi(values[2].(string))
+	if values[0] != nil {
+		all, _ = strconv.Atoi(values[0].(string))
+	}
+	if values[1] != nil {
+		mobile, _ = strconv.Atoi(values[1].(string))
+	}
+	if values[2] != nil {
+		pc, _ = strconv.Atoi(values[2].(string))
+	}
 	return
 }
 
