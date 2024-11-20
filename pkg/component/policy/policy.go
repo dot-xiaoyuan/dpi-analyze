@@ -15,20 +15,32 @@ import (
 )
 
 var (
-	Policy         policy
+	Policy         *policy
 	productsFields = []string{"products_id", "products_name", "mgr_name"}
 	controlsFields = []string{"control_name", "disable_proxy", "proxy_times", "proxy_disable_time"}
 )
 
 func Setup() error {
+	Policy = &policy{}
 	return Policy.Setup()
+}
+
+// GetList 获取策略列表
+func GetList() []types.Products {
+	var productsList []types.Products
+
+	for _, product := range Policy.products {
+		productsList = append(productsList, product)
+	}
+
+	return productsList
 }
 
 type policy struct {
 	once        sync.Once
 	initialized bool
-	Products    map[string]types.Products
-	Controls    map[string]types.Controls
+	products    map[string]types.Products
+	controls    map[string]types.Controls
 }
 
 func (p *policy) Setup() error {
@@ -48,7 +60,7 @@ func (p *policy) Setup() error {
 			setupErr = err
 			return
 		}
-		zap.L().Info("加载产品和控制策略完成", zap.Int("产品数量", len(p.Products)), zap.Int("控制策略", len(p.Controls)))
+		zap.L().Info("加载产品和控制策略完成", zap.Int("产品数量", len(p.products)), zap.Int("控制策略", len(p.controls)))
 	})
 	return setupErr
 }
@@ -59,7 +71,7 @@ func (p *policy) load() error {
 
 	// 获取控制策略总数初始化map
 	controlsCount := rdb.LLen(ctx, types.ListControl).Val()
-	p.Controls = make(map[string]types.Controls, controlsCount)
+	p.controls = make(map[string]types.Controls, controlsCount)
 
 	// 遍历控制策略
 	controls := rdb.LRange(ctx, types.ListControl, 0, -1).Val()
@@ -76,12 +88,12 @@ func (p *policy) load() error {
 			zap.L().Error("获取控制策略失败", zap.String("control", controlID), zap.Error(err))
 			continue
 		}
-		p.Controls[controlID] = control
+		p.controls[controlID] = control
 	}
 
 	// 获取产品总数初始化map
 	productsCount := rdb.LLen(ctx, types.ListProducts).Val()
-	p.Products = make(map[string]types.Products, productsCount)
+	p.products = make(map[string]types.Products, productsCount)
 
 	// 遍历产品列表
 	products := rdb.LRange(ctx, types.ListProducts, 0, -1).Val()
@@ -99,8 +111,8 @@ func (p *policy) load() error {
 		}
 		// 获取产品绑定的控制策略
 		productControl := rdb.LIndex(ctx, fmt.Sprintf(types.ListProductsControl, productID), 0).Val()
-		product.Controls = p.Controls[productControl]
-		p.Products[productID] = product
+		product.Controls = p.controls[productControl]
+		p.products[productID] = product
 	}
 	return nil
 }
@@ -109,7 +121,7 @@ func (p *policy) searchMongo() error {
 	// 检查集合是否有数据
 	count, err := mongo.GetMongoClient().
 		Database(types.MongoDatabaseConfigs).
-		Collection(types.MongoDatabaseProxy).
+		Collection(types.MongoCollectionPolicy).
 		CountDocuments(mongo.Context, bson.M{})
 	if err != nil {
 		zap.L().Error("Failed to count documents in MongoDB", zap.Error(err))
@@ -124,28 +136,36 @@ func (p *policy) searchMongo() error {
 	// 获取已有的配置
 	cursor, err := mongo.GetMongoClient().
 		Database(types.MongoDatabaseConfigs).
-		Collection(types.MongoDatabaseProxy).
+		Collection(types.MongoCollectionPolicy).
 		Find(mongo.Context, bson.M{})
 	if err != nil {
 		zap.L().Error("Failed to find documents in MongoDB", zap.Error(err))
 		return err
 	}
 
-	var configs []types.PolicyConfig
+	var configs []types.Products
 	err = cursor.All(mongo.Context, &configs)
 	if err != nil {
 		zap.L().Error("Failed to decode MongoDB documents", zap.Error(err))
 		return err
 	}
 
+	// 将 MongoDB 的配置更新到内存
 	for _, config := range configs {
-		p.Products[config.Products.ProductsID] = config.Products
-		p.Controls[config.Controls.ControlName] = config.Controls
+		product, exists := p.products[config.ProductsID]
+		if exists {
+			// 更新策略到内存中的产品
+			product.Policy = config.Policy
+			p.products[config.ProductsID] = product
+		} else {
+			// 如果 Redis 没有该产品，直接从 MongoDB 添加
+			p.products[config.ProductsID] = config
+		}
 	}
 
 	zap.L().Info("Loaded policies from MongoDB",
-		zap.Int("products_count", len(p.Products)),
-		zap.Int("controls_count", len(p.Controls)))
+		zap.Int("products_count", len(p.products)),
+		zap.Int("controls_count", len(p.controls)))
 	return nil
 }
 
@@ -153,15 +173,18 @@ func (p *policy) storeMongo() error {
 	client := mongo.GetMongoClient()
 	collection := client.Database(types.MongoDatabaseConfigs).Collection(types.MongoCollectionPolicy)
 
-	for _, product := range p.Products {
-		config := types.PolicyConfig{
-			Products: product,
-			Policy: types.Policy{
-				ALL:    4,
-				Mobile: 2,
-				Pc:     2,
-			},
+	for _, product := range p.products {
+		if product.ALL == 0 {
+			product.Policy.ALL = 4
 		}
+		if product.Mobile == 0 {
+			product.Policy.Mobile = 2
+		}
+		if product.Pc == 0 {
+			product.Policy.Pc = 2
+		}
+		p.products[product.ProductsID] = product
+		config := product
 
 		filter := bson.M{"_id": product.ProductsID}
 		update := bson.M{
@@ -179,4 +202,17 @@ func (p *policy) storeMongo() error {
 	}
 	zap.L().Info("Successfully stored policies in MongoDB")
 	return nil
+}
+
+func (p *policy) Update(params types.Products) error {
+	product, ok := p.products[params.ProductsID]
+	if !ok {
+		return errors.New("product not found")
+	}
+	product.Pc = params.Pc
+	product.Mobile = params.Mobile
+	product.ALL = params.Pc + params.Mobile
+	p.products[params.ProductsID] = product
+	zap.L().Debug("product updated", zap.Any("product", p.products[params.ProductsID]))
+	return p.storeMongo()
 }

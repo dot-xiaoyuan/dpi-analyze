@@ -5,6 +5,7 @@ type Products struct {
 	ProductsName string `json:"products_name" bson:"products_name" redis:"products_name"`
 	MgrName      string `json:"mgr_name" bson:"mgr_name" redis:"mgr_name"`
 	Controls
+	Policy
 }
 
 type Controls struct {
@@ -18,9 +19,4 @@ type Policy struct {
 	ALL    int `json:"all" bson:"all"`
 	Mobile int `json:"mobile" bson:"mobile"`
 	Pc     int `json:"pc" bson:"pc"`
-}
-
-type PolicyConfig struct {
-	Products
-	Policy
 }

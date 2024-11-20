@@ -25,7 +25,7 @@ func Register(r *gin.Engine) {
 			// Dashboard
 			api.GET("/dashboard", controllers.Dashboard())
 
-			// Terminal
+			// Terminal 终端相关
 			terminal := api.Group("/terminal")
 			{
 				terminal.POST("/identification", controllers.Identification())
@@ -33,9 +33,17 @@ func Register(r *gin.Engine) {
 				terminal.POST("/application", controllers.Application())
 				terminal.POST("/detail", controllers.Detail())
 			}
+			// Judge 特征判定
 			featureJudge := api.Group("/feature/judge")
 			{
 				featureJudge.POST("/realtime", controllers.JudgeRealtime())
+			}
+
+			// policy 策略配置
+			policy := api.Group("/policy")
+			{
+				policy.GET("/list", controllers.PolicyList())
+				policy.POST("/update", controllers.PolicyUpdate())
 			}
 			// IP 操作
 			api.GET("/ip/list", controllers.IPList())

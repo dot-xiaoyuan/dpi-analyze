@@ -7,4 +7,6 @@ func InitHandlers() {
 	socket.RegisterHandler(socket.IPDetail, IPDetail)
 	socket.RegisterHandler(socket.Observer, Observer)
 	socket.RegisterHandler(socket.UserList, UserList)
+	socket.RegisterHandler(socket.PolicyList, PolicyList)
+	socket.RegisterHandler(socket.PolicyUpdate, PolicyUpdate)
 }

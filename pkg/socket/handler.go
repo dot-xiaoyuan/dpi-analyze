@@ -12,6 +12,8 @@ const (
 	IPDetail
 	Observer
 	UserList
+	PolicyList
+	PolicyUpdate
 )
 
 // Message unix 通信数据结构体
