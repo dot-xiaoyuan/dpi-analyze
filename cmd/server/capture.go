@@ -15,6 +15,7 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/redis"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/features"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/i18n"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/policy"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/uaparser"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/socket"
@@ -209,14 +210,19 @@ func loadComponents() {
 	if err = redis.Setup(); err != nil {
 		os.Exit(1)
 	}
+
 	if err = ants.Setup(10); err != nil {
 		os.Exit(1)
 	}
 
-	if config.UseMongo {
-		if err = mongo.Setup(); err != nil {
-			os.Exit(1)
-		}
+	//if config.UseMongo {
+	if err = mongo.Setup(); err != nil {
+		os.Exit(1)
+	}
+	//}
+
+	if err = policy.Setup(); err != nil {
+		os.Exit(1)
 	}
 
 	if config.UseFeature {

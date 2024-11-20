@@ -100,6 +100,7 @@ type Redis struct {
 	DPI    RedisConfig `mapstructure:"dpi"`
 	Online RedisConfig `mapstructure:"online"`
 	Cache  RedisConfig `mapstructure:"cache"`
+	Users  RedisConfig `mapstructure:"users"`
 }
 
 type RedisConfig struct {

@@ -21,6 +21,7 @@ type redis struct {
 	Client      *v9.Client
 	Online      *v9.Client
 	Cache       *v9.Client
+	Users       *v9.Client
 }
 
 func (r *redis) Setup() error {
@@ -63,6 +64,18 @@ func (r *redis) Setup() error {
 				zap.String("Host", config.Cfg.Redis.Cache.Host),
 				zap.String("Port", config.Cfg.Redis.Cache.Port),
 				zap.String("Password", config.Cfg.Redis.Cache.Password),
+			)
+			setErr = err
+			return
+		}
+		// Users
+		r.Users, err = createClient(config.Cfg.Redis.Users)
+		if err != nil {
+			zap.L().Error("Failed to Create [Users] redis Client",
+				zap.Error(err),
+				zap.String("Host", config.Cfg.Redis.Users.Host),
+				zap.String("Port", config.Cfg.Redis.Users.Port),
+				zap.String("Password", config.Cfg.Redis.Users.Password),
 			)
 			setErr = err
 			return
@@ -123,6 +136,13 @@ func (r *redis) GetCacheClient() *v9.Client {
 	return r.Cache
 }
 
+func (r *redis) GetUsersClient() *v9.Client {
+	if err := r.Setup(); err != nil {
+		return nil
+	}
+	return r.Users
+}
+
 func GetRedisClient() *v9.Client {
 	return Redis.GetClient()
 }
@@ -133,4 +153,8 @@ func GetOnlineRedisClient() *v9.Client {
 
 func GetCacheRedisClient() *v9.Client {
 	return Redis.GetCacheClient()
+}
+
+func GetUsersRedisClient() *v9.Client {
+	return Redis.GetUsersClient()
 }

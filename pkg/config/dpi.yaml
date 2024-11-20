@@ -55,7 +55,7 @@ redis:
     port: 16380
     password: "srun_3000@redis"
   # 4k user表, 用于dpi同步产品信息和控制策略信息
-  user:
+  users:
     host: 192.168.0.174
     port: 16382
     password: "srun_3000@redis"

@@ -28,6 +28,12 @@ const (
 	KeyDevicesAllIP    = "key:devices:all:ip:%s"
 	KeyDevicesMobileIP = "key:devices:mobile:ip:%s"
 	KeyDevicesPcIP     = "key:devices:pc:ip:%s"
+
+	ListProducts        = "list:products"
+	ListControl         = "list:control"
+	HashProducts        = "hash:products:%s"
+	HashControl         = "hash:control:%s"
+	ListProductsControl = "list:products:control:%s"
 )
 
 // Ethernet 以太网
