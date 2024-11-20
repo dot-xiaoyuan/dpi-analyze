@@ -11,6 +11,7 @@ import (
 	v9 "github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -204,9 +205,9 @@ func GetDeviceIncr(ip string, rdb *v9.Client) (all, mobile, pc int) {
 		zap.L().Error("Error getting device incr", zap.String("ip", ip), zap.Error(err))
 		return 0, 0, 0
 	}
-	all = values[0].(int)
-	mobile = values[1].(int)
-	pc = values[2].(int)
+	all, _ = strconv.Atoi(values[0].(string))
+	mobile, _ = strconv.Atoi(values[1].(string))
+	pc, _ = strconv.Atoi(values[2].(string))
 	return
 }
 
