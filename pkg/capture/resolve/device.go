@@ -218,7 +218,7 @@ func GetDeviceIncr(ip string, rdb *v9.Client) (all, mobile, pc int) {
 }
 
 // DelDeviceIncr 删除设备数量信息
-func DelDeviceIncr(ip string, rdb v9.Client) {
+func DelDeviceIncr(ip string, rdb *v9.Client) {
 	rdb.Del(context.TODO(), fmt.Sprintf(types.KeyDevicesAllIP, ip)).Val()
 	rdb.Del(context.TODO(), fmt.Sprintf(types.KeyDevicesMobileIP, ip)).Val()
 	rdb.Del(context.TODO(), fmt.Sprintf(types.KeyDevicesPcIP, ip)).Val()

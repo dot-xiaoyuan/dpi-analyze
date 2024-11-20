@@ -28,7 +28,6 @@ func HandleProxy(record *types.ProxyRecord) {
 	_, _ = mongo.GetMongoClient().Database(types.MongoDatabaseProxy).
 		Collection(time.Now().Format("06_01")).
 		InsertOne(context.TODO(), record)
-
 }
 
 // Discover 检测到当前设备数异常后处理
@@ -70,6 +69,7 @@ func Discover(ip string) {
 	pr.AllCount, pr.MobileCount, pr.PcCount = all, mobile, pc
 	// TODO 是否需要下线
 	HandleProxy(pr)
+	DelDeviceIncr(ip, rdb)
 	afterDiscover(key, rdb)
 }
 
