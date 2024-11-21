@@ -154,8 +154,11 @@ func AppendDevice2Redis(ip string, property types.Property, value any, dr types.
 	old := rdb.HMGet(ctx, key, string(property)).Val()[0]
 	if old != nil {
 		_ = json.Unmarshal([]byte(old.(string)), &devices)
-		for _, device := range devices {
+		for i, device := range devices {
 			if device.BrandName == value {
+				if device.Icon != mf.Icon {
+					devices = append(devices[:i], devices[i+1:]...)
+				}
 				return
 			}
 		}
