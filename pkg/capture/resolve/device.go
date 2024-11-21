@@ -13,8 +13,11 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
+
+var lock sync.Mutex
 
 // 将设备信息序列化为 JSON 字符串
 func serializeDevice(device types.DeviceRecord) string {
@@ -62,7 +65,9 @@ func storeMongo(device types.DeviceRecord) {
 // 触发事件函数
 func triggerEvent(ip string) {
 	zap.L().Warn("Event Triggered: Multiple devices detected for IP ", zap.String("ip", ip))
+	lock.Lock()
 	Discover(ip)
+	lock.Unlock()
 }
 
 // 检查设备数量，并在满足条件时触发事件

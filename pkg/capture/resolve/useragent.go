@@ -13,6 +13,8 @@ import (
 )
 
 func AnalyzeByUserAgent(ip, ua, host string) {
+	lock.Lock()
+	defer lock.Unlock()
 	client := uaparser.Analyze(ua, host)
 	if client == nil {
 		return
