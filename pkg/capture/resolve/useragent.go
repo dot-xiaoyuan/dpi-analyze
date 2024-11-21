@@ -9,8 +9,11 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/uaparser"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 )
+
+var useragentLock sync.Mutex
 
 func AnalyzeByUserAgent(ip, ua, host string) {
 	client := uaparser.Analyze(ua, host)
@@ -36,9 +39,12 @@ func AnalyzeByUserAgent(ip, ua, host string) {
 		Model:     client.Device.Model,
 		LastSeen:  time.Now(),
 	}
+
+	useragentLock.Lock()
 	_, _ = mongo.GetMongoClient().Database(types.MongoDatabaseUserAgent).
 		Collection(time.Now().Format("06_01_02_useragent")).
 		InsertOne(context.TODO(), record)
+	useragentLock.Unlock()
 
 	if client.Os.ToString() == "Other" || client.UserAgent.Family == "IE" || len(client.Os.ToVersionString()) == 0 {
 		return

@@ -22,18 +22,19 @@ import (
 // Stream Reader
 
 type StreamReader struct {
-	isSaved  bool
-	Ident    string
-	Parent   *Stream
-	IsClient bool
-	Bytes    chan []byte
-	data     []byte
-	Protocol protocols.ProtocolType
-	SrcIP    string
-	DstIP    string
-	SrcPort  string
-	DstPort  string
-	Handlers map[protocols.ProtocolType]protocols.ProtocolHandler
+	isSaved   bool
+	isUaSaved bool
+	Ident     string
+	Parent    *Stream
+	IsClient  bool
+	Bytes     chan []byte
+	data      []byte
+	Protocol  protocols.ProtocolType
+	SrcIP     string
+	DstIP     string
+	SrcPort   string
+	DstPort   string
+	Handlers  map[protocols.ProtocolType]protocols.ProtocolHandler
 }
 
 func (sr *StreamReader) Read(p []byte) (n int, err error) {
@@ -228,7 +229,8 @@ func (sr *StreamReader) SetHttpInfo(host, userAgent, contentType, upgrade string
 		Urls:        sr.GetUrls(),
 	}
 	// 如果UserAgent不为空且开启了ua分析
-	if len(userAgent) > 0 && config.UseUA {
+	if len(userAgent) > 0 && config.UseUA && !sr.isUaSaved {
+		sr.isUaSaved = true
 		_ = ants.Submit(func() {
 			resolve.AnalyzeByUserAgent(sr.Parent.SrcIP, userAgent, host)
 		})
