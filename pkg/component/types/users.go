@@ -1,20 +1,22 @@
 package types
 
 const (
-	ListRadOnline = "list:rad_online"
-	HashRadOnline = "hash:rad_online:%s"
-	ListAntiProxy = "list:antiproxy:%s"
+	ListRadOnline       = "list:rad_online"
+	ListRadOnlineUpdate = "list:rad_online:update"
+	HashRadOnline       = "hash:rad_online:%s"
+	ListAntiProxy       = "list:antiproxy:%s"
 )
 
 type User struct {
-	UserName   string `redis:"user_name" json:"user_name"`
-	IP         string `redis:"ip" json:"ip"`
-	UserMac    string `redis:"user_mac" json:"user_mac"`
-	LineType   int    `redis:"line_type" json:"line_type"`
-	AddTime    int    `redis:"add_time" json:"add_time"`
-	ProductsID int    `redis:"products_id" json:"products_id"`
-	BillingID  int    `redis:"billing_id" json:"billing_id"`
-	ContractID int    `redis:"contract_id" json:"contract_id"`
+	RadOnlineID string `redis:"rad_online_id" json:"rad_online_id"`
+	UserName    string `redis:"user_name" json:"user_name"`
+	IP          string `redis:"ip" json:"ip"`
+	UserMac     string `redis:"user_mac" json:"user_mac"`
+	LineType    int    `redis:"line_type" json:"line_type"`
+	AddTime     int    `redis:"add_time" json:"add_time"`
+	ProductsID  int    `redis:"products_id" json:"products_id"`
+	BillingID   int    `redis:"billing_id" json:"billing_id"`
+	ContractID  int    `redis:"contract_id" json:"contract_id"`
 }
 
 type UserEvent struct {

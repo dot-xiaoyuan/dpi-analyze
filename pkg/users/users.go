@@ -20,7 +20,7 @@ import (
 
 var (
 	OnlineUsers sync.Map
-	hashFields  = []string{"user_name", "ip", "user_mac", "line_type", "add_time", "products_id", "billing_id", "control_id"}
+	hashFields  = []string{"rad_online_id", "user_name", "ip", "user_mac", "line_type", "add_time", "products_id", "billing_id", "control_id"}
 )
 
 type UserEvent types.UserEvent

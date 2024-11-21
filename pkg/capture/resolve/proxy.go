@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/redis"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/policy"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/users"
 	v9 "github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
+	"strconv"
 	"time"
 )
 
@@ -51,7 +53,7 @@ func Discover(ip string) {
 	// TODO 获取控制策略,检测是否开启防代理
 
 	// 获取产品对应条件
-	conditionAll, conditionMobile, conditionPc := getStrategyByProduct(user.ProductsID)
+	conditionAll, conditionMobile, conditionPc, disable := getStrategyByProduct(user.ProductsID)
 	// 获取设备信息
 	all, mobile, pc := GetDeviceIncr(ip, rdb)
 	if all < conditionAll && mobile < conditionMobile && pc < conditionPc {
@@ -67,15 +69,18 @@ func Discover(ip string) {
 	}
 	pr := NewRecord(ip, user.UserName, devices)
 	pr.AllCount, pr.MobileCount, pr.PcCount = all, mobile, pc
-	// TODO 是否需要下线
+	if disable == 1 {
+		_ = users.HookDropUser(user, pr)
+	}
 	HandleProxy(pr)
 	DelDeviceIncr(ip, rdb)
 	afterDiscover(key, rdb)
 }
 
-// 根据产品获取对应的策略 TODO 按照配置文件读取
-func getStrategyByProduct(product int) (all, mobile, pc int) {
-	all, mobile, pc = 4, 2, 2
+// 根据产品获取对应的策略
+func getStrategyByProduct(productID int) (all, mobile, pc, disable int) {
+	product := policy.Get(strconv.Itoa(productID))
+	all, mobile, pc, disable = product.ALL, product.Mobile, product.Pc, product.DisableProxy
 	return
 }
 

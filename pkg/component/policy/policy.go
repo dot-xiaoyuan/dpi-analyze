@@ -36,6 +36,10 @@ func GetList() []types.Products {
 	return productsList
 }
 
+func Get(product string) types.Products {
+	return Policy.products[product]
+}
+
 type policy struct {
 	once        sync.Once
 	initialized bool
