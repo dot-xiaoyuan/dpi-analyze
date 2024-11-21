@@ -139,7 +139,6 @@ func DeviceHandle(device types.DeviceRecord) {
 		// 如果该品牌的信息已存在且操作系统为 unknown，则更新
 		if d.Brand == device.Brand {
 			if device.Os == "" || device.Version == "" {
-				// 重复的unknown跳过
 				updated = true
 				break
 			}
@@ -151,7 +150,6 @@ func DeviceHandle(device types.DeviceRecord) {
 			// 更新操作系统和型号
 			d.Os = device.Os
 			d.Version = device.Version
-
 			d.OriginChanel = device.OriginChanel
 			d.OriginValue = device.OriginValue
 			d.LastSeen = device.LastSeen
@@ -175,7 +173,7 @@ func DeviceHandle(device types.DeviceRecord) {
 			break
 		}
 		// 忽略系统版本一致但是设备是 Other 或者 品牌是 android的
-		if d.Os == device.Os && d.Version == device.Version && (device.Device == "Other" || device.Brand == "android") {
+		if d.Os == device.Os && d.Version == device.Version && (device.Device == "Other" || device.Brand == "android" || device.Brand == "generic_android") {
 			updated = true
 			break
 		}
@@ -244,6 +242,9 @@ func IsMobile(device types.DeviceRecord) bool {
 		// 判断 OS 是否为常见的移动操作系统
 		if strings.Contains(osFamily, "android") || strings.Contains(osFamily, "ios") {
 			return true
+		}
+		if strings.Contains(osFamily, "mac") || strings.Contains(osFamily, "windows") {
+			return false
 		}
 	}
 
