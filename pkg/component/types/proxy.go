@@ -15,3 +15,25 @@ type ProxyRecord struct {
 	PcCount     int                `json:"pc_count" bson:"pc_count"`
 	LastSeen    time.Time          `json:"last_seen" bson:"last_seen"`
 }
+
+type SuspectedRecord struct {
+	ID             primitive.ObjectID `json:"_id" bson:"_id"`
+	IP             string             `json:"ip" bson:"ip"`
+	Username       string             `json:"username" bson:"username"`
+	ReasonCategory string             `json:"reason_category" bson:"reason_category"`
+	ReasonDetail   ReasonDetail       `json:"reason_detail" bson:"reason_detail"`
+	Tags           []string           `json:"tags" bson:"tags"`
+	Context        Context            `json:"context" bson:"context"`
+	Remark         string             `json:"remark" bson:"remark"`
+	LastSeen       time.Time          `json:"last_seen" bson:"last_seen"`
+}
+
+type ReasonDetail struct {
+	Name      any `json:"name" bson:"name"`
+	Value     any `json:"value" bson:"value"`
+	Threshold any `json:"threshold" bson:"threshold"`
+}
+
+type Context struct {
+	Device string `json:"device" bson:"device"`
+}

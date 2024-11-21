@@ -76,6 +76,15 @@ func FindUser(ip string) types.User {
 	return types.User{}
 }
 
+// FindUserName 根据ip查找用户名
+func FindUserName(ip string) string {
+	user, ok := OnlineUsers.Load(ip)
+	if ok {
+		return user.(types.User).UserName
+	}
+	return ""
+}
+
 // ExitsUser 用户是否存在
 func ExitsUser(ip string) bool {
 	_, ok := OnlineUsers.Load(ip)

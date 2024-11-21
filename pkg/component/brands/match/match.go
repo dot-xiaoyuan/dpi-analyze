@@ -38,7 +38,8 @@ func BrandMatch(brand, ip string, dr types.DeviceRecord) types.Domain {
 	}
 
 	if domain.BrandName == "apple" {
-		if dr.Os == "Mac" {
+		zap.L().Debug("apple 品牌标识", zap.Any("domain", domain), zap.Any("dr", dr))
+		if strings.Contains(strings.ToLower(dr.Os), "mac") || strings.Contains(strings.ToLower(dr.Model), "mac") {
 			domain.Icon = "icon-macos"
 		}
 	}

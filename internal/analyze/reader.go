@@ -232,7 +232,14 @@ func (sr *StreamReader) SetHttpInfo(host, userAgent, contentType, upgrade string
 	if len(userAgent) > 0 && config.UseUA && !sr.isUaSaved {
 		sr.isUaSaved = true
 		_ = ants.Submit(func() {
-			resolve.AnalyzeByUserAgent(sr.Parent.SrcIP, userAgent, host)
+			uaStr := resolve.AnalyzeByUserAgent(sr.Parent.SrcIP, userAgent, host)
+			if len(uaStr) > 0 {
+				member.Store(member.Hash{
+					IP:    sr.Parent.SrcIP,
+					Field: types.UserAgent,
+					Value: uaStr,
+				})
+			}
 		})
 	}
 	// host

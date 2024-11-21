@@ -8,6 +8,7 @@ const (
 	MongoDatabaseDevices   = "devices"
 	MongoDatabaseConfigs   = "config"
 	MongoDatabaseProxy     = "proxy"
+	MongoDatabaseSuspected = "suspected"
 
 	MongoCollectionPolicy = "policy"
 )

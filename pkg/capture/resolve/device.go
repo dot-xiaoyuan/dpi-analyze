@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/member"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/brands/match"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/redis"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
@@ -51,7 +51,7 @@ func storeDevice(rdb *v9.Client, device types.DeviceRecord) {
 		str = strings.ToLower(device.Os)
 	}
 	zap.L().Debug("wait to save device", zap.String("key", key), zap.String("str", str))
-	member.AppendDevice2Redis(device.IP, types.Device, str, device)
+	AppendDevice2Redis(device.IP, types.Device, str, device)
 
 	// 检查设备数量是否超过 1，触发事件
 	checkAndTriggerEvent(device.IP)
@@ -259,4 +259,35 @@ func IsMobile(device types.DeviceRecord) bool {
 
 	// 默认返回 PC
 	return false
+}
+
+// AppendDevice2Redis 追加设备信息到redis
+func AppendDevice2Redis(ip string, property types.Property, value any, dr types.DeviceRecord) {
+	rdb := redis.GetRedisClient()
+	ctx := context.TODO()
+	key := fmt.Sprintf(types.HashAnalyzeIP, ip)
+
+	var devices []types.Domain
+
+	mf := match.BrandMatch(value.(string), ip, dr)
+	// info hash
+	old := rdb.HMGet(ctx, key, string(property)).Val()[0]
+	if old != nil {
+		_ = json.Unmarshal([]byte(old.(string)), &devices)
+		for i, device := range devices {
+			if device.BrandName == value {
+				if device.Icon != mf.Icon {
+					devices = append(devices[:i], devices[i+1:]...)
+				}
+				return
+			}
+		}
+		devices = append(devices, mf)
+		bytes, _ := json.Marshal(devices)
+		rdb.HSet(ctx, key, string(property), bytes).Val()
+	} else {
+		devices = append(devices, mf)
+		bytes, _ := json.Marshal(devices)
+		rdb.HSet(ctx, key, string(property), bytes).Val()
+	}
 }

@@ -3,7 +3,6 @@ package resolve
 import (
 	"context"
 	"fmt"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/member"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/uaparser"
@@ -15,14 +14,14 @@ import (
 
 var useragentLock sync.Mutex
 
-func AnalyzeByUserAgent(ip, ua, host string) {
+func AnalyzeByUserAgent(ip, ua, host string) string {
 	client := uaparser.Analyze(ua, host)
 	if client == nil {
-		return
+		return ""
 	}
 	// TODO 厂商严格分析开关，开启后如果厂商为空直接跳过
 	if len(client.Os.Family) == 0 {
-		return
+		return ""
 	}
 	// 记录mongodb
 	uaStr, _ := url.QueryUnescape(ua)
@@ -47,7 +46,7 @@ func AnalyzeByUserAgent(ip, ua, host string) {
 	useragentLock.Unlock()
 
 	if client.Os.ToString() == "Other" || client.UserAgent.Family == "IE" || len(client.Os.ToVersionString()) == 0 {
-		return
+		return ""
 	}
 	var brand, icon string
 	brand = strings.ToLower(client.Device.Brand)
@@ -70,11 +69,7 @@ func AnalyzeByUserAgent(ip, ua, host string) {
 		Description:  "UserAgent 解析",
 		LastSeen:     time.Now(),
 	}
-	member.Store(member.Hash{
-		IP:    ip,
-		Field: types.UserAgent,
-		Value: fmt.Sprintf("%s %s", dr.Os, dr.Version),
-	})
 
 	DeviceHandle(dr)
+	return fmt.Sprintf("%s %s", dr.Os, dr.Version)
 }

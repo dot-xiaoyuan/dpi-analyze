@@ -2,10 +2,8 @@ package member
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/brands/match"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/redis"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	v9 "github.com/redis/go-redis/v9"
@@ -139,37 +137,6 @@ func storeHash2Redis(ip string, property types.Property, value any) {
 	}).Val()
 	// info hash
 	rdb.HSet(ctx, key, string(property), value).Val()
-}
-
-// AppendDevice2Redis 追加设备信息到redis
-func AppendDevice2Redis(ip string, property types.Property, value any, dr types.DeviceRecord) {
-	rdb := redis.GetRedisClient()
-	ctx := context.TODO()
-	key := fmt.Sprintf(types.HashAnalyzeIP, ip)
-
-	var devices []types.Domain
-
-	mf := match.BrandMatch(value.(string), ip, dr)
-	// info hash
-	old := rdb.HMGet(ctx, key, string(property)).Val()[0]
-	if old != nil {
-		_ = json.Unmarshal([]byte(old.(string)), &devices)
-		for i, device := range devices {
-			if device.BrandName == value {
-				if device.Icon != mf.Icon {
-					devices = append(devices[:i], devices[i+1:]...)
-				}
-				return
-			}
-		}
-		devices = append(devices, mf)
-		bytes, _ := json.Marshal(devices)
-		rdb.HSet(ctx, key, string(property), bytes).Val()
-	} else {
-		devices = append(devices, mf)
-		bytes, _ := json.Marshal(devices)
-		rdb.HSet(ctx, key, string(property), bytes).Val()
-	}
 }
 
 func CleanUp() {

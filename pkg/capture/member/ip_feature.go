@@ -132,6 +132,8 @@ func updateChart(featureSet *types.FeatureSet, industry types.FeatureType, newCo
 		Industry:   industry,
 		Unemployed: newCount,
 	})
+	// trigger 触发特征数量
+	TriggerSuspected(featureSet.IP, industry, newCount)
 }
 
 // TTL索引

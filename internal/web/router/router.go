@@ -37,6 +37,7 @@ func Register(r *gin.Engine) {
 			featureJudge := api.Group("/feature/judge")
 			{
 				featureJudge.POST("/realtime", controllers.JudgeRealtime())
+				featureJudge.POST("/suspected", controllers.JudgeSuspected())
 			}
 
 			// policy 策略配置

@@ -63,8 +63,9 @@ type Yaml struct {
 	Web                   Web
 	IgnoreFeature         []string `mapstructure:"ignore_feature"`
 	Feature               Feature
-	Username              string `mapstructure:"username"`
-	Password              string `mapstructure:"password"`
+	Thresholds            Thresholds `mapstructure:"thresholds"`
+	Username              string     `mapstructure:"username"`
+	Password              string     `mapstructure:"password"`
 }
 
 type Capture struct {
@@ -89,6 +90,23 @@ type FeatureConfig struct {
 type MobileDeviceFeature struct {
 	Domains []string `mapstructure:"domains"`
 	Icon    string   `mapstructure:"icon"`
+}
+
+type Thresholds struct {
+	SNI         ProtocolFeature `mapstructure:"sni"`
+	HTTP        ProtocolFeature `mapstructure:"http"`
+	TLSVersion  ProtocolFeature `mapstructure:"tls_version"`
+	CipherSuite ProtocolFeature `mapstructure:"cipher_suite"`
+	Session     ProtocolFeature `mapstructure:"session"`
+	DNS         ProtocolFeature `mapstructure:"dns"`
+	QUIC        ProtocolFeature `mapstructure:"quic"`
+	SNMP        ProtocolFeature `mapstructure:"snmp"`
+}
+
+type ProtocolFeature struct {
+	Threshold int    `mapstructure:"threshold"`
+	Normal    string `mapstructure:"normal"`
+	Remark    string `mapstructure:"remark"`
 }
 
 type Mongodb struct {

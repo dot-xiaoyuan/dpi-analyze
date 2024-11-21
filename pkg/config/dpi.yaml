@@ -3,7 +3,7 @@ language: zh-CN
 # 日志登记
 log_level: info
 # 调试模式 开 - true 关 - false
-debug: true
+debug: false
 # geo2ip 数据文件
 geo2ip: GeoIP2-City.mmdb
 # ua regular
@@ -39,6 +39,36 @@ feature:
   sni:
     time_window: 60
     count_size: 10
+# 协议特征阈值
+thresholds:
+  sni:
+    threshold: 10
+    normal: "SNI 是 TLS 协议中的一个扩展，用于标识客户端请求的主机名。一个用户设备通常不会在短时间内请求多个不同的 SNI"
+    remark: "10 次 SNI 切换是一个合理的阈值。在一分钟内，超过 10 次的 SNI 切换很可能是代理或负载均衡器的行为"
+  http:
+    threshold: 50
+    normal: "HTTP 协议的请求频率较高，尤其在 Web 服务中，频繁的 HTTP 请求是常见的。但如果短时间内发起大量请求（尤其是来自单一 IP），可能是代理或自动化程序的行为。"
+    remark: "50 次 HTTP 请求是合理的，考虑到一个 IP 在一分钟内进行正常的多次网页请求或数据交互"
+  tls_version:
+    threshold: 50
+    normal: "每个客户端和服务器在建立 TLS 连接时通常使用一个固定的 TLS 版本。频繁切换 TLS 版本通常表明存在异常流量，可能是代理服务器引起的"
+    remark: "50 次是一个较高的阈值，适用于多个客户端连接到不同服务器或进行高频 TLS 握手的场景"
+  cipher_suite:
+    threshold: 50
+    normal: "在每次 TLS 握手中，客户端和服务器会协商使用的密码套件。频繁切换密码套件可能是代理服务器或负载均衡器的典型行为"
+    remark: "50 次会话是一个较高的阈值，适用于存在大量并发会话的场景"
+  session:
+    threshold: 50
+    normal: "会话信息通常不会频繁变化。一个设备在短时间内开启多个会话是异常的，可能是代理或某种负载均衡机制在工作"
+    remark: "50 次会话是一个较高的阈值，适用于存在大量并发会话的场景"
+  dns:
+    threshold: 100
+    normal: "DNS 查询通常频繁发生，但一个设备不太可能在短时间内发起大量不同的 DNS 查询请求。频繁的 DNS 查询可能表明使用了代理或自动化工具"
+    remark: "100 次 DNS 查询。大多数家庭或小型企业的设备不会频繁进行这么多的查询"
+  quic:
+    threshold: 50
+    normal: "QUIC 是一种由 Google 开发的网络协议，主要用于提高网络性能。通常用于 HTTP/3，但在短时间内大量的 QUIC 请求可能是代理行为的标志"
+    remark: "50 次。QUIC 请求一般在高频次的数据流量中可能出现"
 # mongodb，用于流分析持久化存储与查询
 mongodb:
   host: 127.0.0.1
@@ -51,17 +81,17 @@ redis:
     password: ""
   # 4k 在线表, 用于dpi同步在线用户与ip对应关系以及获取控制策略
   online:
-    host: 192.168.0.174
+    host: 192.168.0.190
     port: 16380
     password: "srun_3000@redis"
   # 4k user表, 用于dpi同步产品信息和控制策略信息
   users:
-    host: 192.168.0.174
+    host: 192.168.0.190
     port: 16382
     password: "srun_3000@redis"
   # 4k cache, 在线表同步接口，用于接收用户上下线事件来同步dpi的在线表
   cache:
-    host: 192.168.0.174
+    host: 192.168.0.190
     port: 16384
     password: "srun_3000@redis"
 username: admin
