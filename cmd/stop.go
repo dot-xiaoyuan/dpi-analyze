@@ -19,5 +19,5 @@ var StopCmd = &cobra.Command{
 
 func init() {
 	StopCmd.AddCommand(server.NewCaptureServer())
-	StopCmd.AddCommand(server.NewWebServer())
+	StopCmd.AddCommand(server.NewWebCmd())
 }

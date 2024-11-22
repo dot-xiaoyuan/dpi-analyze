@@ -19,5 +19,5 @@ var StatusCmd = &cobra.Command{
 
 func init() {
 	StatusCmd.AddCommand(server.NewCaptureServer())
-	StatusCmd.AddCommand(server.NewWebServer())
+	StatusCmd.AddCommand(server.NewWebCmd())
 }

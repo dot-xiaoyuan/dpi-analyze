@@ -19,5 +19,5 @@ var RestartCmd = &cobra.Command{
 
 func init() {
 	RestartCmd.AddCommand(server.NewCaptureServer())
-	RestartCmd.AddCommand(server.NewWebServer())
+	RestartCmd.AddCommand(server.NewWebCmd())
 }

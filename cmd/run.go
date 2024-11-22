@@ -21,5 +21,5 @@ var RunCmd = &cobra.Command{
 
 func init() {
 	RunCmd.AddCommand(server.NewCaptureServer())
-	RunCmd.AddCommand(server.NewWebServer())
+	RunCmd.AddCommand(server.NewWebCmd())
 }

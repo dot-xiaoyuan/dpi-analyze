@@ -101,7 +101,7 @@ func captureCmdRun(cmd *cobra.Command, args []string) {
 		captureDaemon.Status()
 		break
 	case "restart":
-		captureDaemon.Restart(webRun)
+		captureDaemon.Restart(captureRun)
 		break
 	default:
 		if config.Detach {

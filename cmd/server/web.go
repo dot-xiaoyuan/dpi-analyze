@@ -15,7 +15,7 @@ import (
 
 // 统计cli
 
-func NewWebServer() *cobra.Command {
+func NewWebCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:    "web",
 		Short:  "web commands",
