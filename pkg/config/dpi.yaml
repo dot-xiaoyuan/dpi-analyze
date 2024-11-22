@@ -10,8 +10,6 @@ geo2ip: GeoIP2-City.mmdb
 ua_regular: regexes.yaml
 # 仅关注在线用户
 follow_only_online_users: true
-# 是否开启mongodb
-use_mongo: true
 # 是否分析TTL
 use_ttl: true
 # 是否分析user-agent

@@ -9,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 )
 
 //go:embed dpi.yaml
@@ -32,7 +31,6 @@ var (
 	UaRegular             string
 	CaptureNic            string
 	CapturePcap           string
-	UseMongo              bool
 	BerkeleyPacketFilter  string
 	IgnoreMissing         bool
 	FollowOnlyOnlineUsers bool
@@ -44,88 +42,72 @@ var (
 )
 
 type Yaml struct {
-	Language              string  `mapstructure:"language"`
-	LogLevel              string  `mapstructure:"log_level"`
-	Debug                 bool    `mapstructure:"debug"`
-	Detach                bool    `mapstructure:"detach"`
-	Geo2IP                string  `mapstructure:"geo2ip"`
-	UaRegular             string  `mapstructure:"ua_regular"`
-	UseMongo              bool    `mapstructure:"use_mongo"`
-	BerkeleyPacketFilter  string  `mapstructure:"berkeley_packet_filter"`
-	IgnoreMissing         bool    `mapstructure:"ignore_missing"`
-	FollowOnlyOnlineUsers bool    `mapstructure:"follow_only_online_users"`
-	UseTTL                bool    `mapstructure:"use_ttl"`
-	UseUA                 bool    `mapstructure:"use_ua"`
-	UseFeature            bool    `mapstructure:"use_feature"`
-	Capture               Capture `mapstructure:"capture"`
-	Mongodb               Mongodb `mapstructure:"mongodb"`
-	Redis                 Redis   `mapstructure:"redis"`
-	Web                   Web
-	IgnoreFeature         []string `mapstructure:"ignore_feature"`
-	Feature               Feature
-	Thresholds            Thresholds `mapstructure:"thresholds"`
-	Username              string     `mapstructure:"username"`
-	Password              string     `mapstructure:"password"`
+	Language              string     `mapstructure:"language" bson:"language" json:"language"`
+	LogLevel              string     `mapstructure:"log_level" bson:"log_level" json:"log_level"`
+	Debug                 bool       `mapstructure:"debug" bson:"debug" json:"debug"`
+	Detach                bool       `mapstructure:"detach" bson:"detach" json:"detach"`
+	Geo2IP                string     `mapstructure:"geo2ip" bson:"geo2ip" json:"geo2ip"`
+	UaRegular             string     `mapstructure:"ua_regular" bson:"ua_regular" json:"ua_regular"`
+	BerkeleyPacketFilter  string     `mapstructure:"berkeley_packet_filter" bson:"berkeley_packet_filter" json:"berkeley_packet_filter"`
+	IgnoreMissing         bool       `mapstructure:"ignore_missing" bson:"ignore_missing" json:"ignore_missing"`
+	FollowOnlyOnlineUsers bool       `mapstructure:"follow_only_online_users" bson:"follow_only_online_users" json:"follow_only_online_users"`
+	UseTTL                bool       `mapstructure:"use_ttl" bson:"use_ttl" json:"use_ttl"`
+	UseUA                 bool       `mapstructure:"use_ua" bson:"use_ua" json:"use_ua"`
+	UseFeature            bool       `mapstructure:"use_feature" bson:"use_feature" json:"use_feature"`
+	Capture               Capture    `mapstructure:"capture" bson:"capture" json:"capture"`
+	Mongodb               Mongodb    `mapstructure:"mongodb" bson:"mongodb" json:"mongodb"`
+	Redis                 Redis      `mapstructure:"redis" bson:"redis" json:"redis"`
+	Web                   Web        `mapstructure:"web" bson:"web" json:"web"`
+	IgnoreFeature         []string   `mapstructure:"ignore_feature" bson:"ignore_feature" json:"ignore_feature"`
+	Thresholds            Thresholds `mapstructure:"thresholds" bson:"thresholds" json:"thresholds"`
+	Username              string     `mapstructure:"username" bson:"username" json:"username"`
+	Password              string     `mapstructure:"password" bson:"password" json:"password"`
 }
 
 type Capture struct {
-	OfflineFile string `mapstructure:"offline_file"`
-	NIC         string `mapstructure:"nic"`
-	SnapLen     int32  `mapstructure:"snap_len"`
+	OfflineFile string `mapstructure:"offline_file" bson:"offline_file" json:"offline_file"`
+	NIC         string `mapstructure:"nic" bson:"nic" json:"nic"`
+	SnapLen     int32  `mapstructure:"snap_len" bson:"snap_len" json:"snap_len"`
 }
 
 type Web struct {
 	Port uint `mapstructure:"port"`
 }
 
-type Feature struct {
-	SNI FeatureConfig `mapstructure:"sni"`
-}
-
-type FeatureConfig struct {
-	TimeWindow time.Duration `mapstructure:"time_window"`
-	CountSize  int           `mapstructure:"count_size"`
-}
-
-type MobileDeviceFeature struct {
-	Domains []string `mapstructure:"domains"`
-	Icon    string   `mapstructure:"icon"`
-}
-
 type Thresholds struct {
-	SNI         ProtocolFeature `mapstructure:"sni"`
-	HTTP        ProtocolFeature `mapstructure:"http"`
-	TLSVersion  ProtocolFeature `mapstructure:"tls_version"`
-	CipherSuite ProtocolFeature `mapstructure:"cipher_suite"`
-	Session     ProtocolFeature `mapstructure:"session"`
-	DNS         ProtocolFeature `mapstructure:"dns"`
-	QUIC        ProtocolFeature `mapstructure:"quic"`
-	SNMP        ProtocolFeature `mapstructure:"snmp"`
+	SNI         ProtocolFeature `mapstructure:"sni" bson:"sni" json:"sni"`
+	HTTP        ProtocolFeature `mapstructure:"http" bson:"http" json:"http"`
+	TLSVersion  ProtocolFeature `mapstructure:"tls_version" bson:"tls_version" json:"tls_version"`
+	CipherSuite ProtocolFeature `mapstructure:"cipher_suite" bson:"cipher_suite" json:"cipher_suite"`
+	Session     ProtocolFeature `mapstructure:"session" bson:"session" json:"session"`
+	DNS         ProtocolFeature `mapstructure:"dns" bson:"dns" json:"dns"`
+	QUIC        ProtocolFeature `mapstructure:"quic" bson:"quic" json:"quic"`
+	SNMP        ProtocolFeature `mapstructure:"snmp" bson:"snmp" json:"snmp"`
 }
 
 type ProtocolFeature struct {
-	Threshold int    `mapstructure:"threshold"`
-	Normal    string `mapstructure:"normal"`
-	Remark    string `mapstructure:"remark"`
+	Threshold int    `mapstructure:"threshold" bson:"threshold" json:"threshold"`
+	Normal    string `mapstructure:"normal" bson:"normal" json:"normal"`
+	Remark    string `mapstructure:"remark" bson:"remark" json:"remark"`
 }
 
 type Mongodb struct {
-	Host string `mapstructure:"host"`
-	Port string `mapstructure:"port"`
+	Host string `mapstructure:"host" bson:"host" json:"host"`
+	Port string `mapstructure:"port" bson:"port" json:"port"`
 }
 
 type Redis struct {
-	DPI    RedisConfig `mapstructure:"dpi"`
-	Online RedisConfig `mapstructure:"online"`
-	Cache  RedisConfig `mapstructure:"cache"`
-	Users  RedisConfig `mapstructure:"users"`
+	DPI    RedisConfig `mapstructure:"dpi" bson:"dpi" json:"dpi"`
+	Online RedisConfig `mapstructure:"online" bson:"online" json:"online"`
+	Cache  RedisConfig `mapstructure:"cache" bson:"cache" json:"cache"`
+	Users  RedisConfig `mapstructure:"users" bson:"users" json:"users"`
 }
 
 type RedisConfig struct {
-	Host     string `mapstructure:"host"`
-	Port     string `mapstructure:"port"`
-	Password string `mapstructure:"password"`
-	DB       int    `mapstructure:"db"`
+	Host     string `mapstructure:"host" bson:"host" json:"host"`
+	Port     string `mapstructure:"port" bson:"port" json:"port"`
+	Password string `mapstructure:"password" bson:"password" json:"password"`
+	DB       int    `mapstructure:"db" bson:"db" json:"db"`
 }
 
 func init() {

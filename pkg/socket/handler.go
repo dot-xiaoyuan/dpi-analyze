@@ -14,6 +14,7 @@ const (
 	UserList
 	PolicyList
 	PolicyUpdate
+	ConfigUpdate
 )
 
 // Message unix 通信数据结构体

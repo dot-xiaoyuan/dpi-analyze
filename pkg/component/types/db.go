@@ -11,4 +11,5 @@ const (
 	MongoDatabaseSuspected  = "suspected"
 
 	MongoCollectionPolicy = "policy"
+	MongoCollectionConfig = "config"
 )

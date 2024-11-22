@@ -17,10 +17,6 @@ func Login() gin.HandlerFunc {
 			return
 		}
 
-		//h := sha256.New()
-		//h.Write([]byte("123123"))
-		//sha := hex.EncodeToString(h.Sum(nil))
-		//fmt.Println(sha)
 		if req.Username != config.Cfg.Username || req.Password != config.Cfg.Password {
 			c.JSON(http.StatusBadRequest, gin.H{"message": "账号或密码错误"})
 			return
@@ -34,6 +30,32 @@ func Login() gin.HandlerFunc {
 
 		c.JSON(http.StatusOK, gin.H{"message": "Login successful", "token": token})
 		return
+	}
+}
+
+func ChangePassword() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var req midderware.ChangePasswordRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request"})
+			return
+		}
+
+		// 校验当前密码
+		if req.CurrentPassword != config.Cfg.Password {
+			c.JSON(http.StatusBadRequest, gin.H{"message": "当前密码错误"})
+			return
+		}
+
+		// 校验新密码与确认密码是否一致
+		if req.NewPassword != req.ConfirmPassword {
+			c.JSON(http.StatusBadRequest, gin.H{"message": "新密码与确认密码不一致"})
+			return
+		}
+
+		// 更新密码
+		config.Cfg.Password = req.NewPassword
+		c.JSON(http.StatusOK, gin.H{"message": "密码修改成功"})
 	}
 }
 

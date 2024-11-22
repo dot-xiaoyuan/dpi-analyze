@@ -52,6 +52,13 @@ func Register(r *gin.Engine) {
 			{
 				log.POST("/users/events", controllers.UserEventsLog())
 			}
+
+			// setting 系统配置
+			settings := api.Group("/setting")
+			{
+				settings.GET("/config", controllers.ConfigList())
+				settings.POST("/config", controllers.ConfigUpdate())
+			}
 			// IP 操作
 			api.GET("/ip/list", controllers.IPList())
 			api.GET("/ip/detail", controllers.IPDetail())

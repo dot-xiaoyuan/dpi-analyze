@@ -40,7 +40,7 @@ func StartServer() {
 // handleConnection 处理客户端连接
 func handleConnection(conn net.Conn) {
 	defer conn.Close()
-	buf := make([]byte, 1024)
+	buf := make([]byte, 10240)
 	n, err := conn.Read(buf)
 	if err != nil {
 		fmt.Println("read error:", err)
