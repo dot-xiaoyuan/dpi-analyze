@@ -6,7 +6,7 @@ import (
 )
 
 type ProxyRecord struct {
-	ID          primitive.ObjectID `json:"_id" bson:"_id"`
+	ID          primitive.ObjectID `json:"_id;omitempty" bson:"_id;omitempty"`
 	IP          string             `json:"ip" bson:"ip"`
 	Username    string             `json:"username" bson:"username"`
 	Devices     []DeviceRecord     `json:"devices" bson:"devices"`
@@ -17,7 +17,7 @@ type ProxyRecord struct {
 }
 
 type SuspectedRecord struct {
-	ID             primitive.ObjectID `json:"_id" bson:"_id"`
+	ID             primitive.ObjectID `json:"_id;omitempty" bson:"_id;omitempty"`
 	IP             string             `json:"ip" bson:"ip"`
 	Username       string             `json:"username" bson:"username"`
 	ReasonCategory string             `json:"reason_category" bson:"reason_category"`

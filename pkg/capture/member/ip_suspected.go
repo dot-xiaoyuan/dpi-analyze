@@ -2,22 +2,48 @@ package member
 
 import (
 	"context"
+	"github.com/allegro/bigcache"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"go.uber.org/zap"
+	"sync"
 	"time"
 )
+
+var (
+	suspectedCache *bigcache.BigCache
+	once           sync.Once
+)
+
+func GetSuspectedCache() *bigcache.BigCache {
+	once.Do(func() {
+		var err error
+		suspectedCache, err = bigcache.NewBigCache(bigcache.Config{
+			LifeWindow: 10 * time.Minute,
+		})
+		if err != nil {
+			zap.L().Error("GetSuspectedCache", zap.Error(err))
+		}
+	})
+	return suspectedCache
+}
 
 // 疑似代理
 
 func TriggerSuspected(ip string, ft types.FeatureType, count int) {
 	pf := getThreshold(ft)
 	if pf.Threshold == 0 {
-		zap.L().Warn("threshold is empty", zap.Any("ft", ft))
+		//zap.L().Warn("threshold is empty", zap.Any("ft", ft))
 		return
 	}
-	zap.L().Debug("trigger suspected for ip", zap.String("ip", ip), zap.Int("count", count), zap.Int("threshold", pf.Threshold))
+	// 检查缓存是否存在
+	if _, err := suspectedCache.Get(ip); err == nil {
+		// 如果 IP 已在缓存中，不再重复记录
+		//zap.L().Debug("IP is already cached, skipping", zap.String("ip", ip))
+		return
+	}
+	//zap.L().Debug("trigger suspected for ip", zap.String("ip", ip), zap.Int("count", count), zap.Int("threshold", pf.Threshold))
 	if count > pf.Threshold {
 		// 超过阈值，记录疑似代理
 		record := types.SuspectedRecord{
@@ -39,6 +65,14 @@ func TriggerSuspected(ip string, ft types.FeatureType, count int) {
 			InsertOne(context.TODO(), record)
 		if err != nil {
 			zap.L().Error("failed to insert suspected record", zap.String("ip", ip), zap.Error(err))
+			return
+		}
+
+		// 缓存
+		err = suspectedCache.Set(ip, []byte("cached"))
+		if err != nil {
+			zap.L().Error("failed to insert suspected record", zap.String("ip", ip), zap.Error(err))
+			return
 		}
 	}
 }
