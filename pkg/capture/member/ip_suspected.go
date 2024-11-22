@@ -5,6 +5,7 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
+	"go.uber.org/zap"
 	"time"
 )
 
@@ -13,8 +14,10 @@ import (
 func TriggerSuspected(ip string, ft types.FeatureType, count int) {
 	pf := getThreshold(ft)
 	if pf.Threshold == 0 {
+		zap.L().Warn("threshold is empty", zap.Any("ft", ft))
 		return
 	}
+	zap.L().Debug("trigger suspected for ip", zap.String("ip", ip), zap.Int("count", count), zap.Int("threshold", pf.Threshold))
 	if count > pf.Threshold {
 		// 超过阈值，记录疑似代理
 		record := types.SuspectedRecord{
@@ -31,9 +34,12 @@ func TriggerSuspected(ip string, ft types.FeatureType, count int) {
 			Remark:   pf.Remark,
 			LastSeen: time.Now(),
 		}
-		_, _ = mongo.GetMongoClient().Database(types.MongoDatabaseSuspected).
+		_, err := mongo.GetMongoClient().Database(types.MongoDatabaseSuspected).
 			Collection(time.Now().Format("06_01")).
 			InsertOne(context.TODO(), record)
+		if err != nil {
+			zap.L().Error("failed to insert suspected record", zap.String("ip", ip), zap.Error(err))
+		}
 	}
 }
 
