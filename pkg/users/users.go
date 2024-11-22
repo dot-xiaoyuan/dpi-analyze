@@ -10,8 +10,6 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/i18n"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	v9 "github.com/redis/go-redis/v9"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 	"os"
 	"sync"
@@ -151,59 +149,9 @@ func (u *UserEvent) DropEvent() {
 func (u *UserEvent) Save2Mongo() {
 	ctx := context.TODO()
 
-	_, err := mongodb.GetMongoClient().Database(types.MongoDatabaseEvents).Collection(time.Now().Format("user_event_06_01")).InsertOne(ctx, u)
+	_, err := mongodb.GetMongoClient().Database(types.MongoDatabaseUserEvents).Collection(time.Now().Format("06_01")).InsertOne(ctx, u)
 	if err != nil {
 		zap.L().Error(i18n.T("Error inserting event"), zap.Error(err))
 		os.Exit(1)
 	}
-}
-
-func UserEventQuery(c types.UserEventCondition) (int64, any, error) {
-	zap.L().Info(i18n.T("UserEventQuery"), zap.Any("Condition", c))
-	skip := (c.Page - 1) * c.PageSize
-	// 构建公共的 match 条件
-	matchStage := bson.D{
-		{"$match", bson.D{}},
-	}
-	var sort int
-	if c.OrderBy == "descend" {
-		sort = -1
-	} else {
-		sort = 1
-	}
-	// 排序
-	sortStage := bson.D{
-		{"$sort", bson.D{{c.SortField, sort}}},
-	}
-	// 分页
-	limitStage := bson.D{
-		{"$limit", c.PageSize},
-	}
-	skipStage := bson.D{
-		{"$skip", skip},
-	}
-	pipeline := mongo.Pipeline{matchStage, sortStage, limitStage, skipStage}
-
-	coll := mongodb.GetMongoClient().
-		Database(types.MongoDatabaseEvents).
-		Collection(fmt.Sprintf("user_event_%s_%s", c.Year, c.Month))
-	cursor, err := coll.
-		Aggregate(context.Background(), pipeline)
-
-	if err != nil {
-		return 0, nil, err
-	}
-	defer cursor.Close(context.Background())
-
-	var result []types.UserEvent
-	for cursor.Next(context.Background()) {
-		var log types.UserEvent
-		_ = cursor.Decode(&log)
-		result = append(result, log)
-	}
-	totalCount, err := coll.CountDocuments(context.Background(), bson.D{})
-	if err != nil {
-		return 0, nil, err
-	}
-	return totalCount, result, nil
 }

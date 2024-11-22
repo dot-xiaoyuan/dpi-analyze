@@ -46,12 +46,15 @@ func Register(r *gin.Engine) {
 				policy.GET("/list", controllers.PolicyList())
 				policy.POST("/update", controllers.PolicyUpdate())
 			}
+
+			// log 日志管理
+			log := api.Group("/log")
+			{
+				log.POST("/users/events", controllers.UserEventsLog())
+			}
 			// IP 操作
 			api.GET("/ip/list", controllers.IPList())
 			api.GET("/ip/detail", controllers.IPDetail())
-
-			// Stream Log
-			api.Match([]string{"GET", "POST"}, "/stream/list", controllers.StreamList())
 
 			// Observer
 			observer := api.Group("/observer")

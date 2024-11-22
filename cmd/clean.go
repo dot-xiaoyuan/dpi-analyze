@@ -32,7 +32,7 @@ var CleanCmd = &cobra.Command{
 			types.MongoDatabaseDevices,
 			types.MongoDatabaseFeatures,
 			types.MongoDatabaseProxy,
-			types.MongoDatabaseEvents,
+			types.MongoDatabaseUserEvents,
 			types.MongoDatabaseUserAgent,
 			types.MongoDatabaseSuspected,
 		}
