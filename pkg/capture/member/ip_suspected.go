@@ -23,7 +23,7 @@ func GetSuspectedCache() *bigcache.BigCache {
 			LifeWindow: 10 * time.Minute,
 		})
 		if err != nil {
-			zap.L().Error("GetSuspectedCache", zap.Error(err))
+			zap.L().Fatal("GetSuspectedCache", zap.Error(err))
 		}
 	})
 	return suspectedCache
@@ -38,7 +38,7 @@ func TriggerSuspected(ip string, ft types.FeatureType, count int) {
 		return
 	}
 	// 检查缓存是否存在
-	if _, err := suspectedCache.Get(ip); err == nil {
+	if _, err := GetSuspectedCache().Get(ip); err == nil {
 		// 如果 IP 已在缓存中，不再重复记录
 		//zap.L().Debug("IP is already cached, skipping", zap.String("ip", ip))
 		return
@@ -69,7 +69,7 @@ func TriggerSuspected(ip string, ft types.FeatureType, count int) {
 		}
 
 		// 缓存
-		err = suspectedCache.Set(ip, []byte("cached"))
+		err = GetSuspectedCache().Set(ip, []byte("cached"))
 		if err != nil {
 			zap.L().Error("failed to insert suspected record", zap.String("ip", ip), zap.Error(err))
 			return
