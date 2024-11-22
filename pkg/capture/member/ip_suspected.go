@@ -3,6 +3,7 @@ package member
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/allegro/bigcache"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
@@ -40,7 +41,6 @@ func GetSuspectedCache() *bigcache.BigCache {
 func TriggerSuspected(ip string, ft types.FeatureType, count int) {
 	pf := getThreshold(ft)
 	if pf.Threshold == 0 {
-		//zap.L().Warn("threshold is empty", zap.Any("ft", ft))
 		return
 	}
 	// 检查缓存是否存在
@@ -48,16 +48,13 @@ func TriggerSuspected(ip string, ft types.FeatureType, count int) {
 	if err != nil {
 		if !errors.Is(bigcache.ErrEntryNotFound, err) {
 			// 如果是其他错误，记录日志
-			//zap.L().Error("Failed to get cache", zap.String("key", ip), zap.Error(err))
 			return
 		}
 		// 缓存不存在，继续处理
 	} else {
 		// 如果缓存已存在，直接返回
-		//zap.L().Debug("IP is already cached, skipping", zap.String("key", ip))
 		return
 	}
-	//zap.L().Debug("trigger suspected for ip", zap.String("ip", ip), zap.Int("count", count), zap.Int("threshold", pf.Threshold))
 	if count > pf.Threshold {
 		// 超过阈值，记录疑似代理
 		record := types.SuspectedRecord{
@@ -65,9 +62,10 @@ func TriggerSuspected(ip string, ft types.FeatureType, count int) {
 			//Username:       username,
 			ReasonCategory: "protocol_threshold",
 			ReasonDetail: types.ReasonDetail{
-				Name:      ft,
-				Value:     count,
-				Threshold: pf.Threshold,
+				Name:        ft,
+				Value:       count,
+				Threshold:   pf.Threshold,
+				Description: fmt.Sprintf("短时间内%s次数超过限定阈值:%d", ft, pf.Threshold),
 			},
 			Tags:     []string{pf.Normal},
 			Context:  types.Context{},

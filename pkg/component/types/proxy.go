@@ -6,7 +6,7 @@ import (
 )
 
 type ProxyRecord struct {
-	ID          primitive.ObjectID `json:"_id;omitempty" bson:"_id;omitempty"`
+	ID          primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
 	IP          string             `json:"ip" bson:"ip"`
 	Username    string             `json:"username" bson:"username"`
 	Devices     []DeviceRecord     `json:"devices" bson:"devices"`
@@ -17,7 +17,7 @@ type ProxyRecord struct {
 }
 
 type SuspectedRecord struct {
-	ID             primitive.ObjectID `json:"_id;omitempty" bson:"_id;omitempty"`
+	ID             primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
 	IP             string             `json:"ip" bson:"ip"`
 	Username       string             `json:"username" bson:"username"`
 	ReasonCategory string             `json:"reason_category" bson:"reason_category"`
@@ -29,9 +29,11 @@ type SuspectedRecord struct {
 }
 
 type ReasonDetail struct {
-	Name      any `json:"name" bson:"name"`
-	Value     any `json:"value" bson:"value"`
-	Threshold any `json:"threshold" bson:"threshold"`
+	Name        any    `json:"name" bson:"name"`
+	Value       any    `json:"value" bson:"value"`
+	Threshold   any    `json:"threshold" bson:"threshold"`
+	Description string `json:"description,omitempty" bson:"description,omitempty"`
+	ExtraInfo   string `json:"extra_info,omitempty" bson:"extra_info,omitempty"`
 }
 
 type Context struct {

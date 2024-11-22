@@ -165,8 +165,8 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 		})
 	}
 
-	if capture.PacketsCount%10000 == 0 {
-		zap.L().Debug(i18n.T("capture packet"), zap.Int("count", capture.PacketsCount))
+	if capture.PacketsCount%1000 == 0 {
+		//zap.L().Debug(i18n.T("capture packet"), zap.Int("count", capture.PacketsCount))
 		ref := packet.Metadata().Timestamp
 		_, _ = a.Assembler.FlushWithOptions(reassembly.FlushOptions{
 			T:  ref.Add(-timeout),
