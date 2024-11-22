@@ -79,6 +79,8 @@ func Increment(f types.Feature) {
 
 			// 更新 Total 中的 Chart 数据
 			updateChart(featureSet, f.Field, featureList[i].Count)
+			// trigger 触发特征数量
+			TriggerSuspected(featureSet.IP, f.Field, featureList[i].Count)
 			return
 		}
 	}
@@ -132,8 +134,6 @@ func updateChart(featureSet *types.FeatureSet, industry types.FeatureType, newCo
 		Industry:   industry,
 		Unemployed: newCount,
 	})
-	// trigger 触发特征数量
-	TriggerSuspected(featureSet.IP, industry, newCount)
 }
 
 // TTL索引
