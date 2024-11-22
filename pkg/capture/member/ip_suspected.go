@@ -2,6 +2,7 @@ package member
 
 import (
 	"context"
+	"errors"
 	"github.com/allegro/bigcache"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
@@ -20,7 +21,12 @@ func GetSuspectedCache() *bigcache.BigCache {
 	once.Do(func() {
 		var err error
 		suspectedCache, err = bigcache.NewBigCache(bigcache.Config{
-			LifeWindow: 10 * time.Minute,
+			Shards:           1024,
+			LifeWindow:       10 * time.Minute,
+			MaxEntrySize:     500,
+			CleanWindow:      5 * time.Minute,
+			HardMaxCacheSize: 128,
+			Verbose:          true,
 		})
 		if err != nil {
 			zap.L().Fatal("GetSuspectedCache", zap.Error(err))
@@ -38,9 +44,17 @@ func TriggerSuspected(ip string, ft types.FeatureType, count int) {
 		return
 	}
 	// 检查缓存是否存在
-	if _, err := GetSuspectedCache().Get(ip); err == nil {
-		// 如果 IP 已在缓存中，不再重复记录
-		//zap.L().Debug("IP is already cached, skipping", zap.String("ip", ip))
+	_, err := GetSuspectedCache().Get(ip)
+	if err != nil {
+		if !errors.Is(bigcache.ErrEntryNotFound, err) {
+			// 如果是其他错误，记录日志
+			zap.L().Error("Failed to get cache", zap.String("key", ip), zap.Error(err))
+			return
+		}
+		// 缓存不存在，继续处理
+	} else {
+		// 如果缓存已存在，直接返回
+		zap.L().Debug("IP is already cached, skipping", zap.String("key", ip))
 		return
 	}
 	//zap.L().Debug("trigger suspected for ip", zap.String("ip", ip), zap.Int("count", count), zap.Int("threshold", pf.Threshold))
@@ -60,7 +74,7 @@ func TriggerSuspected(ip string, ft types.FeatureType, count int) {
 			Remark:   pf.Remark,
 			LastSeen: time.Now(),
 		}
-		_, err := mongo.GetMongoClient().Database(types.MongoDatabaseSuspected).
+		_, err = mongo.GetMongoClient().Database(types.MongoDatabaseSuspected).
 			Collection(time.Now().Format("06_01")).
 			InsertOne(context.TODO(), record)
 		if err != nil {
