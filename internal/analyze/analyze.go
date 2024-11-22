@@ -111,7 +111,7 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 	}
 	// 传输层
 	transmission := types.Transmission{}
-	trafficMap := memory.Traffic{Date: time.Now().Format("0102/15/04")}
+	trafficMap := memory.Traffic{Date: time.Now().Format("01-02/15/04")}
 	if len(packet.TransportLayer().TransportFlow().Src().String()) > len("1024") {
 		transmission.UpStream = int64(len(packet.Data()))
 	} else {
