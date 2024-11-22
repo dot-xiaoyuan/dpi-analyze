@@ -34,6 +34,7 @@ var CleanCmd = &cobra.Command{
 			types.MongoDatabaseProxy,
 			types.MongoDatabaseEvents,
 			types.MongoDatabaseUserAgent,
+			types.MongoDatabaseSuspected,
 		}
 
 		// 清空 MongoDB 操作
