@@ -13,18 +13,18 @@ import (
 
 func ConfigList() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		common.SuccessResponse(c, config.Cfg)
+		groupedConfig := config.GroupConfigByType(config.Cfg)
+
+		// 输出为 JSON
+		//jsonData, _ := json.MarshalIndent(groupedConfig, "", "  ")
+		common.SuccessResponse(c, groupedConfig)
 	}
 }
 
 func ConfigUpdate() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var params config.Yaml
+		var params any
 		err := c.ShouldBindJSON(&params)
-		if err != nil {
-			common.ErrorResponse(c, http.StatusBadRequest, err.Error())
-			return
-		}
 		bytes, err := socket.SendUnixMessage(socket.ConfigUpdate, params)
 		if err != nil {
 			common.ErrorResponse(c, http.StatusBadRequest, err.Error())

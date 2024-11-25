@@ -9,8 +9,24 @@ import (
 
 func ConfigUpdate(raw json.RawMessage) any {
 	zap.L().Debug("config update", zap.Any("raw", raw))
-	var params config.Yaml
-	_ = json.Unmarshal(raw, &params)
 
-	return mongodb.UpdateConfig(params)
+	var updates map[string]interface{}
+	err := json.Unmarshal(raw, &updates)
+	if err != nil {
+		zap.L().Error("config update error", zap.Error(err))
+		return err
+	}
+
+	err = mongodb.UpdateNestedConfig(config.Cfg, updates)
+	if err != nil {
+		zap.L().Error("config update error", zap.Error(err))
+		return err
+	}
+
+	err = mongodb.Store2Mongo()
+	if err != nil {
+		zap.L().Error("config update error", zap.Error(err))
+		return err
+	}
+	return "successful"
 }

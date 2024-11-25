@@ -168,7 +168,7 @@ func (sr *StreamReader) SetTlsInfo(sni, version, cipherSuite string) {
 			})
 		}
 		// 如果特征库加载 进行域名分析
-		if features.AhoCorasick != nil {
+		if config.UseFeature && features.AhoCorasick != nil {
 			if ok, feature := features.Match(sni); ok {
 				sr.Parent.Metadata.ApplicationInfo.AppName = feature.Name
 				sr.Parent.Metadata.ApplicationInfo.AppCategory = feature.Category
@@ -229,7 +229,7 @@ func (sr *StreamReader) SetHttpInfo(host, userAgent, contentType, upgrade string
 		Urls:        sr.GetUrls(),
 	}
 	// 如果UserAgent不为空且开启了ua分析
-	if len(userAgent) > 0 && config.UseUA && !sr.isUaSaved {
+	if config.UseUA && len(userAgent) > 0 && !sr.isUaSaved {
 		sr.isUaSaved = true
 		_ = ants.Submit(func() {
 			uaStr := resolve.AnalyzeByUserAgent(sr.Parent.SrcIP, userAgent, host)
@@ -253,7 +253,7 @@ func (sr *StreamReader) SetHttpInfo(host, userAgent, contentType, upgrade string
 		})
 	}
 	// 如果特征库加载 进行域名分析
-	if features.AhoCorasick != nil && host != "" && !strings.HasPrefix(host, "/") {
+	if config.UseFeature && features.AhoCorasick != nil && host != "" && !strings.HasPrefix(host, "/") {
 		if ok, feature := features.Match(host); ok {
 			sr.Parent.Metadata.ApplicationInfo.AppName = feature.Name
 			sr.Parent.Metadata.ApplicationInfo.AppCategory = feature.Category

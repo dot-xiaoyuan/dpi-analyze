@@ -2,7 +2,6 @@ package mongo
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
@@ -109,7 +108,7 @@ func searchMongo() error {
 
 	if count, err := collection.CountDocuments(Context, bson.M{}); count == 0 || err != nil {
 		// 配置不存在，将yaml加载到mongodb中
-		return store2Mongo()
+		return Store2Mongo()
 	}
 	// 配置存在，将mongodb中的配置重载到config
 	_, err := collection.Find(Context, bson.M{})
@@ -130,8 +129,8 @@ func searchMongo() error {
 	return nil
 }
 
-// 将配置保存到mongodb中
-func store2Mongo() error {
+// Store2Mongo 将配置保存到mongodb中
+func Store2Mongo() error {
 	collection := GetMongoClient().Database(types.MongoDatabaseConfigs).Collection(types.MongoCollectionConfig)
 
 	_, err := collection.UpdateOne(
@@ -146,87 +145,30 @@ func store2Mongo() error {
 	return nil
 }
 
-func UpdateConfig(p config.Yaml) error {
-	zap.L().Debug("UpdateConfig", zap.Any("config", p))
+func UpdateNestedConfig(cfg interface{}, updates map[string]interface{}) error {
+	v := reflect.ValueOf(cfg).Elem()
+	t := v.Type()
 
-	//if len(p.LogLevel) > 0 && p.LogLevel != config.Cfg.LogLevel {
-	//	config.Cfg.LogLevel = p.LogLevel
-	//}
-	//if p.Debug != config.Cfg.Debug {
-	//	config.Cfg.Debug = p.Debug
-	//}
-	//if p.IgnoreMissing != config.Cfg.IgnoreMissing {
-	//	config.Cfg.IgnoreMissing = p.IgnoreMissing
-	//}
-	//if p.FollowOnlyOnlineUsers != config.Cfg.FollowOnlyOnlineUsers {
-	//	config.Cfg.FollowOnlyOnlineUsers = p.FollowOnlyOnlineUsers
-	//}
-	//if p.UseTTL != config.Cfg.UseTTL {
-	//	config.Cfg.UseTTL = p.UseTTL
-	//}
-	//if p.UseUA != config.Cfg.UseUA {
-	//	config.Cfg.UseUA = p.UseUA
-	//}
-	//if p.UseFeature != config.Cfg.UseFeature {
-	//	config.Cfg.UseFeature = p.UseFeature
-	//}
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Field(i)
+		fieldType := t.Field(i)
+		jsonTag := fieldType.Tag.Get("json")
 
-	return MergeStruct(config.Cfg, &p)
-	//return nil
-}
-
-func MergeStruct(dst, src interface{}) error {
-	dstVal := reflect.ValueOf(dst)
-	srcVal := reflect.ValueOf(src)
-
-	// 确保目标是指针类型且非空
-	if dstVal.Kind() != reflect.Ptr || dstVal.IsNil() {
-		return errors.New("destination must be a non-nil pointer")
-	}
-
-	dstVal = dstVal.Elem()
-	srcVal = srcVal.Elem()
-
-	// 确保目标和源是结构体
-	if dstVal.Kind() != reflect.Struct || srcVal.Kind() != reflect.Struct {
-		return errors.New("both destination and source must be struct pointers")
-	}
-
-	// 遍历目标字段
-	for i := 0; i < dstVal.NumField(); i++ {
-		dstField := dstVal.Field(i)         // 目标结构体的字段值
-		srcField := srcVal.Field(i)         // 来源结构体的字段值
-		fieldType := dstVal.Type().Field(i) // 字段元信息
-
-		// 如果字段是嵌套结构体，递归合并
-		if dstField.Kind() == reflect.Struct && srcField.Kind() == reflect.Struct {
-			err := MergeStruct(dstField.Addr().Interface(), srcField.Addr().Interface())
-			if err != nil {
-				return err
-			}
-			continue
-		}
-
-		// 如果字段是零值，跳过更新
-		if isZeroValue(srcField) {
-			continue
-		}
-		// 如果字段值不同，更新目标字段
-		if !reflect.DeepEqual(dstField.Interface(), srcField.Interface()) {
-			if dstField.CanSet() {
-				dstField.Set(srcField)
-				zap.L().Debug("set", zap.Any("dstField", dstField.Interface()))
-				zap.L().Debug("debug", zap.Bool("d", config.Cfg.Debug), zap.Any("ft", fieldType))
-			} else {
-				return errors.New("cannot set value for field: " + fieldType.Name)
+		if newValue, ok := updates[jsonTag]; ok {
+			if field.Kind() == reflect.Struct {
+				// 递归更新嵌套结构
+				if err := UpdateNestedConfig(field.Addr().Interface(), newValue.(map[string]interface{})); err != nil {
+					return err
+				}
+			} else if field.CanSet() {
+				newValueReflect := reflect.ValueOf(newValue)
+				if newValueReflect.Type().ConvertibleTo(field.Type()) {
+					field.Set(newValueReflect.Convert(field.Type()))
+				} else {
+					return fmt.Errorf("type mismatch for field %s", jsonTag)
+				}
 			}
 		}
 	}
-
 	return nil
-}
-
-// 判断字段是否是零值
-func isZeroValue(v reflect.Value) bool {
-	return reflect.DeepEqual(v.Interface(), reflect.Zero(v.Type()).Interface())
 }

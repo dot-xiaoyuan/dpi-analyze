@@ -7,6 +7,7 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/socket/models"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/utils"
 	"sync/atomic"
 )
 
@@ -28,7 +29,7 @@ func Dashboard(raw json.RawMessage) any {
 	res := models.Dashboard{
 		Total: models.Total{
 			Packets:  capture.PacketsCount,
-			Traffics: capture.TrafficCount,
+			Traffics: utils.FormatBytes(capture.TrafficCount),
 			Sessions: capture.SessionCount,
 		},
 		Charts: models.Charts{

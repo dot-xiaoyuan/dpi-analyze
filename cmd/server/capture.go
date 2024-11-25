@@ -224,17 +224,17 @@ func loadComponents() {
 		os.Exit(1)
 	}
 
-	if config.UseFeature {
-		if err = features.Setup(); err != nil {
-			os.Exit(1)
-		}
+	//if config.UseFeature {
+	if err = features.Setup(); err != nil {
+		os.Exit(1)
 	}
+	//}
 
-	if config.UseUA {
-		if err = uaparser.Setup(); err != nil {
-			os.Exit(1)
-		}
+	//if config.UseUA {
+	if err = uaparser.Setup(); err != nil {
+		os.Exit(1)
 	}
+	//}
 
 	//if config.Geo2IP != "" {
 	//	maxmind.MaxMind.Filename = fmt.Sprintf("%s/%s", config.EtcDir, config.Geo2IP)

@@ -6,9 +6,9 @@ type Dashboard struct {
 }
 
 type Total struct {
-	Packets  int `json:"packets,omitempty"`
-	Traffics int `json:"traffics,omitempty"`
-	Sessions int `json:"sessions,omitempty"`
+	Packets  int    `json:"packets,omitempty"`
+	Traffics string `json:"traffics,omitempty"`
+	Sessions int    `json:"sessions,omitempty"`
 }
 
 type Charts struct {

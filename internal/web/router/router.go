@@ -21,6 +21,8 @@ func Register(r *gin.Engine) {
 		// 需要认证的 API 路由组
 		api.Use(midderware.AuthMiddleware()) // 启用认证中间件
 		{
+			api.POST("/change-password", controllers.ChangePassword())
+
 			api.GET("/me", controllers.GetCurrentUser())
 			// Dashboard
 			api.GET("/dashboard", controllers.Dashboard())
@@ -57,7 +59,7 @@ func Register(r *gin.Engine) {
 			settings := api.Group("/setting")
 			{
 				settings.GET("/config", controllers.ConfigList())
-				settings.POST("/config", controllers.ConfigUpdate())
+				settings.PUT("/config", controllers.ConfigUpdate())
 			}
 			// IP 操作
 			api.GET("/ip/list", controllers.IPList())
