@@ -3,7 +3,6 @@ package controllers
 import (
 	"encoding/json"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/web/common"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/socket"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -13,11 +12,15 @@ import (
 
 func ConfigList() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		groupedConfig := config.GroupConfigByType(config.Cfg)
-
-		// 输出为 JSON
-		//jsonData, _ := json.MarshalIndent(groupedConfig, "", "  ")
-		common.SuccessResponse(c, groupedConfig)
+		bytes, err := socket.SendUnixMessage(socket.ConfigList, nil)
+		if err != nil {
+			common.ErrorResponse(c, http.StatusBadRequest, err.Error())
+			return
+		}
+		var res any
+		_ = json.Unmarshal(bytes, &res)
+		common.SuccessResponse(c, res)
+		return
 	}
 }
 

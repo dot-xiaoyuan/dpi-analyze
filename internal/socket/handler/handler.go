@@ -10,4 +10,5 @@ func InitHandlers() {
 	socket.RegisterHandler(socket.PolicyList, PolicyList)
 	socket.RegisterHandler(socket.PolicyUpdate, PolicyUpdate)
 	socket.RegisterHandler(socket.ConfigUpdate, ConfigUpdate)
+	socket.RegisterHandler(socket.ConfigList, ConfigList)
 }

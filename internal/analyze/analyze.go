@@ -5,6 +5,7 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/member"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/resolve"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/i18n"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
@@ -126,6 +127,10 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 				Field: types.TTL,
 				Value: internet.TTL,
 			})
+			// 如果TTL = 127，则记录设备为win
+			if internet.TTL > 64 && internet.TTL <= 127 {
+				resolve.AnalyzeByTTL(userIP, internet.TTL)
+			}
 		})
 	}
 

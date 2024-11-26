@@ -23,10 +23,15 @@ func ConfigUpdate(raw json.RawMessage) any {
 		return err
 	}
 
+	zap.L().Info("config update done", zap.Any("config", config.Cfg))
 	err = mongodb.Store2Mongo()
 	if err != nil {
 		zap.L().Error("config update error", zap.Error(err))
 		return err
 	}
 	return "successful"
+}
+
+func ConfigList(raw json.RawMessage) any {
+	return config.Cfg
 }

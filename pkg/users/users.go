@@ -59,6 +59,7 @@ func DropUser(ip string) {
 	rdb.Del(ctx, fmt.Sprintf(types.SetIPDevices, ip)).Val()
 
 	member.DelMemory(ip)
+	member.DelFeatureSet(ip)
 	observer.TTLObserver.DeleteRedis(ip)
 	observer.MacObserver.DeleteRedis(ip)
 	observer.UaObserver.DeleteRedis(ip)

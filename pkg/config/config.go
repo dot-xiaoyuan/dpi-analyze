@@ -8,7 +8,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 )
 
@@ -168,47 +167,4 @@ func ensureDirExists(dir string) {
 			panic(fmt.Sprintf("Failed to create directory %s: %v", dir, err))
 		}
 	}
-}
-
-// GroupConfigByType 通过反射将配置分组
-func GroupConfigByType(config interface{}) map[string]map[string]interface{} {
-	result := make(map[string]map[string]interface{})
-
-	// Use reflection to inspect the struct or pointer to struct
-	val := reflect.ValueOf(config)
-	typ := reflect.TypeOf(config)
-
-	// Dereference pointer if needed
-	if val.Kind() == reflect.Ptr {
-		val = val.Elem()
-		typ = typ.Elem()
-	}
-
-	// Ensure the dereferenced value is still a struct
-	if val.Kind() != reflect.Struct {
-		panic("input must be a struct or a pointer to a struct")
-	}
-
-	// Iterate through the fields of the struct
-	for i := 0; i < val.NumField(); i++ {
-		field := val.Field(i)
-		fieldType := field.Type().Kind().String()
-		structField := typ.Field(i)
-
-		// Get the json tag
-		jsonTag := structField.Tag.Get("json")
-		if jsonTag == "" || jsonTag == "-" {
-			// Fallback to the field's name if json tag is not present
-			jsonTag = structField.Name
-		}
-
-		// Initialize the group if it doesn't exist
-		if _, exists := result[fieldType]; !exists {
-			result[fieldType] = make(map[string]interface{})
-		}
-
-		// Add the field and its value to the appropriate type group
-		result[fieldType][jsonTag] = field.Interface()
-	}
-	return result
 }
