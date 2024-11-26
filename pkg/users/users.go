@@ -129,14 +129,15 @@ func Traversal(c types.Condition) (int64, interface{}, error) {
 // 2.记录事件日志2mongo
 func (u *UserEvent) LoadEvent() {
 	storeUser(u.Ip, types.User{
-		UserName:   u.UserName,
-		IP:         u.Ip,
-		UserMac:    u.UserMac,
-		LineType:   u.LineType,
-		AddTime:    u.AddTime,
-		ProductsID: u.ProductsId,
-		BillingID:  u.BillingId,
-		ContractID: u.ControlId,
+		UserName:    u.UserName,
+		IP:          u.Ip,
+		UserMac:     u.UserMac,
+		LineType:    u.LineType,
+		AddTime:     u.AddTime,
+		ProductsID:  u.ProductsId,
+		BillingID:   u.BillingId,
+		ContractID:  u.ControlId,
+		RadOnlineID: u.RadOnlineId,
 	})
 	u.Save2Mongo()
 }

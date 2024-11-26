@@ -10,7 +10,7 @@ const (
 )
 
 type User struct {
-	RadOnlineID string `redis:"rad_online_id" json:"rad_online_id"`
+	RadOnlineID int    `redis:"rad_online_id" json:"rad_online_id"`
 	UserName    string `redis:"user_name" json:"user_name"`
 	IP          string `redis:"ip" json:"ip"`
 	UserMac     string `redis:"user_mac" json:"user_mac"`

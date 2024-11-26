@@ -145,6 +145,7 @@ func Store2Mongo() error {
 	return nil
 }
 
+// UpdateNestedConfig 更新配置
 func UpdateNestedConfig(cfg interface{}, updates map[string]interface{}) error {
 	v := reflect.ValueOf(cfg).Elem()
 	t := v.Type()

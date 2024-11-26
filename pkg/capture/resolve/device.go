@@ -9,6 +9,9 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/redis"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	v9 "github.com/redis/go-redis/v9"
+	"go.mongodb.org/mongo-driver/bson"
+	driver "go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/zap"
 	"log"
 	"strconv"
@@ -17,7 +20,9 @@ import (
 	"time"
 )
 
-var lock sync.Mutex
+var (
+	triggerLock sync.Mutex
+)
 
 // 将设备信息序列化为 JSON 字符串
 func serializeDevice(device types.DeviceRecord) string {
@@ -57,17 +62,73 @@ func storeDevice(rdb *v9.Client, device types.DeviceRecord) {
 	checkAndTriggerEvent(device.IP)
 }
 
+// 创建索引并返回集合
+func createDynamicCollectionWithUniqueIndex(client *driver.Client, dbName string) (*driver.Collection, error) {
+	// 根据时间动态生成集合名
+	collectionName := time.Now().Format("06_01_02")
+	collection := client.Database(dbName).Collection(collectionName)
+
+	// 检查复合唯一索引是否已存在
+	if err := ensureUniqueCompoundIndexExists(collection); err != nil {
+		return nil, fmt.Errorf("failed to check if index exists: %w", err)
+	}
+
+	return collection, nil
+}
+
+// 检查索引是否存在
+func ensureUniqueCompoundIndexExists(collection *driver.Collection) error {
+	// 检查是否存在名为 "unique_ip_last_seen_index" 的索引
+	cursor, err := collection.Indexes().List(context.TODO())
+	if err != nil {
+		return fmt.Errorf("failed to list indexes: %w", err)
+	}
+	defer cursor.Close(context.TODO())
+
+	for cursor.Next(context.TODO()) {
+		var index bson.M
+		if err := cursor.Decode(&index); err != nil {
+			return fmt.Errorf("failed to decode index: %w", err)
+		}
+
+		// 查找具有指定名称的索引
+		if index["name"] == "unique_ip_last_seen_index" {
+			// 如果索引已经存在，直接返回
+			return nil
+		}
+	}
+
+	// 如果没有找到指定名称的索引，创建复合唯一索引
+	indexModel := driver.IndexModel{
+		Keys: bson.D{
+			{Key: "ip", Value: 1},        // 升序索引
+			{Key: "last_seen", Value: 1}, // 升序索引
+		},
+		Options: options.Index().
+			SetUnique(true).                      // 设置唯一索引
+			SetName("unique_ip_last_seen_index"), // 给索引指定一个名称
+	}
+
+	_, err = collection.Indexes().CreateOne(context.TODO(), indexModel)
+	return err
+}
+
 // 设备录入记录
 func storeMongo(device types.DeviceRecord) {
-	_, _ = mongo.GetMongoClient().Database(types.MongoDatabaseDevices).Collection(time.Now().Format("06_01_02")).InsertOne(context.TODO(), device)
+	collection, err := createDynamicCollectionWithUniqueIndex(mongo.GetMongoClient(), types.MongoDatabaseDevices)
+	if err != nil {
+		zap.L().Error("failed to create unique index", zap.Error(err))
+		return
+	}
+	_, _ = collection.InsertOne(context.TODO(), device)
 }
 
 // 触发事件函数
 func triggerEvent(ip string) {
 	zap.L().Warn("Event Triggered: Multiple devices detected for IP ", zap.String("ip", ip))
-	lock.Lock()
+	triggerLock.Lock()
 	Discover(ip)
-	lock.Unlock()
+	triggerLock.Unlock()
 }
 
 // 检查设备数量，并在满足条件时触发事件
