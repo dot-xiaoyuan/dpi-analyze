@@ -129,6 +129,7 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 			})
 			// 如果TTL = 127，则记录设备为win
 			if internet.TTL > 64 && internet.TTL <= 127 {
+				zap.L().Debug("ttl analyze", zap.Uint8("ttl", internet.TTL))
 				resolve.AnalyzeByTTL(userIP, internet.TTL)
 			}
 		})
