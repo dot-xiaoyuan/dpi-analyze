@@ -180,6 +180,25 @@ func DeviceHandle(device types.DeviceRecord) {
 	rdb := redis.GetRedisClient()
 	ctx := context.Background()
 	key := fmt.Sprintf(types.SetIPDevices, device.IP)
+	lockKey := fmt.Sprintf(types.LockIPBrand, device.IP, device.Brand)
+
+	// 尝试获取锁
+	lockValue := fmt.Sprintf("%d", time.Now().UnixNano())
+	locked, err := rdb.SetNX(ctx, lockKey, lockValue, time.Second).Result()
+	if err != nil {
+		zap.L().Error("Error acquiring Redis lock: %v", zap.Error(err))
+		return
+	}
+	if !locked {
+		zap.L().Warn("Another process is handling the same brand and IP, skipping.", zap.String("ip", device.IP))
+		return
+	}
+	defer func() {
+		val, _ := rdb.Get(ctx, lockKey).Result()
+		if val == lockValue {
+			rdb.Del(ctx, lockKey)
+		}
+	}()
 
 	// 获取该 IP 下所有设备信息
 	deviceData, err := rdb.SMembers(ctx, key).Result()
@@ -295,6 +314,9 @@ func IsMobile(device types.DeviceRecord) bool {
 		// 判断 Device 家族是否包含常见移动设备标识
 		if strings.Contains(deviceFamily, "phone") || strings.Contains(deviceFamily, "mobile") {
 			return true
+		}
+		if strings.Contains(deviceFamily, "windows") {
+			return false
 		}
 	}
 

@@ -28,6 +28,7 @@ const (
 	KeyDevicesAllIP    = "key:devices:all:ip:%s"
 	KeyDevicesMobileIP = "key:devices:mobile:ip:%s"
 	KeyDevicesPcIP     = "key:devices:pc:ip:%s"
+	LockIPBrand        = "lock:%s:%s"
 
 	ListProducts        = "list:products"
 	ListControl         = "list:control"
