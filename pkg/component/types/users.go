@@ -5,7 +5,7 @@ import "go.mongodb.org/mongo-driver/bson/primitive"
 const (
 	ListRadOnline       = "list:rad_online"
 	ListRadOnlineUpdate = "list:rad_online:update"
-	HashRadOnline       = "hash:rad_online:%s"
+	HashRadOnline       = "hash:rad_online:%d"
 	ListAntiProxy       = "list:antiproxy:%s"
 )
 

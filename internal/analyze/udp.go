@@ -4,6 +4,7 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/member"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/statictics"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 )
@@ -118,5 +119,6 @@ func pushTask(userIP, tranIP string, featureType types.FeatureType) {
 			Field: featureType,
 			Value: tranIP,
 		})
+		statictics.ApplicationLayer.Increment(string(featureType))
 	})
 }

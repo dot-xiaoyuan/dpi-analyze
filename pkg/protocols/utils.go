@@ -3,6 +3,7 @@ package protocols
 import (
 	"crypto/md5"
 	"fmt"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/statictics"
 	"regexp"
 )
 
@@ -14,20 +15,19 @@ var (
 // IdentifyProtocol 识别协议
 func IdentifyProtocol(buffer []byte, srcPort, dstPort string) ProtocolType {
 	// 统计应用层数
-	IncrementCount(&ApplicationCount)
 	if srcPort == "80" || dstPort == "80" || checkHttp(buffer) {
 		// 统计http数
-		IncrementCount(&HTTPCount)
+		statictics.ApplicationLayer.Increment("http")
 		return HTTP
 	}
 	if srcPort == "443" || dstPort == "443" {
 		// 统计
-		IncrementCount(&TLSCount)
+		statictics.ApplicationLayer.Increment("tls")
 		return TLS
 	}
 	if srcPort == "53" || dstPort == "53" {
 		// 统计 DNS
-		IncrementCount(&DNSCount)
+		statictics.ApplicationLayer.Increment("dns")
 		return DNS
 	}
 	return UNKNOWN

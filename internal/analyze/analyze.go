@@ -9,12 +9,12 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/i18n"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/statictics"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/users"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/reassembly"
 	"go.uber.org/zap"
-	"sync/atomic"
 	"time"
 )
 
@@ -105,9 +105,9 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 
 	if transportType := packet.TransportLayer().LayerType().String(); transportType != "" {
 		if transportType == "TCP" {
-			atomic.AddInt64(&capture.TCPCount, 1)
+			statictics.TransportLayer.Increment("tcp")
 		} else if transportType == "UDP" {
-			atomic.AddInt64(&capture.UDPCount, 1)
+			statictics.TransportLayer.Increment("udp")
 		}
 	}
 	// 传输层

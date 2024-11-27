@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/cloudflare/ahocorasick"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/statictics"
 	"go.uber.org/zap"
 	"regexp"
 	"strings"
@@ -106,7 +107,9 @@ func Match(s string) (ok bool, feature Feature) {
 		return false, Feature{}
 	}
 	if feature, ok = DomainMap[hits[0]]; ok {
-		//zap.L().Info("匹配到域名信息", zap.String("hostname", h), zap.String("name", name), zap.String("domain", DomainMap[hits[0]]))
+		// 增量统计应用分类
+		statictics.Application.Increment(feature.Name)
+		statictics.AppCategory.Increment(feature.Category)
 		return true, feature
 	}
 	return false, feature

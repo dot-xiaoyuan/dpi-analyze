@@ -4,11 +4,10 @@ import (
 	"encoding/json"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/analyze/memory"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/socket/models"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/statictics"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/users"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/utils"
-	"sync/atomic"
 )
 
 type Charts struct {
@@ -16,27 +15,23 @@ type Charts struct {
 	Value int64  `json:"value"`
 }
 
+// Dashboard 仪表盘
+// 总流量、总包数、总会话数、在线数
+// 流量趋势图表、应用排行图表、应用分类图表
 func Dashboard(raw json.RawMessage) any {
-	tcpCount := atomic.LoadInt64(&capture.TCPCount)
-	udpCount := atomic.LoadInt64(&capture.UDPCount)
-
-	transportCharts := []Charts{
-		{Name: "TCP", Value: tcpCount},
-		{Name: "UDP", Value: udpCount},
-	}
-
-	// TODO 应用排行方法迁移
 	res := models.Dashboard{
 		Total: models.Total{
 			Packets:  capture.PacketsCount,
 			Traffics: utils.FormatBytes(capture.TrafficCount),
 			Sessions: capture.SessionCount,
+			Users:    users.GetTotalCount(),
 		},
 		Charts: models.Charts{
-			ApplicationLayer: protocols.GenerateChartData(),
-			TransportLayer:   transportCharts,
-			Traffic:          memory.GenerateChartData(),
-			Application:      types.GenerateChartData(),
+			Traffic:        memory.GenerateChartData(),
+			TransportLayer: statictics.TransportLayer.GetStats(),
+			Application:    statictics.Application.GetStats(),
+			AppCategory:    statictics.AppCategory.GetStats(),
+			Protocol:       statictics.ApplicationLayer.GetStats(),
 		},
 	}
 	return res

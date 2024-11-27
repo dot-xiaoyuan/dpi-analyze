@@ -12,6 +12,7 @@ import (
 	v9 "github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -73,6 +74,12 @@ func FindUser(ip string) types.User {
 		return user.(types.User)
 	}
 	return types.User{}
+}
+
+func GetTotalCount() int64 {
+	rdb := redis.GetRedisClient()
+	ctx := context.TODO()
+	return rdb.ZCount(ctx, types.ZSetOnlineUsers, "0", strconv.FormatInt(time.Now().Unix(), 10)).Val()
 }
 
 // FindUserName 根据ip查找用户名

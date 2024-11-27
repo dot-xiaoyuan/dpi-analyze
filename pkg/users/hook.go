@@ -24,7 +24,7 @@ func HookDropUser(user types.User, pr *types.ProxyRecord) error {
 	rdb.HMSet(ctx, onlineKey, "pc_num", pr.PcCount, "mobile_num", pr.MobileCount).Val()
 
 	cache := redis.GetCacheRedisClient()
-	update := fmt.Sprintf("1-%s", user.RadOnlineID)
+	update := fmt.Sprintf("1-%d", user.RadOnlineID)
 
 	zap.L().Info("模拟 UPDATE 报文推送", zap.String("队列", types.ListRadOnlineUpdate), zap.String("元素", update))
 	_, err := cache.RPush(ctx, types.ListRadOnline, update).Result()

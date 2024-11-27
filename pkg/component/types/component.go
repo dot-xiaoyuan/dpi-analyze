@@ -9,6 +9,10 @@ type AhoCorasick interface {
 	Match(origin string) (ok bool, domain Domain)
 }
 
+type Aggregation interface {
+	GetTotalCount() int64
+}
+
 type Domain struct {
 	Icon        string `json:"icon"`
 	BrandName   string `json:"brand_name"`
