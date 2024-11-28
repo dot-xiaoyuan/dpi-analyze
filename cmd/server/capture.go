@@ -115,6 +115,11 @@ func captureCmdRun(cmd *cobra.Command, args []string) {
 
 // 捕获开始
 func captureRun() {
+	defer func() {
+		if err := recover(); err != nil {
+			zap.L().Fatal("Panic", zap.Any("err", err))
+		}
+	}()
 	// 创建上下文
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

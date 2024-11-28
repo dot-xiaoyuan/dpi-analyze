@@ -9,20 +9,15 @@ import (
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
 	"go.uber.org/zap"
-	"os"
 )
 
 // 数据包捕获和抓取
 
 var (
-	Handle       *pcap.Handle
-	Err          error
 	Decoder      gopacket.Decoder
 	PacketsCount int // 总包数
 	TrafficCount int // 总流量
 	SessionCount int // 总会话
-	TCPCount     int64
-	UDPCount     int64
 	OK           bool
 )
 
@@ -50,6 +45,8 @@ func StartCapture(ctx context.Context, c Config, handler PacketHandler, done cha
 	zap.L().Info(i18n.T("Starting ProcessChangeEvent"))
 	member.Setup()
 
+	var Handle *pcap.Handle
+	var Err error
 	if c.OffLine != "" {
 		Handle, Err = pcap.OpenOffline(c.OffLine)
 		zap.L().Info(i18n.TT("Open offline package file", map[string]interface{}{
@@ -62,26 +59,28 @@ func StartCapture(ctx context.Context, c Config, handler PacketHandler, done cha
 		}), zap.Error(Err))
 	}
 
+	if Err != nil {
+		zap.L().Error("pcap panic", zap.Error(Err))
+		return
+	}
+
 	if c.BerkeleyPacketFilter != "" {
 		Err = Handle.SetBPFFilter(c.BerkeleyPacketFilter)
 		if Err != nil {
 			zap.L().Error("berkeley packet filter panic", zap.Error(Err))
-			os.Exit(1)
+			return
 		}
 		zap.L().Info(i18n.TT("Berkeley packet filter set", map[string]interface{}{
 			"bpf": c.BerkeleyPacketFilter,
 		}))
 	}
-	if Err != nil {
-		zap.L().Error("pcap panic", zap.Error(Err))
-		os.Exit(1)
-	}
-
+	// 关闭捕获设备
 	defer Handle.Close()
 
 	decoderName := fmt.Sprintf("%s", Handle.LinkType())
 	if Decoder, OK = gopacket.DecodersByLayerName[decoderName]; !OK {
-		panic(fmt.Errorf("decoder %s not found", decoderName))
+		zap.L().Fatal("Decoder not found", zap.String("decoder", decoderName))
+		return
 	}
 
 	source := gopacket.NewPacketSource(Handle, Decoder)
@@ -93,16 +92,20 @@ func StartCapture(ctx context.Context, c Config, handler PacketHandler, done cha
 		select {
 		case <-ctx.Done():
 			zap.L().Info("Capture stopped")
-			done <- struct{}{}
+			close(done)
 			return
 		case packet, ok := <-packets:
 			if !ok {
 				zap.L().Info(i18n.T("Packets Channel Closed"))
-				done <- struct{}{}
+				close(done)
 				return
 			}
 			PacketsCount++
-			handler.HandlePacket(packet)
+			// 异步处理数据包
+			go func(p gopacket.Packet) {
+				handler.HandlePacket(p)
+			}(packet)
+			//handler.HandlePacket(packet)
 		}
 	}
 }
