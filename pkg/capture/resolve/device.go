@@ -208,7 +208,7 @@ func DeviceHandle(device types.DeviceRecord) {
 
 		if !locked {
 			// 如果仍然没有获取到锁，记录一次日志
-			zap.L().Warn("Another process is handling the same brand and IP, skipping.", zap.String("ip", device.IP))
+			// zap.L().Warn("Another process is handling the same brand and IP, skipping.", zap.String("ip", device.IP))
 			return
 		}
 

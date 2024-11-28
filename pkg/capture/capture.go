@@ -101,11 +101,8 @@ func StartCapture(ctx context.Context, c Config, handler PacketHandler, done cha
 				return
 			}
 			PacketsCount++
-			// 异步处理数据包
-			go func(p gopacket.Packet) {
-				handler.HandlePacket(p)
-			}(packet)
-			//handler.HandlePacket(packet)
+			// 因为需要重组，所以不能使用go协程进行异步处理
+			handler.HandlePacket(packet)
 		}
 	}
 }
