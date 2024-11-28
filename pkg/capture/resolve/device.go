@@ -35,10 +35,12 @@ func serializeDevice(device types.DeviceRecord) string {
 }
 
 // 保存设备信息
-func storeDevice(rdb *v9.Client, device types.DeviceRecord) {
+func storeDevice(rdb *v9.Client, device types.DeviceRecord, update bool) {
 	key := fmt.Sprintf(types.SetIPDevices, device.IP)
 
-	storeDeviceIncr(rdb, device)
+	if !update {
+		storeDeviceIncr(rdb, device)
+	}
 	// 将设备信息序列化
 	deviceData := serializeDevice(device)
 
@@ -216,8 +218,13 @@ func DeviceHandle(device types.DeviceRecord) {
 			zap.L().Error("Error deserializing device data: %v", zap.Error(err))
 			continue
 		}
+		// 如果系统一样，比对版本
+		if len(device.Os) > 0 && d.Os == device.Os && len(device.Version) == 0 {
+			updated = true
+			break
+		}
 		// 如果该品牌的信息已存在且操作系统为 unknown，则更新
-		if d.Brand == device.Brand {
+		if len(device.Brand) > 0 && d.Brand == device.Brand {
 			if device.Os == "" || device.Version == "" {
 				updated = true
 				break
@@ -245,7 +252,7 @@ func DeviceHandle(device types.DeviceRecord) {
 			rdb.SRem(ctx, key, data)
 
 			// 存储更新后的设备信息
-			storeDevice(rdb, d)
+			storeDevice(rdb, d, true)
 			d.Remark = "updated device"
 			storeMongo(d)
 
@@ -261,7 +268,7 @@ func DeviceHandle(device types.DeviceRecord) {
 
 	// 如果该 IP 下没有该品牌的信息，直接存储新的设备信息
 	if !updated {
-		storeDevice(rdb, device)
+		storeDevice(rdb, device, false)
 		device.Remark = "saved device"
 		storeMongo(device)
 	}
@@ -341,7 +348,7 @@ func IsMobile(device types.DeviceRecord) bool {
 	}
 
 	// 默认返回 PC
-	return false
+	return true
 }
 
 // AppendDevice2Redis 追加设备信息到redis

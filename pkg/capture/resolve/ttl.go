@@ -17,7 +17,7 @@ func AnalyzeByTTL(ip string, ttl uint8) {
 		Brand:        "",
 		Model:        "",
 		Icon:         "icon-windows",
-		Description:  "UserAgent 解析",
+		Description:  "TTL 识别",
 		LastSeen:     time.Now(),
 	}
 
