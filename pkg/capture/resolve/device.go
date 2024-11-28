@@ -192,13 +192,34 @@ func DeviceHandle(device types.DeviceRecord) {
 		return
 	}
 	if !locked {
-		zap.L().Warn("Another process is handling the same brand and IP, skipping.", zap.String("ip", device.IP))
-		return
+		retryCount := 5
+		retryDelay := 100 * time.Millisecond
+		for i := 0; i < retryCount; i++ {
+			time.Sleep(retryDelay)
+			locked, err = rdb.SetNX(ctx, lockKey, lockValue, time.Second).Result()
+			if err != nil {
+				zap.L().Error("Error re-trying to acquire Redis lock: %v", zap.Error(err))
+				return
+			}
+			if locked {
+				break
+			}
+		}
+
+		if !locked {
+			// 如果仍然没有获取到锁，记录一次日志
+			zap.L().Warn("Another process is handling the same brand and IP, skipping.", zap.String("ip", device.IP))
+			return
+		}
+
 	}
 	defer func() {
 		val, _ := rdb.Get(ctx, lockKey).Result()
 		if val == lockValue {
-			rdb.Del(ctx, lockKey)
+			err = rdb.Del(ctx, lockKey).Err()
+			if err != nil {
+				zap.L().Error("Error releasing Redis lock: %v", zap.Error(err))
+			}
 		}
 	}()
 
