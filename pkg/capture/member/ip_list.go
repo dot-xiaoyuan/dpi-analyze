@@ -2,6 +2,7 @@ package member
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/redis"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
@@ -93,8 +94,8 @@ func TraversalIP(startTime, endTime int64, page, pageSize int64) (result Tables,
 	}
 
 	_, err = pipe.Exec(ctx)
-	if err != nil {
-		zap.L().Error("HGetAll pipe.Exec", zap.Error(err))
+	if err != nil && !errors.Is(err, v9.Nil) {
+		zap.L().Error("管道获取ip列表失败 pipe.Exec", zap.Error(err))
 		return
 	}
 

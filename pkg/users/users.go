@@ -25,7 +25,8 @@ var (
 type UserEvent types.UserEvent
 
 func getHash(id string, rdb *v9.Client) types.User {
-	hashKey := fmt.Sprintf(types.HashRadOnline, id)
+	idInt, _ := strconv.Atoi(id)
+	hashKey := fmt.Sprintf(types.HashRadOnline, idInt)
 	var user types.User
 	if err := rdb.HMGet(context.TODO(), hashKey, hashFields...).Scan(&user); err != nil {
 		zap.L().Error("Error getting hash", zap.String("hashKey", hashKey), zap.Error(err))
