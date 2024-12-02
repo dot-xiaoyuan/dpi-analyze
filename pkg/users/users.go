@@ -55,17 +55,26 @@ func DropUser(ip string) {
 	rdb := redis.GetRedisClient()
 	ctx := context.TODO()
 
-	rdb.ZRem(ctx, types.ZSetIP, ip).Val()
-	rdb.ZRem(ctx, types.ZSetOnlineUsers, ip).Val()
-	rdb.Del(ctx, fmt.Sprintf(types.HashAnalyzeIP, ip)).Val()
-	rdb.Del(ctx, fmt.Sprintf(types.SetIPDevices, ip)).Val()
+	pipe := rdb.Pipeline()
 
+	pipe.ZRem(ctx, types.ZSetIP, ip)
+	pipe.ZRem(ctx, types.ZSetOnlineUsers, ip)
+	pipe.Del(ctx, fmt.Sprintf(types.HashAnalyzeIP, ip))
+	pipe.Del(ctx, fmt.Sprintf(types.SetIPDevices, ip))
+	pipe.Del(ctx, fmt.Sprintf(types.KeyDevicesAllIP, ip))
+	pipe.Del(ctx, fmt.Sprintf(types.KeyDevicesMobileIP, ip))
+	pipe.Del(ctx, fmt.Sprintf(types.KeyDevicesPcIP, ip))
+	pipe.ZRem(ctx, observer.TTLObserver.Table, ip)
+	pipe.ZRem(ctx, observer.MacObserver.Table, ip)
+	pipe.ZRem(ctx, observer.UaObserver.Table, ip)
+	pipe.ZRem(ctx, observer.DeviceObserver.Table, ip)
+
+	_, err := pipe.Exec(ctx)
+	if err != nil {
+		zap.L().Error("Error executing pipe.Exec", zap.Error(err))
+	}
 	member.DelMemory(ip)
 	member.DelFeatureSet(ip)
-	observer.TTLObserver.DeleteRedis(ip)
-	observer.MacObserver.DeleteRedis(ip)
-	observer.UaObserver.DeleteRedis(ip)
-	observer.DeviceObserver.DeleteRedis(ip)
 }
 
 // FindUser 查找用户

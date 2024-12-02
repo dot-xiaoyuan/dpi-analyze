@@ -162,10 +162,6 @@ func (ob *observer[T]) store2Redis(ip string) {
 	}).Val()
 }
 
-func (ob *observer[T]) DeleteRedis(ip string) {
-	redis.GetRedisClient().ZRem(context.TODO(), ob.Table, ip).Val()
-}
-
 // watchChange 观察事件channel
 func (ob *observer[T]) watchChange(events <-chan ChangeObserverEvent[T]) {
 	for e := range events {
