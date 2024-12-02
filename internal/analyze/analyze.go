@@ -157,8 +157,12 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 	if udpLayer := packet.Layer(layers.LayerTypeUDP); udpLayer != nil {
 		udp := udpLayer.(*layers.UDP)
 
-		CheckUDP(userIP, tranIP, udp)
-
+		layerType := CheckUDP(userIP, tranIP, udp)
+		// dhcp协议日志输出
+		if layerType == layers.LayerTypeDHCPv4 {
+			dhcp := packet.Layer(layers.LayerTypeDHCPv4).(*layers.DHCPv4)
+			zap.L().Debug("dhcp", zap.Any("layer", dhcp))
+		}
 		// 会话数累加
 		capture.SessionCount++
 
