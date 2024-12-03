@@ -173,3 +173,17 @@ func UpdateNestedConfig(cfg interface{}, updates map[string]interface{}) error {
 	}
 	return nil
 }
+
+// CollectionExists 集合是否存在
+func CollectionExists(database, collectionName string) (bool, error) {
+	// 使用 ListCollections 检查集合是否存在
+	filter := options.ListCollections().SetNameOnly(true)
+	cursor, err := GetMongoClient().Database(database).ListCollections(Context, bson.M{"name": collectionName}, filter)
+	if err != nil {
+		return false, err
+	}
+	defer cursor.Close(Context)
+
+	// 如果光标有结果，说明集合存在
+	return cursor.Next(Context), nil
+}

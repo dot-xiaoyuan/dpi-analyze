@@ -10,6 +10,7 @@ const (
 	MongoDatabaseProxy      = "proxy"
 	MongoDatabaseSuspected  = "suspected"
 
-	MongoCollectionPolicy = "policy"
-	MongoCollectionConfig = "config"
+	MongoCollectionPolicy             = "policy"
+	MongoCollectionConfig             = "config"
+	MongoCollectionFeatureApplication = "feature_application"
 )

@@ -17,6 +17,7 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/i18n"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/policy"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/uaparser"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/components/features/application"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/socket"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/users"
@@ -229,6 +230,9 @@ func loadComponents() {
 		os.Exit(1)
 	}
 
+	if err = application.Setup(); err != nil {
+		os.Exit(1)
+	}
 	//if config.UseFeature {
 	if err = domain.Setup(); err != nil {
 		os.Exit(1)
