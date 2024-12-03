@@ -7,7 +7,7 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/resolve"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/brands/match"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/features"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/domain"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
@@ -168,8 +168,8 @@ func (sr *StreamReader) SetTlsInfo(sni, version, cipherSuite string) {
 			})
 		}
 		// 如果特征库加载 进行域名分析
-		if config.UseFeature && features.AhoCorasick != nil {
-			if ok, feature := features.Match(sni); ok {
+		if config.UseFeature && domain.AhoCorasick != nil {
+			if ok, feature := domain.Match(sni); ok {
 				sr.Parent.Metadata.ApplicationInfo.AppName = feature.Name
 				sr.Parent.Metadata.ApplicationInfo.AppCategory = feature.Category
 			} else {
@@ -253,8 +253,8 @@ func (sr *StreamReader) SetHttpInfo(host, userAgent, contentType, upgrade string
 		})
 	}
 	// 如果特征库加载 进行域名分析
-	if config.UseFeature && features.AhoCorasick != nil && host != "" && !strings.HasPrefix(host, "/") {
-		if ok, feature := features.Match(host); ok {
+	if config.UseFeature && domain.AhoCorasick != nil && host != "" && !strings.HasPrefix(host, "/") {
+		if ok, feature := domain.Match(host); ok {
 			sr.Parent.Metadata.ApplicationInfo.AppName = feature.Name
 			sr.Parent.Metadata.ApplicationInfo.AppCategory = feature.Category
 		} else {

@@ -1,4 +1,4 @@
-package features
+package domain
 
 import (
 	"bufio"
@@ -19,19 +19,19 @@ import (
 var FeatureCfg []byte
 
 var (
-	Features      features
-	AhoCorasick   *ahocorasick.Matcher
-	AppFeature    []Feature               // 应用特征切片
-	DomainFeature []string                // 域名特征切片
-	DomainMap     = make(map[int]Feature) // 域名
-	parseMutex    sync.Mutex
+	Features    domains
+	AhoCorasick *ahocorasick.Matcher
+	AppFeature  []Domain               // 应用特征切片
+	Feature     []string               // 域名特征切片
+	Map         = make(map[int]Domain) // 域名
+	parseMutex  sync.Mutex
 )
 
 func Setup() error {
 	return Features.Setup()
 }
 
-type Feature struct {
+type Domain struct {
 	ID       string `json:"id"`
 	Name     string `json:"name"`
 	Protocol string `json:"protocol"`
@@ -43,16 +43,16 @@ type Feature struct {
 	Category string `json:"category"`
 }
 
-type features struct {
+type domains struct {
 	once        sync.Once
 	initialized bool
 }
 
-func (f *features) Setup() error {
+func (d *domains) Setup() error {
 	var setupErr error
-	f.once.Do(func() {
-		if f.initialized {
-			setupErr = fmt.Errorf("features already initialized")
+	d.once.Do(func() {
+		if d.initialized {
+			setupErr = fmt.Errorf("domain already initialized")
 			return
 		}
 
@@ -95,18 +95,18 @@ func (f *features) Setup() error {
 		}
 
 		// 创建 Aho-Corasick 匹配器
-		AhoCorasick = ahocorasick.NewStringMatcher(DomainFeature)
-		f.initialized = true
+		AhoCorasick = ahocorasick.NewStringMatcher(Feature)
+		d.initialized = true
 	})
 	return setupErr
 }
 
-func Match(s string) (ok bool, feature Feature) {
+func Match(s string) (ok bool, feature Domain) {
 	hits := AhoCorasick.MatchThreadSafe([]byte(s))
 	if hits == nil {
-		return false, Feature{}
+		return false, Domain{}
 	}
-	if feature, ok = DomainMap[hits[0]]; ok {
+	if feature, ok = Map[hits[0]]; ok {
 		// 增量统计应用分类
 		statictics.Application.Increment(feature.Name)
 		statictics.AppCategory.Increment(feature.Category)
@@ -123,7 +123,7 @@ func parse(line, category string) error {
 		return errors.New("invalid feature format")
 	}
 
-	f := Feature{
+	f := Domain{
 		ID:       match[1],
 		Name:     match[2],
 		Category: category,
@@ -149,13 +149,13 @@ func parse(line, category string) error {
 }
 
 // 处理域名并添加到匹配器列表
-func addDomain(f Feature) {
+func addDomain(f Domain) {
 	if f.Hostname == "" {
 		return
 	}
 
-	DomainFeature = append(DomainFeature, f.Hostname)
-	DomainMap[len(DomainFeature)-1] = f
+	Feature = append(Feature, f.Hostname)
+	Map[len(Feature)-1] = f
 	// 处理多级域名
 	if strings.Count(f.Hostname, ".") >= 2 {
 		parts := strings.SplitN(f.Hostname, ".", 2)
@@ -163,8 +163,8 @@ func addDomain(f Feature) {
 		if ignoreDomain(subdomain) {
 			return
 		}
-		DomainFeature = append(DomainFeature, subdomain)
-		DomainMap[len(DomainFeature)-1] = f
+		Feature = append(Feature, subdomain)
+		Map[len(Feature)-1] = f
 	}
 }
 

@@ -13,7 +13,7 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/brands/partial"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/redis"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/features"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/domain"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/i18n"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/policy"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/uaparser"
@@ -230,7 +230,7 @@ func loadComponents() {
 	}
 
 	//if config.UseFeature {
-	if err = features.Setup(); err != nil {
+	if err = domain.Setup(); err != nil {
 		os.Exit(1)
 	}
 	//}
