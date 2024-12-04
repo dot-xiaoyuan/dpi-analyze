@@ -8,6 +8,7 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/loader"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/matcher"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/parser"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/statictics"
 	"go.uber.org/zap"
 	"strings"
 	"sync"
@@ -83,6 +84,8 @@ func Match(input string) (ok bool, app parser.Application) {
 		return false, parser.Application{}
 	}
 	if app, ok = AppMap[hits[0]]; ok {
+		statictics.Application.Increment(app.Name)
+		statictics.AppCategory.Increment(app.Category)
 		return true, app
 	}
 	return false, parser.Application{}
