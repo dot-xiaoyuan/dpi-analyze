@@ -8,16 +8,15 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/socket/handler"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/brands/full"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/brands/keywords"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/brands/partial"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/redis"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/domain"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/i18n"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/policy"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/uaparser"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/components/features/application"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/components/features/brands"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/components/features/brands_keyword"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/components/features/brands_root"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/socket"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/users"
@@ -233,34 +232,20 @@ func loadComponents() {
 	if err = application.Setup(); err != nil {
 		os.Exit(1)
 	}
-	//if config.UseFeature {
-	if err = domain.Setup(); err != nil {
-		os.Exit(1)
-	}
-	//}
 
-	//if config.UseUA {
 	if err = uaparser.Setup(); err != nil {
 		os.Exit(1)
 	}
-	//}
 
-	//if config.Geo2IP != "" {
-	//	maxmind.MaxMind.Filename = fmt.Sprintf("%s/%s", config.EtcDir, config.Geo2IP)
-	//	if err = maxmind.MaxMind.Setup(); err != nil {
-	//		//os.Exit(1)
-	//	}
-	//}
-	// 加载品牌精确匹配
-	if err = full.Brands.Setup(); err != nil {
+	if err = brands.Setup(); err != nil {
 		os.Exit(1)
 	}
-	// 加载品牌部分匹配
-	if err = partial.Brands.Setup(); err != nil {
+
+	if err = brands_keyword.Setup(); err != nil {
 		os.Exit(1)
 	}
-	// 加载品牌关键词匹配
-	if err = keywords.Brands.Setup(); err != nil {
+
+	if err = brands_root.Setup(); err != nil {
 		os.Exit(1)
 	}
 	// 注册unix路由

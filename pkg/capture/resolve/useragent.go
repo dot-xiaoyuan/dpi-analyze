@@ -55,6 +55,9 @@ func AnalyzeByUserAgent(ip, ua, host string) string {
 	brand = strings.ToLower(client.Device.Brand)
 	if len(brand) > 0 {
 		icon = fmt.Sprintf("icon-%s", brand)
+		if brand == "apple" && (strings.Contains(strings.ToLower(client.Os.Family), "mac") || strings.Contains(strings.ToLower(client.Device.Model), "windows")) {
+			icon = "icon-macos"
+		}
 	} else if len(client.Os.Family) > 0 {
 		brand = strings.ToLower(client.Os.Family)
 		icon = fmt.Sprintf("icon-%s", strings.ToLower(client.Os.Family))

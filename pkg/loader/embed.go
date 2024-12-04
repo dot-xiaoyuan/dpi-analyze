@@ -4,15 +4,15 @@ import "embed"
 
 type EmbedLoader struct {
 	Fs       embed.FS
-	FileName string
+	Filename string
 }
 
 func (el *EmbedLoader) Load() ([]byte, error) {
-	return el.Fs.ReadFile(el.FileName)
+	return el.Fs.ReadFile(el.Filename)
 }
 
 func (el *EmbedLoader) Exists() bool {
-	if _, err := el.Fs.Open(el.FileName); err != nil {
+	if _, err := el.Fs.Open(el.Filename); err != nil {
 		return false
 	}
 	return true

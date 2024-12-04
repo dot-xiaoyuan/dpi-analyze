@@ -5,10 +5,10 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/member"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/resolve"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/brands/match"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/domain"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/components/features"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/components/features/application"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/utils"
@@ -152,7 +152,7 @@ func (sr *StreamReader) SetTlsInfo(sni, version, cipherSuite string) {
 		})
 		// 开始品牌匹配
 		// step.1 先进行精确匹配
-		if ok, domain := match.DomainMatch(sni, sr.Parent.SrcIP); ok {
+		if ok, domain := features.HandleFeatureMatch(sni, sr.Parent.SrcIP, types.DeviceRecord{}); ok {
 			resolve.DeviceHandle(types.DeviceRecord{
 				IP:           sr.Parent.SrcIP,
 				OriginChanel: types.Device,
@@ -168,8 +168,8 @@ func (sr *StreamReader) SetTlsInfo(sni, version, cipherSuite string) {
 			})
 		}
 		// 如果特征库加载 进行域名分析
-		if config.UseFeature && domain.AhoCorasick != nil {
-			if ok, feature := domain.Match(sni); ok {
+		if config.UseFeature && application.MatcherInstance != nil {
+			if ok, feature := application.Match(sni); ok {
 				sr.Parent.Metadata.ApplicationInfo.AppName = feature.Name
 				sr.Parent.Metadata.ApplicationInfo.AppCategory = feature.Category
 			} else {
@@ -253,8 +253,8 @@ func (sr *StreamReader) SetHttpInfo(host, userAgent, contentType, upgrade string
 		})
 	}
 	// 如果特征库加载 进行域名分析
-	if config.UseFeature && domain.AhoCorasick != nil && host != "" && !strings.HasPrefix(host, "/") {
-		if ok, feature := domain.Match(host); ok {
+	if config.UseFeature && application.MatcherInstance != nil && host != "" && !strings.HasPrefix(host, "/") {
+		if ok, feature := application.Match(host); ok {
 			sr.Parent.Metadata.ApplicationInfo.AppName = feature.Name
 			sr.Parent.Metadata.ApplicationInfo.AppCategory = feature.Category
 		} else {

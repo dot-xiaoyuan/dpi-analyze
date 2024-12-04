@@ -16,6 +16,7 @@ const (
 	PolicyUpdate
 	ConfigUpdate
 	ConfigList
+	FeatureLibrary
 )
 
 // Message unix 通信数据结构体

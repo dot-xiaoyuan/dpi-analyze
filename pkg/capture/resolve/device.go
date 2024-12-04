@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/brands/match"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/redis"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/components/features"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/parser"
 	v9 "github.com/redis/go-redis/v9"
 	"go.mongodb.org/mongo-driver/bson"
 	driver "go.mongodb.org/mongo-driver/mongo"
@@ -246,6 +247,7 @@ func DeviceHandle(device types.DeviceRecord) {
 		}
 		// 如果该品牌的信息已存在且操作系统为 unknown，则更新
 		if len(device.Brand) > 0 && d.Brand == device.Brand {
+			zap.L().Debug("device", zap.Any("device", device), zap.Any("d", d))
 			if device.Os == "" || device.Version == "" {
 				updated = true
 				break
@@ -378,9 +380,9 @@ func AppendDevice2Redis(ip string, property types.Property, value any, dr types.
 	ctx := context.TODO()
 	key := fmt.Sprintf(types.HashAnalyzeIP, ip)
 
-	var devices []types.Domain
+	var devices []parser.Domain
 
-	mf := match.BrandMatch(value.(string), ip, dr)
+	_, mf := features.HandleFeatureMatch(value.(string), ip, dr)
 	// info hash
 	old := rdb.HMGet(ctx, key, string(property)).Val()[0]
 	if old != nil {

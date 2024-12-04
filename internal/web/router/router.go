@@ -36,10 +36,14 @@ func Register(r *gin.Engine) {
 				terminal.POST("/detail", controllers.Detail())
 			}
 			// Judge 特征判定
-			featureJudge := api.Group("/feature/judge")
+			feature := api.Group("/feature")
 			{
-				featureJudge.POST("/realtime", controllers.JudgeRealtime())
-				featureJudge.POST("/suspected", controllers.JudgeSuspected())
+				judge := feature.Group("/judge")
+				{
+					judge.POST("/realtime", controllers.JudgeRealtime())
+					judge.POST("/suspected", controllers.JudgeSuspected())
+				}
+				feature.POST("/library", controllers.FeatureLibrary())
 			}
 
 			// policy 策略配置
