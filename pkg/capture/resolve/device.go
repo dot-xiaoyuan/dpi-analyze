@@ -381,25 +381,35 @@ func AppendDevice2Redis(ip string, property types.Property, value any, dr types.
 	key := fmt.Sprintf(types.HashAnalyzeIP, ip)
 
 	var devices []parser.Domain
+	var domain parser.Domain
+	if len(dr.Os) == 0 {
+		_, domain = features.HandleFeatureMatch(value.(string), ip, dr)
+	} else {
+		domain = parser.Domain{
+			Icon:        dr.Icon,
+			BrandName:   dr.Brand,
+			DomainName:  "",
+			Description: "",
+		}
+	}
 
-	_, mf := features.HandleFeatureMatch(value.(string), ip, dr)
 	// info hash
 	old := rdb.HMGet(ctx, key, string(property)).Val()[0]
 	if old != nil {
 		_ = json.Unmarshal([]byte(old.(string)), &devices)
 		for i, device := range devices {
 			if device.BrandName == value {
-				if device.Icon != mf.Icon {
+				if device.Icon != domain.Icon {
 					devices = append(devices[:i], devices[i+1:]...)
 				}
 				return
 			}
 		}
-		devices = append(devices, mf)
+		devices = append(devices, domain)
 		bytes, _ := json.Marshal(devices)
 		rdb.HSet(ctx, key, string(property), bytes).Val()
 	} else {
-		devices = append(devices, mf)
+		devices = append(devices, domain)
 		bytes, _ := json.Marshal(devices)
 		rdb.HSet(ctx, key, string(property), bytes).Val()
 	}
