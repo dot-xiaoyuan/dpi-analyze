@@ -31,7 +31,7 @@ func Setup() error {
 				var domain parser.Domain
 				for _, keyword := range brand.Keywords {
 					domain.BrandName = strings.ToLower(brand.BrandName)
-					domain.Icon = fmt.Sprintf("icon-%s", brand.BrandName)
+					domain.Icon = fmt.Sprintf("icon-%s", domain.BrandName)
 					domain.DomainName = keyword
 					domain.Description = brand.Description
 					features = append(features, domain.DomainName)
