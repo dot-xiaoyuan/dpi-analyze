@@ -68,6 +68,7 @@ func DropUser(ip string) {
 	pipe.ZRem(ctx, observer.MacObserver.Table, ip)
 	pipe.ZRem(ctx, observer.UaObserver.Table, ip)
 	pipe.ZRem(ctx, observer.DeviceObserver.Table, ip)
+	pipe.ZRem(ctx, types.ZSetRealtimeShored, ip)
 
 	_, err := pipe.Exec(ctx)
 	if err != nil {

@@ -22,6 +22,7 @@ const (
 	ZSetObserverUa     = "z_set:observer:ua"
 	ZSetObserverDevice = "z_set:observer:device"
 	ZSetOnlineUsers    = "z_set:online:users"
+	ZSetRealtimeShored = "z_set:realtime:shored"
 	HashAnalyzeIP      = "hash:analyze:ip:%s"
 	SetIPDevices       = "set:ip:devices:%s"
 	KeyDiscoverIP      = "key:discover:ip:%s"

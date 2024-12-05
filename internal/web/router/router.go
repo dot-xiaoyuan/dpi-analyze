@@ -42,7 +42,7 @@ func Register(r *gin.Engine) {
 			{
 				judge := feature.Group("/judge")
 				{
-					judge.POST("/realtime", controllers.JudgeRealtime())
+					judge.POST("/realtime", controllers.FeatureJudgement())
 					judge.POST("/suspected", controllers.JudgeSuspected())
 				}
 				feature.POST("/library", controllers.FeatureLibrary())
@@ -60,6 +60,7 @@ func Register(r *gin.Engine) {
 			log := api.Group("/log")
 			{
 				log.POST("/users/events", controllers.UserEventsLog())
+				log.POST("/proxy", controllers.JudgeRealtime())
 			}
 
 			// setting 系统配置

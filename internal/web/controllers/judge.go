@@ -14,6 +14,7 @@ import (
 	"strconv"
 )
 
+// JudgeRealtime 代理记录
 func JudgeRealtime() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var query QueryData

@@ -50,6 +50,8 @@ func Discover(ip string) {
 		zap.L().Warn("用户不存在", zap.String("ip", ip))
 		return
 	}
+	// 记录到实时共享终端判定记录中
+	NewRealtime(ip)
 	// TODO 获取控制策略,检测是否开启防代理
 
 	// 获取产品对应条件
