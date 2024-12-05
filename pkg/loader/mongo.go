@@ -132,7 +132,7 @@ func (ml *MongoLoader) GetCurrentVersion() (string, error) {
 	opts := options.FindOne().SetSort(bson.D{{"created_at", -1}}) // 按创建时间降序
 	filter := bson.D{}                                            // 可扩展为按条件查询
 	var result struct {
-		Version string `bson:"version"`
+		Version string `bson:"current_version"`
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

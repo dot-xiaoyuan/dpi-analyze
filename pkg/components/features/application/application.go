@@ -17,8 +17,7 @@ import (
 var (
 	//go:embed feature2.0_cn_24.10.14-plus.cfg
 	feature         embed.FS
-	loaderManger    = loader.Manager{}
-	AppFeature      []parser.Application
+	LoaderManger    = loader.Manager{}
 	Feature         []string
 	AppMap          = make(map[int]parser.Application)
 	MatcherInstance *matcher.Matcher
@@ -26,17 +25,17 @@ var (
 )
 
 func Setup() error {
-	loaderManger.Embed = &loader.EmbedLoader{
+	LoaderManger.Embed = &loader.EmbedLoader{
 		Fs:       feature,
 		Filename: "feature2.0_cn_24.10.14-plus.cfg",
 	}
-	loaderManger.Mongo = &loader.MongoLoader{
+	LoaderManger.Mongo = &loader.MongoLoader{
 		Client:             mongodb.GetMongoClient(),
 		MetadataCollection: types.MongoCollectionFeatureApplication,
 		HistoryCollection:  types.MongoCollectionFeatureApplicationHistory,
 		Database:           types.MongoDatabaseConfigs,
 	}
-	data, err := loaderManger.Load()
+	data, err := LoaderManger.Load()
 	if err != nil {
 		return err
 	}
@@ -70,7 +69,6 @@ func Parse(data []byte) error {
 	mutex.Lock()
 	defer mutex.Unlock()
 	for _, app := range applications {
-		//AppFeature = append(AppFeature, app)
 		domainParse(app)
 	}
 

@@ -50,3 +50,8 @@ func (m *Manager) Load() ([]byte, error) {
 	}
 	return nil, errors.New("no data source available")
 }
+
+func (m *Manager) Version() string {
+	v, _ := m.Mongo.GetCurrentVersion()
+	return v
+}
