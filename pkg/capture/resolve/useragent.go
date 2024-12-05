@@ -48,7 +48,7 @@ func AnalyzeByUserAgent(ip, ua, host string) string {
 	if client.Os.ToString() == "Other" ||
 		client.UserAgent.Family == "IE" ||
 		len(client.Os.ToVersionString()) == 0 ||
-		client.Device.Family == "Other" {
+		client.Device.Family == "Other" || client.Device.Brand == "Generic_Android" {
 		return ""
 	}
 	var brand, icon string
