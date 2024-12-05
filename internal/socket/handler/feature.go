@@ -70,7 +70,8 @@ func FeatureUpdate(raw json.RawMessage) any {
 		return res
 	}
 	if req.Filepath == "" {
-		return "file path is required"
+		res.Message = errors.New("file path is empty").Error()
+		return res
 	}
 
 	switch req.Module {
