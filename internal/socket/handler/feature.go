@@ -7,16 +7,18 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/components/features/brands"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/components/features/brands_keyword"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/components/features/brands_root"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/loader"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/socket/models"
 	"net/http"
 )
 
 func FeatureLibrary(raw json.RawMessage) any {
 	type Feature struct {
-		Name    string `json:"name"`
-		Count   int    `json:"count"`
-		Version string `json:"version"`
-		Module  string `json:"module"`
+		Name    string           `json:"name"`
+		Count   int              `json:"count"`
+		Version string           `json:"version"`
+		Module  string           `json:"module"`
+		History []loader.History `json:"history"`
 	}
 
 	res := []Feature{
@@ -25,24 +27,28 @@ func FeatureLibrary(raw json.RawMessage) any {
 			Count:   len(application.Feature),
 			Version: application.LoaderManger.Version(),
 			Module:  "application",
+			History: application.LoaderManger.History(),
 		},
 		{
 			Name:    "品牌特征",
 			Count:   len(brands.Manager.Feature),
 			Version: brands.Manager.Loader.Version(),
 			Module:  "brands",
+			History: brands.Manager.Loader.History(),
 		},
 		{
 			Name:    "品牌关键词特征",
 			Count:   len(brands_keyword.Manager.Feature),
 			Version: brands_keyword.Manager.Loader.Version(),
 			Module:  "brands_keyword",
+			History: brands_keyword.Manager.Loader.History(),
 		},
 		{
 			Name:    "品牌根域名特征",
 			Count:   len(brands_root.Manager.Feature),
 			Version: brands_root.Manager.Loader.Version(),
 			Module:  "brands_root",
+			History: brands_root.Manager.Loader.History(),
 		},
 	}
 

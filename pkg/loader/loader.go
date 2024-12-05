@@ -57,3 +57,9 @@ func (m *Manager) Version() string {
 	v, _ := m.Mongo.GetCurrentVersion()
 	return v
 }
+
+// History 历史版本
+func (m *Manager) History() []History {
+	v, _ := m.Mongo.GetHistoryVersions()
+	return v
+}

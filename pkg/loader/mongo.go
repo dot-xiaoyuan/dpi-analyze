@@ -23,6 +23,14 @@ type MongoLoader struct {
 	Version            string
 }
 
+type History struct {
+	DocId        primitive.ObjectID `bson:"doc_id" json:"doc_id"`
+	Version      string             `bson:"version" json:"version"`
+	Type         string             `bson:"type" json:"type"`
+	Timestamp    primitive.DateTime `bson:"timestamp" json:"timestamp"`
+	ChangeNumber int                `bson:"change_number" json:"change_number"`
+}
+
 // Load 获取当前最新版本的数据
 func (ml *MongoLoader) Load() ([]byte, error) {
 	ctx := context.TODO()
@@ -154,6 +162,35 @@ func (ml *MongoLoader) GetCurrentVersion() (string, error) {
 	}
 
 	return result.Version, nil
+}
+
+// GetHistoryVersions 获取历史版本信息
+func (ml *MongoLoader) GetHistoryVersions() ([]History, error) {
+	collection := ml.Client.Database(ml.Database).Collection(ml.HistoryCollection)
+
+	opts := options.Find().SetSort(bson.D{{"created_at", -1}}) // 按创建时间降序
+	filter := bson.D{}                                         // 可扩展为按条件查询
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// 执行查询
+	cursor, err := collection.Find(ctx, filter, opts)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, fmt.Errorf("no version found in collection %s", ml.HistoryCollection)
+		}
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var results []History
+
+	if err = cursor.All(ctx, &results); err != nil {
+		return nil, err
+	}
+
+	return results, nil
 }
 
 // RollbackToVersion 回滚数据到指定版本

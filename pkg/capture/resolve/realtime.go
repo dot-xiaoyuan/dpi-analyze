@@ -33,7 +33,7 @@ func DeleteRealtime(ip string) {
 }
 
 type Tables struct {
-	Results    []InfoJson `json:"results"`
+	Results    []InfoJson `json:"result"`
 	TotalCount int64      `json:"totalCount"`
 }
 
@@ -51,7 +51,6 @@ func TraversalIP(startTime, endTime int64, page, pageSize int64) (result Tables,
 	// 分页的起止索引
 	start := (page - 1) * pageSize
 
-	var setName string
 	// 查询集合总数
 	result.TotalCount = rdb.ZCount(ctx, types.ZSetRealtimeShored, strconv.FormatInt(startTime, 10), strconv.FormatInt(endTime, 10)).Val()
 	if result.TotalCount == 0 {
@@ -62,7 +61,7 @@ func TraversalIP(startTime, endTime int64, page, pageSize int64) (result Tables,
 	// Pipeline 批量查询
 	pipe := rdb.Pipeline()
 	// step1. 分页查询集合
-	zRangCmd := rdb.ZRevRangeByScoreWithScores(ctx, setName, &v9.ZRangeBy{
+	zRangCmd := rdb.ZRevRangeByScoreWithScores(ctx, types.ZSetRealtimeShored, &v9.ZRangeBy{
 		Min:    strconv.FormatInt(startTime, 10), // 查询范围的最小时间戳
 		Max:    strconv.FormatInt(endTime, 10),   // 查询范围的最大时间戳
 		Offset: start,                            // 分页起始位置
