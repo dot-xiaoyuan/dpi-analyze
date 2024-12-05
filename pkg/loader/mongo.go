@@ -59,7 +59,7 @@ func (ml *MongoLoader) Exists() bool {
 }
 
 // Save 存储新版本数据
-func (ml *MongoLoader) Save(rawData []byte) error {
+func (ml *MongoLoader) Save(rawData []byte, changeNumber int) error {
 	ctx := context.TODO()
 	// 获取版本
 	line, _ := bytes.NewBuffer(rawData).ReadBytes('\n')
@@ -72,10 +72,13 @@ func (ml *MongoLoader) Save(rawData []byte) error {
 	historyColl := ml.Client.Database(ml.Database).Collection(ml.HistoryCollection)
 	// 获取当前元信息
 	var metadata struct {
-		CurrentVersion string `bson:"current_version"`
+		ID             primitive.ObjectID `bson:"_id"`
+		CurrentVersion string             `bson:"current_version"`
+		CreatedAt      primitive.DateTime `bson:"created_at"`
+		UpdatedAt      primitive.DateTime `bson:"updated_at"`
 	}
 	docID := primitive.NewObjectID()
-	err := metadataColl.FindOne(ctx, bson.M{"_id": docID}).Decode(&metadata)
+	err := metadataColl.FindOne(ctx, bson.M{}).Decode(&metadata)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			// 如果元数据不存在，则初始化
@@ -90,10 +93,12 @@ func (ml *MongoLoader) Save(rawData []byte) error {
 			}
 			// 在历史集合中插入第一版数据
 			_, err = historyColl.InsertOne(ctx, bson.M{
-				"doc_id":    docID,
-				"version":   ml.Version,
-				"data":      rawData,
-				"timestamp": time.Now(),
+				"doc_id":        docID,
+				"version":       ml.Version,
+				"data":          rawData,
+				"timestamp":     time.Now(),
+				"change_number": 0,
+				"type":          "insert",
 			})
 			return err
 		}
@@ -101,12 +106,12 @@ func (ml *MongoLoader) Save(rawData []byte) error {
 	}
 
 	// 计算新版本号
-	newVersion := time.Now().Format("v06.01.02")
+	//newVersion := time.Now().Format("v06.01.02")
 
 	// 更新元集合中的版本信息
-	_, err = metadataColl.UpdateOne(ctx, bson.M{"_id": docID}, bson.M{
+	_, err = metadataColl.UpdateOne(ctx, bson.M{"_id": metadata.ID}, bson.M{
 		"$set": bson.M{
-			"current_version": newVersion,
+			"current_version": ml.Version,
 			"updated_at":      time.Now(),
 		},
 	})
@@ -116,10 +121,12 @@ func (ml *MongoLoader) Save(rawData []byte) error {
 
 	// 在历史集合中插入新版本数据
 	_, err = historyColl.InsertOne(ctx, bson.M{
-		"doc_id":    docID,
-		"version":   newVersion,
-		"data":      rawData,
-		"timestamp": time.Now(),
+		"doc_id":        docID,
+		"version":       ml.Version,
+		"data":          rawData,
+		"timestamp":     time.Now(),
+		"change_number": changeNumber,
+		"type":          "update",
 	})
 	return err
 }

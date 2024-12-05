@@ -11,6 +11,7 @@ type Manager struct {
 	Yaml  *YamlLoader
 }
 
+// Load 加载
 func (m *Manager) Load() ([]byte, error) {
 	// 优先加载mongo，没有再加载embed
 	if m.Mongo != nil && m.Mongo.Exists() {
@@ -24,7 +25,7 @@ func (m *Manager) Load() ([]byte, error) {
 
 		// 将加载的数据存储到 MongoDB
 		if m.Mongo != nil {
-			err = m.Mongo.Save(data)
+			err = m.Mongo.Save(data, 0)
 			if err != nil {
 				return nil, fmt.Errorf("failed to store data into MongoDB: %w", err)
 			}
@@ -40,7 +41,7 @@ func (m *Manager) Load() ([]byte, error) {
 
 		// 将加载的数据存储到 MongoDB
 		if m.Mongo != nil {
-			err = m.Mongo.Save(data)
+			err = m.Mongo.Save(data, 0)
 			if err != nil {
 				return nil, fmt.Errorf("failed to store data into MongoDB: %w", err)
 			}
@@ -51,6 +52,7 @@ func (m *Manager) Load() ([]byte, error) {
 	return nil, errors.New("no data source available")
 }
 
+// Version 版本
 func (m *Manager) Version() string {
 	v, _ := m.Mongo.GetCurrentVersion()
 	return v

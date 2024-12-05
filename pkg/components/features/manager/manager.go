@@ -5,6 +5,7 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/loader"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/matcher"
 	"go.uber.org/zap"
+	"os"
 )
 
 // Config 配置结构
@@ -76,4 +77,30 @@ func (m *Manager) Match(input string) (ok bool, result interface{}) {
 		return true, result
 	}
 	return false, nil
+}
+
+// Update 更新
+func (m *Manager) Update(filepath string) error {
+	file, err := os.ReadFile(filepath)
+	if err != nil {
+		zap.L().Error("Failed to open domain file", zap.String("file", filepath), zap.Error(err))
+		return err
+	}
+
+	features, mapping, err := m.Config.ParserFunc(file)
+	if err != nil {
+		zap.L().Error("Failed to parse data", zap.String("file", filepath), zap.Error(err))
+		return err
+	}
+
+	err = m.Loader.Mongo.Save(file, len(m.Feature)-len(features))
+	if err != nil {
+		zap.L().Error("Failed to update domain file", zap.String("file", filepath), zap.Error(err))
+		return err
+	}
+	m.Feature = features
+	m.Map = mapping
+	m.MatcherInstance = matcher.NewMatcher(features)
+	zap.L().Info("Matcher initialized", zap.String("module", m.Config.Filename), zap.Int("patternCount", len(features)))
+	return nil
 }

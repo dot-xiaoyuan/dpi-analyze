@@ -26,6 +26,8 @@ func Register(r *gin.Engine) {
 			api.GET("/me", controllers.GetCurrentUser())
 			// Dashboard
 			api.GET("/dashboard", controllers.Dashboard())
+			// 上传
+			api.POST("/upload", controllers.Upload())
 
 			// Terminal 终端相关
 			terminal := api.Group("/terminal")
@@ -44,6 +46,7 @@ func Register(r *gin.Engine) {
 					judge.POST("/suspected", controllers.JudgeSuspected())
 				}
 				feature.POST("/library", controllers.FeatureLibrary())
+				feature.PUT("/library", controllers.FeatureUpdate())
 			}
 
 			// policy 策略配置
@@ -65,18 +68,19 @@ func Register(r *gin.Engine) {
 				settings.GET("/config", controllers.ConfigList())
 				settings.PUT("/config", controllers.ConfigUpdate())
 			}
+
 			// IP 操作
-			api.GET("/ip/list", controllers.IPList())
-			api.GET("/ip/detail", controllers.IPDetail())
+			//api.GET("/ip/list", controllers.IPList())
+			//api.GET("/ip/detail", controllers.IPDetail())
 
 			// Observer
-			observer := api.Group("/observer")
-			{
-				observer.GET("/ttl", controllers.ObserverTTL())
-				observer.GET("/mac", controllers.ObserverMac())
-				observer.GET("/ua", controllers.ObserverUa())
-				observer.GET("/device", controllers.ObserverDevice())
-			}
+			//observer := api.Group("/observer")
+			//{
+			//	observer.GET("/ttl", controllers.ObserverTTL())
+			//	observer.GET("/mac", controllers.ObserverMac())
+			//	observer.GET("/ua", controllers.ObserverUa())
+			//	observer.GET("/device", controllers.ObserverDevice())
+			//}
 
 			// Users
 			users := api.Group("/users")

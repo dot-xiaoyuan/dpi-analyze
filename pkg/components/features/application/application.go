@@ -10,6 +10,7 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/parser"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/statictics"
 	"go.uber.org/zap"
+	"os"
 	"strings"
 	"sync"
 )
@@ -87,6 +88,32 @@ func Match(input string) (ok bool, app parser.Application) {
 		return true, app
 	}
 	return false, parser.Application{}
+}
+
+// Update 更新
+func Update(filepath string) error {
+	file, err := os.ReadFile(filepath)
+	if err != nil {
+		zap.L().Error("Failed to open domain file", zap.String("file", filepath), zap.Error(err))
+		return err
+	}
+
+	data, err := parser.ParseApplications(file)
+	if err != nil {
+		zap.L().Error("Failed to parse domain file", zap.String("file", filepath), zap.Error(err))
+		return err
+	}
+	mutex.Lock()
+	defer mutex.Unlock()
+	for _, app := range data {
+		domainParse(app)
+	}
+	err = LoaderManger.Mongo.Save(file, len(Feature)-len(data))
+	if err != nil {
+		zap.L().Error("Failed to save domain file", zap.String("file", filepath), zap.Error(err))
+		return err
+	}
+	return nil
 }
 
 // 域名解析

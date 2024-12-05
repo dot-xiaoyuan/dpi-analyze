@@ -17,6 +17,7 @@ const (
 	ConfigUpdate
 	ConfigList
 	FeatureLibrary
+	FeatureUpdate
 )
 
 // Message unix 通信数据结构体

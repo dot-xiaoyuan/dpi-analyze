@@ -15,10 +15,11 @@ import (
 var YamlConfig []byte
 
 var (
-	RunDir string
-	LogDir string
-	EtcDir string
-	BinDir string
+	RunDir    string
+	LogDir    string
+	EtcDir    string
+	BinDir    string
+	UploadDir string
 )
 
 var (
@@ -136,11 +137,13 @@ func Reload() {
 	LogDir = filepath.Join(Home, "log")
 	EtcDir = filepath.Join(Home, "etc")
 	BinDir = filepath.Join(Home, "bin")
+	UploadDir = filepath.Join(Home, "uploads")
 
 	ensureDirExists(RunDir)
 	ensureDirExists(LogDir)
 	ensureDirExists(EtcDir)
 	ensureDirExists(BinDir)
+	ensureDirExists(UploadDir)
 
 	if strings.Contains(Home, "dev_home") {
 		err := viper.ReadConfig(bytes.NewReader(YamlConfig))
