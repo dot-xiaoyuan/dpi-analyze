@@ -92,12 +92,12 @@ func StartCapture(ctx context.Context, c Config, handler PacketHandler, done cha
 		select {
 		case <-ctx.Done():
 			zap.L().Info("Capture stopped")
-			close(done)
+			done <- struct{}{}
 			return
 		case packet, ok := <-packets:
 			if !ok {
 				zap.L().Info(i18n.T("Packets Channel Closed"))
-				close(done)
+				done <- struct{}{}
 				return
 			}
 			PacketsCount++

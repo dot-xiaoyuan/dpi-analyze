@@ -12,6 +12,7 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/utils"
+	"go.uber.org/zap"
 	"io"
 	"slices"
 	"strings"
@@ -97,6 +98,7 @@ func (sr *StreamReader) Run(wg *sync.WaitGroup) {
 					}
 					err = mongo.Mongo.InsertOneStream("stream", sessionData)
 					if err != nil {
+						zap.L().Error("Failed to insert stream", zap.Error(err))
 						panic(err)
 					}
 					sr.Parent.Wg.Done()
