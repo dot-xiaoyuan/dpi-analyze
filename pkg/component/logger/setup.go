@@ -46,8 +46,7 @@ func (l *Logger) Setup() error {
 
 		// creat zap core
 		core := zapcore.NewCore(
-			zapcore.NewJSONEncoder(getEncodeConfig()),
-			//zapcore.NewConsoleEncoder(getEncodeConfig()),
+			zapcore.NewConsoleEncoder(getEncodeConfig()),
 			zapcore.NewMultiWriteSyncer(ws...),
 			parseLogLevel(level),
 		)
@@ -61,19 +60,14 @@ func (l *Logger) Setup() error {
 }
 
 func getEncodeConfig() zapcore.EncoderConfig {
-	return zapcore.EncoderConfig{
-		TimeKey:        "t",
-		LevelKey:       "l",
-		NameKey:        "logger",
-		CallerKey:      "caller",
-		MessageKey:     "msg",
-		StacktraceKey:  "stacktrace",
-		LineEnding:     zapcore.DefaultLineEnding,
-		EncodeLevel:    zapcore.CapitalColorLevelEncoder,
-		EncodeTime:     zapcore.TimeEncoderOfLayout("2006-01-02 15:04:05"),
-		EncodeDuration: zapcore.StringDurationEncoder,
-		EncodeCaller:   zapcore.ShortCallerEncoder,
+	var ec zapcore.EncoderConfig
+	if config.Debug {
+		ec = zap.NewDevelopmentEncoderConfig()
+	} else {
+		ec = zap.NewProductionEncoderConfig()
 	}
+	ec.EncodeTime = zapcore.TimeEncoderOfLayout("2006-01-02 15:04:05")
+	return ec
 }
 
 // parseLogLevel 将字符串日志级别解析为 zapcore.Level
