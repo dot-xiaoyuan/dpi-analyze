@@ -46,7 +46,8 @@ func (l *Logger) Setup() error {
 
 		// creat zap core
 		core := zapcore.NewCore(
-			zapcore.NewConsoleEncoder(getEncodeConfig()),
+			zapcore.NewJSONEncoder(getEncodeConfig()),
+			//zapcore.NewConsoleEncoder(getEncodeConfig()),
 			zapcore.NewMultiWriteSyncer(ws...),
 			parseLogLevel(level),
 		)

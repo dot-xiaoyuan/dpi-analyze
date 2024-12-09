@@ -24,7 +24,7 @@ func HandleFeatureMatch(input, ip string, dr types.DeviceRecord) (ok bool, domai
 	ok, result, source := Match(input, ip, ipCounter)
 	if ok {
 		domain = result.(parser.Domain)
-		zap.L().Debug("Brand matched", zap.String("source", source), zap.String("brand", domain.BrandName))
+		zap.L().Debug("Brand matched Result", zap.String("input", input), zap.String("source", source), zap.String("brand", domain.DomainName))
 		// 特殊处理
 		// macos修改icon
 		if domain.BrandName == "apple" {
@@ -86,6 +86,7 @@ func ipCounter(ip, source string) (bool, error) {
 	// 达到阈值
 	if count >= 15 {
 		// 重置计数
+		zap.L().Debug("threshold reached", zap.Int("input", count), zap.String("source", source))
 		resetIpCount(cacheKey)
 		return true, nil
 	}
