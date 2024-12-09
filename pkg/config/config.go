@@ -4,6 +4,7 @@ import (
 	"bytes"
 	_ "embed"
 	"fmt"
+	"github.com/denisbrodbeck/machineid"
 	"github.com/spf13/viper"
 	"log"
 	"os"
@@ -43,6 +44,7 @@ var (
 )
 
 type Yaml struct {
+	MachineID             string     `mapstructure:"machine_id" binding:"machine_id" json:"machine_id"`
 	Language              string     `mapstructure:"language" bson:"language" json:"language"`
 	LogLevel              string     `mapstructure:"log_level" bson:"log_level" json:"log_level"`
 	Debug                 bool       `mapstructure:"debug" bson:"debug" json:"debug"`
@@ -161,6 +163,17 @@ func Reload() {
 	err := viper.Unmarshal(&Cfg)
 	if err != nil {
 		panic(err)
+	}
+	// 机器码生成
+	if len(Cfg.MachineID) == 0 {
+		if Cfg.MachineID, err = machineid.ID(); err != nil {
+			panic(err)
+		}
+		viper.Set("machine_id", Cfg.MachineID)
+		err = viper.WriteConfigAs(fmt.Sprintf("%s/dpi.yaml", EtcDir))
+		if err != nil {
+			panic(err)
+		}
 	}
 }
 
