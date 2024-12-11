@@ -29,7 +29,7 @@ func Login() gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"message": "Login successful", "token": token})
+		c.JSON(http.StatusOK, gin.H{"message": "Login successful", "token": token, "machine_id": config.Cfg.MachineID})
 		return
 	}
 }
@@ -57,7 +57,7 @@ func ChangePassword() gin.HandlerFunc {
 func GetCurrentUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		username := c.MustGet("username").(string)
-		c.JSON(http.StatusOK, gin.H{"username": username})
+		c.JSON(http.StatusOK, gin.H{"username": username, "machine_id": config.Cfg.MachineID})
 		return
 	}
 }

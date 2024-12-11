@@ -14,7 +14,7 @@ import (
 const (
 	CliName     = "dpi-analyze"
 	Description = "dpi CLI"
-	CliVersion  = "1.0.4.241113_beta"
+	CliVersion  = "1.1.0.241211_beta"
 )
 
 var rootCmd = &cobra.Command{
@@ -45,6 +45,7 @@ func init() {
 		}
 	}()
 
+	config.Version = CliVersion
 	// Global Flags
 	rootCmd.PersistentFlags().StringVar(&config.Language, "lang", config.Cfg.Language, "language")
 	rootCmd.PersistentFlags().StringVarP(&config.LogLevel, "log-level", "l", config.Cfg.LogLevel, "Set the logging level ('debug', 'info', 'warn', 'error', 'fatal')")

@@ -89,6 +89,10 @@ func Register(r *gin.Engine) {
 				users.GET("/list", controllers.UserList())
 				users.GET("/events/log", controllers.UserEventsLog())
 			}
+
+			// Licence 授权
+			api.GET("/license", controllers.License())
+			api.PUT("/license", controllers.LicenseUpdate())
 		}
 	}
 

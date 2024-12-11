@@ -8,6 +8,7 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/web/router"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/i18n"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -40,6 +41,9 @@ func NewWebServer(c Config) {
 		os.Exit(1)
 	}
 	zap.L().Info(i18n.T("Starting Web Server"))
+	if !config.Debug {
+		gin.SetMode(gin.ReleaseMode)
+	}
 	web = gin.Default()
 	// cors
 	web.Use(cors.New(cors.Config{
@@ -50,6 +54,8 @@ func NewWebServer(c Config) {
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
+	// 静态资源
+	web.Static("/static", config.UploadDir)
 	// 注册路由
 	router.Register(web)
 	web.Use(ServerStatic("build", build))

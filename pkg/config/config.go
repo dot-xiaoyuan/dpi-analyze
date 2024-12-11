@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 //go:embed dpi.yaml
@@ -24,6 +25,7 @@ var (
 )
 
 var (
+	Version               string
 	Home                  string
 	Cfg                   *Yaml
 	Language              string
@@ -65,6 +67,7 @@ type Yaml struct {
 	Thresholds            Thresholds `mapstructure:"thresholds" bson:"thresholds" json:"thresholds"`
 	Username              string     `mapstructure:"username" bson:"username" json:"username"`
 	Password              string     `mapstructure:"password" bson:"password" json:"password"`
+	License               License    `mapstructure:"license" bson:"license" json:"license"`
 }
 
 type Capture struct {
@@ -111,6 +114,12 @@ type RedisConfig struct {
 	Port     string `mapstructure:"port" bson:"port" json:"port"`
 	Password string `mapstructure:"password" bson:"password" json:"password"`
 	DB       int    `mapstructure:"db" bson:"db" json:"db"`
+}
+
+type License struct {
+	Sn         string
+	CheckTime  time.Time
+	ExpireTime time.Time
 }
 
 func init() {
