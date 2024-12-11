@@ -53,11 +53,15 @@ func License() gin.HandlerFunc {
 			common.ErrorResponse(c, http.StatusBadRequest, err.Error())
 			return
 		}
+		schema := "http"
+		if c.Request.TLS != nil {
+			schema = "https"
+		}
 		common.SuccessResponse(c, LicenseRes{
 			LicenseCode: config.Cfg.License.Sn,
 			Version:     config.Version,
 			ExpireDate:  config.Cfg.License.ExpireTime.Format("2006-01-02 15:04:05"),
-			Qrcode:      fmt.Sprintf("%s/static/license_qrcode.png", c.Request.Host),
+			Qrcode:      fmt.Sprintf("%s://%s/static/license_qrcode.png", schema, c.Request.Host),
 			MachineID:   config.Cfg.MachineID,
 		})
 	}
