@@ -9,6 +9,7 @@ import (
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
 	"go.uber.org/zap"
+	"sync"
 )
 
 // 数据包捕获和抓取
@@ -60,7 +61,7 @@ func StartCapture(ctx context.Context, c Config, handler PacketHandler, done cha
 	}
 
 	if Err != nil {
-		zap.L().Error("pcap panic", zap.Error(Err))
+		zap.L().Error("Failed to open capture device", zap.Error(Err))
 		return
 	}
 
@@ -75,7 +76,12 @@ func StartCapture(ctx context.Context, c Config, handler PacketHandler, done cha
 		}))
 	}
 	// 关闭捕获设备
-	defer Handle.Close()
+	defer func() {
+		if Handle != nil {
+			Handle.Close()
+			zap.L().Info("Capture device closed")
+		}
+	}()
 
 	decoderName := fmt.Sprintf("%s", Handle.LinkType())
 	if Decoder, OK = gopacket.DecodersByLayerName[decoderName]; !OK {
@@ -88,6 +94,7 @@ func StartCapture(ctx context.Context, c Config, handler PacketHandler, done cha
 	// packet chan
 	packets := source.Packets()
 
+	var mu sync.Mutex
 	for {
 		select {
 		case <-ctx.Done():
@@ -101,8 +108,10 @@ func StartCapture(ctx context.Context, c Config, handler PacketHandler, done cha
 				return
 			}
 			PacketsCount++
+			mu.Lock()
 			// 因为需要重组，所以不能使用go协程进行异步处理
 			handler.HandlePacket(packet)
+			mu.Unlock()
 		}
 	}
 }

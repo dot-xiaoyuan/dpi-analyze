@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/skip2/go-qrcode"
 	"net/http"
+	"os"
 )
 
 type LicenseRes struct {
@@ -23,7 +24,7 @@ type LicenseRes struct {
 func LicenseUpdate() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		type LicenseCode struct {
-			Code string `json:"code"`
+			Code string `json:"license_code"`
 		}
 		code := LicenseCode{}
 		err := c.ShouldBindJSON(&code)
@@ -44,30 +45,40 @@ func LicenseUpdate() gin.HandlerFunc {
 			common.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 			return
 		}
-		common.SuccessResponse(c, "校验通过")
+		common.SuccessResponse(c, getLicense(c))
 	}
 }
+
 func License() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if err := generateQrcode(); err != nil {
 			common.ErrorResponse(c, http.StatusBadRequest, err.Error())
 			return
 		}
-		schema := "http"
-		if c.Request.TLS != nil {
-			schema = "https"
-		}
-		common.SuccessResponse(c, LicenseRes{
-			LicenseCode: config.Cfg.License.Sn,
-			Version:     config.Version,
-			ExpireDate:  config.Cfg.License.ExpireTime.Format("2006-01-02 15:04:05"),
-			Qrcode:      fmt.Sprintf("%s://%s/static/license_qrcode.png", schema, c.Request.Host),
-			MachineID:   config.Cfg.MachineID,
-		})
+		common.SuccessResponse(c, getLicense(c))
 	}
 }
 
+func getLicense(c *gin.Context) LicenseRes {
+	schema := "http"
+	if c.Request.TLS != nil {
+		schema = "https"
+	}
+	return LicenseRes{
+		LicenseCode: config.Cfg.License.Sn,
+		Version:     config.Version,
+		ExpireDate:  config.Cfg.License.ExpireTime.Format("2006-01-02 15:04:05"),
+		Qrcode:      fmt.Sprintf("%s://%s/static/license_qrcode.png", schema, c.Request.Host),
+		MachineID:   config.Cfg.MachineID,
+	}
+}
+
+// 生成二维码
 func generateQrcode() error {
+	path := fmt.Sprintf("%s/license_qrcode.png", config.UploadDir)
+	if _, err := os.Stat(path); !os.IsNotExist(err) {
+		return nil
+	}
 	type temp struct {
 		Type string `json:"type"`
 		Code string `json:"code"`
@@ -84,7 +95,7 @@ func generateQrcode() error {
 	if err != nil {
 		return err
 	}
-	err = qr.WriteFile(256, fmt.Sprintf("%s/license_qrcode.png", config.UploadDir))
+	err = qr.WriteFile(256, path)
 	if err != nil {
 		return err
 	}
