@@ -5,14 +5,12 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/member"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/resolve"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/components/features"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/components/features/application"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/utils"
-	"go.uber.org/zap"
 	"io"
 	"slices"
 	"strings"
@@ -96,11 +94,16 @@ func (sr *StreamReader) Run(wg *sync.WaitGroup) {
 						ApplicationProtocol: sr.Parent.ApplicationProtocol,
 						Metadata:            sr.Parent.Metadata,
 					}
-					err = mongo.Mongo.InsertOneStream("stream", sessionData)
-					if err != nil {
-						zap.L().Error("Failed to insert stream", zap.Error(err))
-						panic(err)
+					select {
+					case logQueue <- sessionData:
+					default:
+
 					}
+					//err = mongo.Mongo.InsertOneStream("stream", sessionData)
+					//if err != nil {
+					//	zap.L().Error("Failed to insert stream", zap.Error(err))
+					//	panic(err)
+					//}
 					sr.Parent.Wg.Done()
 				}
 				break

@@ -2,6 +2,7 @@ package analyze
 
 import (
 	"fmt"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/member"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
@@ -100,8 +101,14 @@ func (f *Factory) New(netFlow, tcpFlow gopacket.Flow, tcp *layers.TCP, ac reasse
 	}
 
 	f.wg.Add(2)
-	go stream.Client.Run(&f.wg)
-	go stream.Server.Run(&f.wg)
+	_ = ants.Submit(func() {
+		stream.Client.Run(&f.wg)
+	})
+	_ = ants.Submit(func() {
+		stream.Server.Run(&f.wg)
+	})
+	//go stream.Client.Run(&f.wg)
+	//go stream.Server.Run(&f.wg)
 	return stream
 }
 

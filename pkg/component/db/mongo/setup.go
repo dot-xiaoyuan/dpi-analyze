@@ -79,19 +79,19 @@ func (m *mongodb) Setup() error {
 }
 
 // InsertOneStream 插入集合
-func (m *mongodb) InsertOneStream(c string, d interface{}) error {
-	if m.client == nil {
-		zap.L().Error("Mongodb Client Not Initialized")
-		return fmt.Errorf("mongodb Client Not Initialized")
-	}
-
-	collection := m.client.Database(types.MongoDatabaseStream).Collection(time.Now().Format(c + "-06-01-02-15"))
-	_, err := collection.InsertOne(Context, d)
-	if err != nil {
-		zap.L().Error("Mongodb InsertOneStream Error", zap.Error(err))
-	}
-	return err
-}
+//func (m *mongodb) InsertOneStream(c string, d interface{}) error {
+//	if m.client == nil {
+//		zap.L().Error("Mongodb Client Not Initialized")
+//		return fmt.Errorf("mongodb Client Not Initialized")
+//	}
+//
+//	collection := m.client.Database(types.MongoDatabaseStream).Collection(time.Now().Format(c + "-06-01-02-15"))
+//	_, err := collection.InsertOne(Context, d)
+//	if err != nil {
+//		zap.L().Error("Mongodb InsertOneStream Error", zap.Error(err))
+//	}
+//	return err
+//}
 
 func GetMongoClient() *mongo.Client {
 	if Mongo.client == nil {
