@@ -156,9 +156,8 @@ func (sr *StreamReader) SetTlsInfo(sni, version, cipherSuite string) {
 			})
 		})
 		// 开始品牌匹配
-		// step.1 先进行精确匹配
 		if ok, domain := features.HandleFeatureMatch(sni, sr.Parent.SrcIP, types.DeviceRecord{}); ok {
-			resolve.DeviceHandle(types.DeviceRecord{
+			resolve.Handle(types.DeviceRecord{
 				IP:           sr.Parent.SrcIP,
 				OriginChanel: types.Device,
 				OriginValue:  sni,

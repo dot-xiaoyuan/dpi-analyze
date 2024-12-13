@@ -21,5 +21,5 @@ func AnalyzeByTTL(ip string, ttl uint8) {
 		LastSeen:     time.Now(),
 	}
 
-	DeviceHandle(dr)
+	Handle(dr)
 }

@@ -40,6 +40,7 @@ func (ac *AssemblerContext) GetCaptureInfo() gopacket.CaptureInfo {
 func NewAnalyzer() *Analyze {
 	//
 	StartLogConsumer()
+	resolve.StartUserAgentConsumer()
 	// 清空有序集合以及遗留数据
 	member.CleanUp()
 	streamFactory := &Factory{}

@@ -1,18 +1,21 @@
 package resolve
 
 import (
-	"context"
 	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/uaparser"
+	"go.uber.org/zap"
 	"net/url"
 	"strings"
 	"sync"
 	"time"
 )
 
-var useragentLock sync.Mutex
+var (
+	useragentLock sync.Mutex
+	logQueue      = make(chan types.UserAgentRecord, 10000)
+)
 
 func AnalyzeByUserAgent(ip, ua, host string) string {
 	client := uaparser.Analyze(ua, host)
@@ -38,12 +41,13 @@ func AnalyzeByUserAgent(ip, ua, host string) string {
 		Model:     client.Device.Model,
 		LastSeen:  time.Now(),
 	}
-
-	useragentLock.Lock()
-	_, _ = mongo.GetMongoClient().Database(types.MongoDatabaseUserAgent).
-		Collection(time.Now().Format("06_01_02_useragent")).
-		InsertOne(context.TODO(), record)
-	useragentLock.Unlock()
+	logQueue <- record
+	//useragentLock.Lock()
+	//
+	//_, _ = mongo.GetMongoClient().Database(types.MongoDatabaseUserAgent).
+	//	Collection(time.Now().Format("06_01_02_useragent")).
+	//	InsertOne(context.TODO(), record)
+	//useragentLock.Unlock()
 
 	if client.Os.ToString() == "Other" ||
 		client.UserAgent.Family == "IE" ||
@@ -76,6 +80,39 @@ func AnalyzeByUserAgent(ip, ua, host string) string {
 		LastSeen:     time.Now(),
 	}
 
-	DeviceHandle(dr)
+	Handle(dr)
 	return fmt.Sprintf("%s %s", dr.Os, dr.Version)
+}
+
+func StartUserAgentConsumer() {
+	go func() {
+		buffer := make([]any, 0, 100)
+		ticker := time.NewTicker(time.Second) // 每秒批量写入
+		defer ticker.Stop()
+
+		for {
+			select {
+			case log := <-logQueue:
+				buffer = append(buffer, log)
+				if len(buffer) >= 100 {
+					insertManyStream(buffer)
+					buffer = buffer[:0]
+				}
+			case <-ticker.C: // 定时写入
+				if len(buffer) > 0 {
+					insertManyStream(buffer)
+					buffer = buffer[:0]
+				}
+			}
+		}
+	}()
+}
+
+func insertManyStream(buffer []interface{}) {
+	_, err := mongo.GetMongoClient().Database(types.MongoDatabaseUserAgent).Collection(time.Now().Format("06_01_02_useragent")).
+		InsertMany(mongo.Context, buffer)
+	if err != nil {
+		zap.L().Error("insert [useragent] record failed", zap.Error(err))
+		return
+	}
 }
