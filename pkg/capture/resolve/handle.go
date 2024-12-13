@@ -165,6 +165,7 @@ func (d *Device) checkDevice() {
 		if oldRecord.IP != d.IP {
 			continue
 		}
+		zap.L().Info("diff", zap.Any("old", oldRecord), zap.Any("new", d.unSerialize(device)))
 		// 操作系统一致，且版本不存在跳过
 		if len(d.Record.Os) > 0 && d.Record.Os == oldRecord.Os && d.Record.Version == oldRecord.Version {
 			update = true
