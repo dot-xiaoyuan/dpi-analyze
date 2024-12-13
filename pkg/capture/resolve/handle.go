@@ -3,6 +3,7 @@ package resolve
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/redis"
@@ -101,7 +102,7 @@ func (d *Device) updateHash() {
 	key := fmt.Sprintf(types.HashAnalyzeIP, d.IP)
 	old := d.rdb.HMGet(d.ctx, key, string(types.Device)).Val()[0]
 	if old != nil {
-		_ = json.Unmarshal([]byte(old.(string)), &domain)
+		_ = json.Unmarshal([]byte(old.(string)), &devices)
 		for i, device := range devices {
 			if device.BrandName == brand && device.Icon != domain.Icon {
 				devices = append(devices[:i], devices[i+1:]...)
@@ -110,7 +111,7 @@ func (d *Device) updateHash() {
 		}
 	}
 	devices = append(devices, domain)
-	bytes, _ := json.Marshal(domain)
+	bytes, _ := json.Marshal(devices)
 	d.rdb.HSet(d.ctx, key, string(types.Device), bytes).Val()
 	return
 }
@@ -303,14 +304,30 @@ func startLockRenewal(ctx context.Context, rdb *v9.Client, key, value string, ex
 }
 
 func renewLock(ctx context.Context, rdb *v9.Client, key, value string, expiration time.Duration) error {
-	script := `
-        if redis.call("GET", KEYS[1]) == ARGV[1] then
-            return redis.call("PEXPIRE", KEYS[1], ARGV[2])
-        else
-            return 0
-        end
-    `
-	_, err := rdb.Eval(ctx, script, []string{key}, value, int(expiration.Milliseconds())).Result()
+	// 使用 Watch 监听 key，确保操作原子性
+	err := rdb.Watch(ctx, func(tx *v9.Tx) error {
+		// 获取当前锁的值
+		currentValue, err := tx.Get(ctx, key).Result()
+		if err != nil {
+			if errors.Is(err, v9.Nil) {
+				return fmt.Errorf("lock does not exist or expired")
+			}
+			return err
+		}
+
+		// 判断锁的所有权
+		if currentValue != value {
+			return fmt.Errorf("lock ownership mismatch")
+		}
+
+		// 续约
+		_, err = tx.TxPipelined(ctx, func(pipe v9.Pipeliner) error {
+			pipe.Expire(ctx, key, expiration)
+			return nil
+		})
+		return err
+	}, key)
+
 	return err
 }
 
@@ -321,13 +338,28 @@ func trySetLock(ctx context.Context, rdb *v9.Client, key, value string, expirati
 
 // 释放锁
 func releaseLock(ctx context.Context, rdb *v9.Client, key, value string) error {
-	script := `
-		if redis.call("GET", KEYS[1]) == ARGV[1] then
-			return redis.call("DEL", KEYS[1])
-		else
-			return 0
-		end
-	`
-	_, err := rdb.Eval(ctx, script, []string{key}, value).Result()
+	// 使用 Watch 和事务确保安全性
+	err := rdb.Watch(ctx, func(tx *v9.Tx) error {
+		currentValue, err := tx.Get(ctx, key).Result()
+		if err != nil {
+			if errors.Is(err, v9.Nil) {
+				return nil // 锁已经不存在
+			}
+			return err
+		}
+
+		// 确认值匹配
+		if currentValue != value {
+			return nil // 不释放其他客户端的锁
+		}
+
+		// 删除锁
+		_, err = tx.TxPipelined(ctx, func(pipe v9.Pipeliner) error {
+			pipe.Del(ctx, key)
+			return nil
+		})
+		return err
+	}, key)
+
 	return err
 }
