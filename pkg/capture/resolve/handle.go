@@ -180,6 +180,8 @@ func (d *Device) checkDevice() {
 		// 联想
 		if d.Record.Brand == "lenovo" && oldRecord.Os == "windows" && oldRecord.Brand == "windows" {
 			// 更新操作系统和版本
+			oldRecord.Brand = d.Record.Brand
+			oldRecord.Icon = d.Record.Icon
 			oldRecord.Os = d.Record.Os
 			oldRecord.Version = d.Record.Version
 			oldRecord.OriginChanel = d.Record.OriginChanel
