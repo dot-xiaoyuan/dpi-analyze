@@ -166,7 +166,7 @@ func (d *Device) checkDevice() {
 			continue
 		}
 		// 操作系统一致，且版本不存在跳过
-		if len(d.Record.Os) > 0 && d.Record.Os == oldRecord.Os && len(d.Record.Version) == 0 {
+		if len(d.Record.Os) > 0 && d.Record.Os == oldRecord.Os && d.Record.Version == oldRecord.Version {
 			update = true
 			break
 		}
@@ -182,8 +182,6 @@ func (d *Device) checkDevice() {
 			// 更新操作系统和版本
 			oldRecord.Brand = d.Record.Brand
 			oldRecord.Icon = d.Record.Icon
-			oldRecord.Os = d.Record.Os
-			oldRecord.Version = d.Record.Version
 			oldRecord.OriginChanel = d.Record.OriginChanel
 			oldRecord.OriginValue = d.Record.OriginValue
 			oldRecord.LastSeen = d.Record.LastSeen
