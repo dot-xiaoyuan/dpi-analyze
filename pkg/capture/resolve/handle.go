@@ -102,18 +102,45 @@ func (d *Device) updateHash() {
 	key := fmt.Sprintf(types.HashAnalyzeIP, d.IP)
 	old := d.rdb.HMGet(d.ctx, key, string(types.Device)).Val()[0]
 	if old != nil {
-		_ = json.Unmarshal([]byte(old.(string)), &devices)
+		// 如果存在旧数据，反序列化为设备列表
+		if err := json.Unmarshal([]byte(old.(string)), &devices); err != nil {
+			zap.L().Error("Failed to unmarshal devices from Redis", zap.String("key", key), zap.Error(err))
+			return
+		}
+
+		// 遍历现有设备列表，检查是否有同品牌的记录
+		updated := false
 		for i, device := range devices {
-			if device.BrandName == brand && device.Icon != domain.Icon {
-				devices = append(devices[:i], devices[i+1:]...)
-				return
+			if device.BrandName == brand {
+				// 如果品牌一致，更新设备信息
+				if device.Icon != domain.Icon {
+					devices[i].Icon = domain.Icon
+				}
+				updated = true
+				break
 			}
 		}
+
+		// 如果没有更新任何设备，说明是新设备，需要追加
+		if !updated {
+			devices = append(devices, domain)
+		}
+	} else {
+		// 如果没有旧数据，初始化设备列表
+		devices = append(devices, domain)
 	}
-	devices = append(devices, domain)
-	bytes, _ := json.Marshal(devices)
-	d.rdb.HSet(d.ctx, key, string(types.Device), bytes).Val()
-	return
+
+	// 将更新后的设备列表序列化并写回 Redis
+	bytes, err := json.Marshal(devices)
+	if err != nil {
+		zap.L().Error("Failed to marshal devices", zap.String("key", key), zap.Error(err))
+		return
+	}
+
+	_, err = d.rdb.HSet(d.ctx, key, string(types.Device), bytes).Result()
+	if err != nil {
+		zap.L().Error("Failed to update Redis hash", zap.String("key", key), zap.Error(err))
+	}
 }
 
 // 删除设备数量统计
@@ -151,12 +178,20 @@ func (d *Device) checkDevice() {
 			break
 		}
 		// 联想
-		if d.Record.Brand == "lenovo" && oldRecord.Os == "windows" {
+		if d.Record.Brand == "lenovo" && oldRecord.Os == "windows" && oldRecord.Brand == "windows" {
 			// 更新操作系统和版本
-			oldRecord.Brand = d.Record.Brand
+			oldRecord.Os = d.Record.Os
+			oldRecord.Version = d.Record.Version
 			oldRecord.OriginChanel = d.Record.OriginChanel
 			oldRecord.OriginValue = d.Record.OriginValue
 			oldRecord.LastSeen = d.Record.LastSeen
+
+			if len(d.Record.Device) > 0 && len(oldRecord.Device) == 0 {
+				oldRecord.Device = d.Record.Device
+			}
+			if len(d.Record.Model) > 0 && len(oldRecord.Model) == 0 {
+				oldRecord.Model = d.Record.Model
+			}
 			// 删除旧的设备信息
 			d.rdb.SRem(d.ctx, key, device).Val()
 			// 更新设备信息

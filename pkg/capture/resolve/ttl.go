@@ -14,7 +14,7 @@ func AnalyzeByTTL(ip string, ttl uint8) {
 		Os:           "windows",
 		Version:      "",
 		Device:       "windows",
-		Brand:        "",
+		Brand:        "windows",
 		Model:        "",
 		Icon:         "icon-windows",
 		Description:  "TTL 识别",
