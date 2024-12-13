@@ -150,6 +150,22 @@ func (d *Device) checkDevice() {
 			update = true
 			break
 		}
+		// 联想
+		if d.Record.Brand == "lenovo" && oldRecord.Os == "windows" {
+			// 更新操作系统和版本
+			oldRecord.Brand = d.Record.Brand
+			oldRecord.OriginChanel = d.Record.OriginChanel
+			oldRecord.OriginValue = d.Record.OriginValue
+			oldRecord.LastSeen = d.Record.LastSeen
+			// 删除旧的设备信息
+			d.rdb.SRem(d.ctx, key, device).Val()
+			// 更新设备信息
+			d.storeRedis(update)
+			d.Record.Remark = "updated device"
+			d.storeMongo()
+			update = true
+			break
+		}
 		// 品牌处理
 		if len(d.Record.Brand) > 0 && oldRecord.Brand == d.Record.Brand {
 			// 因为这里是更新品牌具体信息，如果操作系统和版本为空那么也跳过，仅当ua分析出来具体的系统和版本再进行设备的更新
@@ -236,7 +252,7 @@ func Handle(device types.DeviceRecord) {
 		return
 	}
 	if !locked {
-		zap.L().Warn("Failed to acquire lock", zap.String("key", lockKey), zap.String("IP", device.IP))
+		// zap.L().Warn("Failed to acquire lock", zap.String("key", lockKey), zap.String("IP", device.IP))
 		return
 	}
 
