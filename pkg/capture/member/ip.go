@@ -10,6 +10,7 @@ import (
 // IP 相关的核心逻辑
 
 var (
+	TTLAnalyze  sync.Map
 	TTLCache    sync.Map
 	MacCache    sync.Map
 	UaCache     sync.Map

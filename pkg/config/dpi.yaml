@@ -9,7 +9,7 @@ geo2ip: GeoIP2-City.mmdb
 # ua regular
 ua_regular: regexes.yaml
 # 仅关注在线用户
-follow_only_online_users: true
+follow_only_online_users: false
 # 是否分析TTL
 use_ttl: true
 # 是否分析user-agent

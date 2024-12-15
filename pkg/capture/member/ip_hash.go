@@ -91,7 +91,18 @@ func putMemory(ip string, m *sync.Map, v any) {
 	m.Store(ip, v)
 }
 
+func GetAnalyze(ip string) bool {
+	_, ok := TTLAnalyze.Load(ip)
+	return ok
+}
+
+func PutAnalyze(ip string) {
+	TTLAnalyze.Store(ip, true)
+}
+
+// DelMemory 删除缓存
 func DelMemory(ip string) {
+	TTLAnalyze.Delete(ip)
 	TTLCache.Delete(ip)
 	UaCache.Delete(ip)
 	DeviceCache.Delete(ip)
