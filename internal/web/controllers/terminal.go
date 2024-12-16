@@ -34,7 +34,7 @@ func Identification() gin.HandlerFunc {
 		}
 		zap.L().Info("query", zap.Int64("page", jsonData.Page), zap.Int64("pageSize", jsonData.PageSize))
 		now := time.Now()
-		result, err := member.TraversalIP(now.Add(-24*time.Hour).Unix(), now.Add(time.Hour).Unix(), jsonData.Page, jsonData.PageSize)
+		result, err := member.TraversalIP(0, now.Add(time.Hour).Unix(), jsonData.Page, jsonData.PageSize)
 		if err != nil {
 			common.ErrorResponse(c, http.StatusBadRequest, err.Error())
 			return
