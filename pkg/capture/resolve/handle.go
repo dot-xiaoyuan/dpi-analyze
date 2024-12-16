@@ -8,10 +8,8 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/redis"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
-	"github.com/dot-xiaoyuan/dpi-analyze/pkg/parser"
 	v9 "github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
-	"strings"
 	"time"
 )
 
@@ -80,67 +78,6 @@ func (d *Device) storeRedis(update bool) {
 	d.rdb.SAdd(d.ctx, key, jsonData).Val()
 	// 设置过期时间
 	d.rdb.Expire(d.ctx, key, 24*time.Hour).Val()
-	// 追加设备信息到hash
-	d.updateHash()
-}
-
-// 更新hash中的设备信息
-func (d *Device) updateHash() {
-	var brand string
-	if len(d.Record.Brand) > 0 && d.Record.Brand != "Generic_Android" && d.Record.Brand != "android" {
-		brand = strings.ToLower(d.Record.Brand)
-	} else {
-		brand = strings.ToLower(d.Record.Os)
-	}
-	zap.L().Debug("Wait to update hash", zap.String("brand", brand), zap.String("ip", d.IP))
-	//
-	var devices []parser.Domain
-	domain := parser.Domain{
-		Icon:      d.Record.Icon,
-		BrandName: brand,
-	}
-	key := fmt.Sprintf(types.HashAnalyzeIP, d.IP)
-	old := d.rdb.HMGet(d.ctx, key, string(types.Device)).Val()[0]
-	if old != nil {
-		// 如果存在旧数据，反序列化为设备列表
-		if err := json.Unmarshal([]byte(old.(string)), &devices); err != nil {
-			zap.L().Error("Failed to unmarshal devices from Redis", zap.String("key", key), zap.Error(err))
-			return
-		}
-
-		// 遍历现有设备列表，检查是否有同品牌的记录
-		updated := false
-		for i, device := range devices {
-			if device.BrandName == brand {
-				// 如果品牌一致，更新设备信息
-				if device.Icon != domain.Icon {
-					devices[i].Icon = domain.Icon
-				}
-				updated = true
-				break
-			}
-		}
-
-		// 如果没有更新任何设备，说明是新设备，需要追加
-		if !updated {
-			devices = append(devices, domain)
-		}
-	} else {
-		// 如果没有旧数据，初始化设备列表
-		devices = append(devices, domain)
-	}
-
-	// 将更新后的设备列表序列化并写回 Redis
-	bytes, err := json.Marshal(devices)
-	if err != nil {
-		zap.L().Error("Failed to marshal devices", zap.String("key", key), zap.Error(err))
-		return
-	}
-
-	_, err = d.rdb.HSet(d.ctx, key, string(types.Device), bytes).Result()
-	if err != nil {
-		zap.L().Error("Failed to update Redis hash", zap.String("key", key), zap.Error(err))
-	}
 }
 
 // 删除设备数量统计
@@ -165,7 +102,7 @@ func (d *Device) checkDevice() {
 		if oldRecord.IP != d.IP {
 			continue
 		}
-		zap.L().Debug("diff", zap.Any("old", oldRecord), zap.Any("new", d.unSerialize(device)))
+		//zap.L().Debug("diff", zap.Any("old", oldRecord), zap.Any("new", d.unSerialize(device)))
 		// 操作系统一致，且版本不存在跳过
 		if len(d.Record.Os) > 0 && d.Record.Os == oldRecord.Os && d.Record.Version == oldRecord.Version {
 			update = true
@@ -181,18 +118,7 @@ func (d *Device) checkDevice() {
 		// 联想
 		if d.Record.Brand == "lenovo" && oldRecord.Os == "windows" && oldRecord.Brand == "windows" {
 			// 更新操作系统和版本
-			oldRecord.Brand = d.Record.Brand
-			oldRecord.Icon = d.Record.Icon
-			oldRecord.OriginChanel = d.Record.OriginChanel
-			oldRecord.OriginValue = d.Record.OriginValue
-			oldRecord.LastSeen = d.Record.LastSeen
-
-			if len(d.Record.Device) > 0 && len(oldRecord.Device) == 0 {
-				oldRecord.Device = d.Record.Device
-			}
-			if len(d.Record.Model) > 0 && len(oldRecord.Model) == 0 {
-				oldRecord.Model = d.Record.Model
-			}
+			d.Record = updateDeviceRecord(d.Record, oldRecord)
 			// 删除旧的设备信息
 			d.rdb.SRem(d.ctx, key, device).Val()
 			// 更新设备信息
@@ -218,11 +144,7 @@ func (d *Device) checkDevice() {
 
 			// TODO end
 			// 更新操作系统和版本
-			oldRecord.Os = d.Record.Os
-			oldRecord.Version = d.Record.Version
-			oldRecord.OriginChanel = d.Record.OriginChanel
-			oldRecord.OriginValue = d.Record.OriginValue
-			oldRecord.LastSeen = d.Record.LastSeen
+			d.Record = updateDeviceRecord(d.Record, oldRecord)
 
 			if len(d.Record.Device) > 0 && len(oldRecord.Device) == 0 {
 				oldRecord.Device = d.Record.Device
@@ -414,4 +336,48 @@ func releaseLock(ctx context.Context, rdb *v9.Client, key, value string) error {
 	}, key)
 
 	return err
+}
+
+// updateDeviceRecord 比较 d.Record 和 oldRecord，更新 d.Record 并返回
+func updateDeviceRecord(d, oldRecord types.DeviceRecord) types.DeviceRecord {
+	// 比较并更新字段：优先使用 d.Record 的值
+	if len(d.Brand) == 0 {
+		d.Brand = oldRecord.Brand
+	}
+	if len(d.Icon) == 0 {
+		d.Icon = oldRecord.Icon
+	}
+	if len(d.OriginChanel) == 0 {
+		d.OriginChanel = oldRecord.OriginChanel
+	}
+	if len(d.OriginValue) == 0 {
+		d.OriginValue = oldRecord.OriginValue
+	}
+	if d.LastSeen.IsZero() {
+		d.LastSeen = oldRecord.LastSeen
+	}
+	if len(d.Device) == 0 {
+		d.Device = oldRecord.Device
+	}
+	if len(d.Model) == 0 {
+		d.Model = oldRecord.Model
+	}
+	if len(d.Type) == 0 {
+		d.Type = oldRecord.Type
+	}
+	if len(d.Os) == 0 {
+		d.Os = oldRecord.Os
+	}
+	if len(d.Version) == 0 {
+		d.Version = oldRecord.Version
+	}
+	if len(d.Description) == 0 {
+		d.Description = oldRecord.Description
+	}
+	if len(d.Remark) == 0 {
+		d.Remark = oldRecord.Remark
+	}
+
+	// 返回更新后的 d.Record
+	return d
 }

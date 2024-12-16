@@ -10,6 +10,7 @@ import (
 	v9 "github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"strconv"
+	"strings"
 )
 
 // IP 列表操作
@@ -79,13 +80,16 @@ func TraversalIP(startTime, endTime int64, page, pageSize int64) (result Tables,
 	// step2. 批量获取每个IP详细信息
 	pipe = rdb.Pipeline()
 	ipCommands := make([]*v9.SliceCmd, 0, len(ips))
+	devicesCommands := make([]*v9.StringSliceCmd, 0, len(ips))
 	extraKeyCommands := make([]*v9.StringCmd, 0, len(ips)*3)
 
 	for _, ip := range ips {
 		key := fmt.Sprintf(types.HashAnalyzeIP, ip.Member.(string))
 		//cmd := pipe.HGetAll(ctx, key)
-		ipCommands = append(ipCommands, pipe.HMGet(ctx, key, "username", "mac", "ttl", "user_agent", "device"))
+		ipCommands = append(ipCommands, pipe.HMGet(ctx, key, "username", "mac", "ttl", "user_agent"))
 
+		// 获取设备集合
+		devicesCommands = append(devicesCommands, pipe.SMembers(ctx, fmt.Sprintf(types.SetIPDevices, ip.Member.(string))))
 		// 获取设备数量
 		allKey := pipe.Get(ctx, fmt.Sprintf(types.KeyDevicesAllIP, ip.Member.(string)))
 		mobileKey := pipe.Get(ctx, fmt.Sprintf(types.KeyDevicesMobileIP, ip.Member.(string)))
@@ -109,26 +113,17 @@ func TraversalIP(startTime, endTime int64, page, pageSize int64) (result Tables,
 			zap.L().Error("Scan", zap.Error(err))
 			continue
 		}
+		// 设备列表
+		devices := devicesCommands[i].Val()
 
 		all := extraKeyCommands[i*3].Val()
 		mobile := extraKeyCommands[i*3+1].Val()
 		pc := extraKeyCommands[i*3+2].Val()
 
+		info.Device = "[" + strings.Join(devices, ",") + "]"
 		info.All, info.Mobile, info.Pc = all, mobile, pc
 		info.IP = ips[i].Member.(string)
 		info.LastSeen = ips[i].Score
-		//detail := InfoJson{
-		//	IP:       ips[i].Member.(string),
-		//	Username: info["username"],
-		//	TTL:      info["ttl"],
-		//	UA:       info["user_agent"],
-		//	Mac:      info["mac"],
-		//	Device:   info["device"],
-		//	All:      all,
-		//	Mobile:   mobile,
-		//	Pc:       pc,
-		//	LastSeen: ips[i].Score,
-		//}
 		ipDetails = append(ipDetails, info)
 	}
 
