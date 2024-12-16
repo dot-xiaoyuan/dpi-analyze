@@ -99,11 +99,6 @@ func (sr *StreamReader) Run(wg *sync.WaitGroup) {
 					default:
 
 					}
-					//err = mongo.Mongo.InsertOneStream("stream", sessionData)
-					//if err != nil {
-					//	zap.L().Error("Failed to insert stream", zap.Error(err))
-					//	panic(err)
-					//}
 					sr.Parent.Wg.Done()
 				}
 				break

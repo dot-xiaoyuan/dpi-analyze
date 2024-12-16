@@ -62,6 +62,7 @@ func StartCapture(ctx context.Context, c Config, handler PacketHandler, done cha
 
 	if Err != nil {
 		zap.L().Error("Failed to open capture device", zap.Error(Err))
+		done <- struct{}{}
 		return
 	}
 
@@ -69,6 +70,7 @@ func StartCapture(ctx context.Context, c Config, handler PacketHandler, done cha
 		Err = Handle.SetBPFFilter(c.BerkeleyPacketFilter)
 		if Err != nil {
 			zap.L().Error("berkeley packet filter panic", zap.Error(Err))
+			done <- struct{}{}
 			return
 		}
 		zap.L().Info(i18n.TT("Berkeley packet filter set", map[string]interface{}{
