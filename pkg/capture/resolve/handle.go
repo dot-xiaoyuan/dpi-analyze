@@ -165,7 +165,7 @@ func (d *Device) checkDevice() {
 		if oldRecord.IP != d.IP {
 			continue
 		}
-		zap.L().Info("diff", zap.Any("old", oldRecord), zap.Any("new", d.unSerialize(device)))
+		zap.L().Debug("diff", zap.Any("old", oldRecord), zap.Any("new", d.unSerialize(device)))
 		// 操作系统一致，且版本不存在跳过
 		if len(d.Record.Os) > 0 && d.Record.Os == oldRecord.Os && d.Record.Version == oldRecord.Version {
 			update = true
@@ -196,10 +196,10 @@ func (d *Device) checkDevice() {
 			// 删除旧的设备信息
 			d.rdb.SRem(d.ctx, key, device).Val()
 			// 更新设备信息
+			update = true
 			d.storeRedis(update)
 			d.Record.Remark = "updated device"
 			d.storeMongo()
-			update = true
 			break
 		}
 		// 品牌处理
@@ -233,10 +233,10 @@ func (d *Device) checkDevice() {
 			// 删除旧的设备信息
 			d.rdb.SRem(d.ctx, key, device).Val()
 			// 更新设备信息
+			update = true
 			d.storeRedis(update)
 			d.Record.Remark = "updated device"
 			d.storeMongo()
-			update = true
 			break
 		}
 	}
