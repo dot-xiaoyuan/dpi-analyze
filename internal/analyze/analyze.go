@@ -100,6 +100,8 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 	// 仅关注在线用户 如果在线用户中不存在该IP跳过该数据包
 	if userIP == "" && config.FollowOnlyOnlineUsers {
 		return
+	} else {
+		userIP, tranIP, userMac = ip, dip, ethernet.SrcMac
 	}
 	// 如果 TTL = 255，跳过该数据包
 	if internet.TTL == 255 {
