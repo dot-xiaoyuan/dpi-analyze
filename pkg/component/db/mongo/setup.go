@@ -48,7 +48,8 @@ func (m *mongodb) Setup() error {
 
 		opts := options.Client().
 			ApplyURI(uri).
-			SetServerSelectionTimeout(3 * time.Second)
+			SetServerSelectionTimeout(3 * time.Second).
+			SetMaxPoolSize(500)
 
 		var err error
 		Context = context.Background()
