@@ -226,7 +226,7 @@ func loadComponents() {
 	//}
 
 	if err = policy.Setup(); err != nil {
-		os.Exit(1)
+		//os.Exit(1)
 	}
 
 	if err = application.Setup(); err != nil {
