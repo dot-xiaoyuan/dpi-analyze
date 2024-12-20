@@ -38,12 +38,16 @@ func Store(i interface{}) {
 		m = &UaCache
 		v = hash.Value.(string)
 		break
-	case types.DeviceName:
+	case types.Device:
 		m = &DeviceCache
 		v = hash.Value.(string)
 		break
+	case types.DeviceName:
+		m = &DeviceNameCache
+		v = hash.Value.(string)
+		break
 	case types.DeviceType:
-		m = &DeviceCache
+		m = &DeviceTypeCache
 		v = hash.Value.(string)
 		break
 	}

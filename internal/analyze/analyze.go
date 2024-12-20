@@ -167,8 +167,8 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 		} else {
 			userIP, tranIP, userMac = dip, ip, ethernet.DstMac
 		}
-
 	}
+	// 记录mac和ip地址绑定关系
 	// 如果 TTL = 255，跳过该数据包
 	if internet.TTL == 255 {
 		return
