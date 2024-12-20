@@ -29,8 +29,8 @@ func Setup() error {
 			mapping := make(map[int]interface{})
 			for _, brand := range brands {
 				for _, domain := range brand.Domains {
-					domain.BrandName = strings.ToLower(domain.BrandName)
-					domain.Icon = fmt.Sprintf("icon-%s", domain.Icon)
+					domain.BrandName = strings.ToLower(brand.BrandName)
+					domain.Icon = fmt.Sprintf("icon-%s", domain.BrandName)
 					features = append(features, domain.DomainName)
 					mapping[len(features)-1] = domain
 				}

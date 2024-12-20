@@ -168,6 +168,38 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 			userIP, tranIP, userMac = dip, ip, ethernet.DstMac
 		}
 	}
+	// mDNS
+	if srcPort == "5353" || dstPort == "5353" {
+		device := protocols.ParseMDNS(packet.ApplicationLayer().Payload(), userIP, userMac)
+		//zap.L().Debug("mDNS handle:", zap.Any("device", device))
+		if len(device.Name) > 0 {
+			_ = ants.Submit(func() {
+				member.Store(member.Hash{
+					IP:    userIP,
+					Field: types.DeviceName,
+					Value: device.Name,
+				})
+			})
+		}
+		if len(device.Type) > 0 {
+			_ = ants.Submit(func() {
+				member.Store(member.Hash{
+					IP:    userIP,
+					Field: types.DeviceType,
+					Value: device.Type,
+				})
+			})
+		}
+		if len(device.MAC) > 0 {
+			_ = ants.Submit(func() {
+				member.Store(member.Hash{
+					IP:    userIP,
+					Field: types.Mac,
+					Value: device.MAC,
+				})
+			})
+		}
+	}
 	// 记录mac和ip地址绑定关系
 	// 如果 TTL = 255，跳过该数据包
 	if internet.TTL == 255 {
@@ -232,30 +264,6 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 		udp := udpLayer.(*layers.UDP)
 
 		layerType := CheckUDP(userIP, tranIP, udp)
-		// mdns
-		if layerType == LayerTypeMDNS {
-			_ = dstPort
-			device := protocols.ParseMDNS(packet.ApplicationLayer().Payload(), userIP, userMac)
-			zap.L().Debug("mDNS handle:", zap.Any("device", device))
-			if len(device.Name) > 0 {
-				_ = ants.Submit(func() {
-					member.Store(member.Hash{
-						IP:    userIP,
-						Field: types.DeviceName,
-						Value: device.Name,
-					})
-				})
-			}
-			if len(device.Type) > 0 {
-				_ = ants.Submit(func() {
-					member.Store(member.Hash{
-						IP:    userIP,
-						Field: types.DeviceType,
-						Value: device.Type,
-					})
-				})
-			}
-		}
 		// dhcp协议日志输出
 		if layerType == layers.LayerTypeDHCPv4 {
 			dhcp := packet.Layer(layers.LayerTypeDHCPv4).(*layers.DHCPv4)
