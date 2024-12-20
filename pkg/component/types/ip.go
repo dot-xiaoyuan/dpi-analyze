@@ -5,10 +5,12 @@ import "time"
 type Property string
 
 const (
-	TTL       Property = "ttl"
-	Mac       Property = "mac"
-	UserAgent Property = "user_agent"
-	Device    Property = "device"
+	TTL        Property = "ttl"
+	Mac        Property = "mac"
+	UserAgent  Property = "user_agent"
+	Device     Property = "device"
+	DeviceName Property = "device_name"
+	DeviceType Property = "device_type"
 )
 
 type FeatureType string

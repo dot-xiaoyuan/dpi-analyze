@@ -21,16 +21,18 @@ type Tables struct {
 }
 
 type InfoJson struct {
-	IP       string  `json:"ip" redis:"ip"`
-	Username string  `json:"username,omitempty" redis:"username,omitempty"`
-	Mac      string  `json:"mac,omitempty" redis:"mac,omitempty"`
-	TTL      string  `json:"ttl,omitempty" redis:"ttl,omitempty"`
-	UA       string  `json:"user_agent,omitempty" redis:"user_agent,omitempty"`
-	Device   string  `json:"device,omitempty" redis:"device,omitempty"`
-	All      string  `json:"all,omitempty" redis:"all,omitempty"`
-	Mobile   string  `json:"mobile,omitempty" redis:"mobile,omitempty"`
-	Pc       string  `json:"pc,omitempty" redis:"pc,omitempty"`
-	LastSeen float64 `json:"last_seen" redis:"last_seen"`
+	IP         string  `json:"ip" redis:"ip"`
+	Username   string  `json:"username,omitempty" redis:"username,omitempty"`
+	Mac        string  `json:"mac,omitempty" redis:"mac,omitempty"`
+	TTL        string  `json:"ttl,omitempty" redis:"ttl,omitempty"`
+	UA         string  `json:"user_agent,omitempty" redis:"user_agent,omitempty"`
+	Device     string  `json:"device,omitempty" redis:"device,omitempty"`
+	DeviceName string  `json:"device_name" redis:"device_name,omitempty"`
+	DeviceType string  `json:"device_type" redis:"device_type,omitempty"`
+	All        string  `json:"all,omitempty" redis:"all,omitempty"`
+	Mobile     string  `json:"mobile,omitempty" redis:"mobile,omitempty"`
+	Pc         string  `json:"pc,omitempty" redis:"pc,omitempty"`
+	LastSeen   float64 `json:"last_seen" redis:"last_seen"`
 }
 
 // TraversalIP 遍历IP表
@@ -86,7 +88,7 @@ func TraversalIP(startTime, endTime int64, page, pageSize int64) (result Tables,
 	for _, ip := range ips {
 		key := fmt.Sprintf(types.HashAnalyzeIP, ip.Member.(string))
 		//cmd := pipe.HGetAll(ctx, key)
-		ipCommands = append(ipCommands, pipe.HMGet(ctx, key, "username", "mac", "ttl", "user_agent"))
+		ipCommands = append(ipCommands, pipe.HMGet(ctx, key, "username", "mac", "ttl", "user_agent", "device_name", "device_type"))
 
 		// 获取设备集合
 		devicesCommands = append(devicesCommands, pipe.SMembers(ctx, fmt.Sprintf(types.SetIPDevices, ip.Member.(string))))

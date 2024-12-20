@@ -1,4 +1,4 @@
-package analyze
+package sessions
 
 import (
 	mongodb "github.com/dot-xiaoyuan/dpi-analyze/pkg/component/db/mongo"
@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-var logQueue = make(chan types.Sessions, 500000)
+var SessionQueue = make(chan types.Sessions, 500000)
 
 func StartLogConsumer() {
 	consumerCount := 4 // 启动 4 个消费者，你可以根据机器的资源来调整这个值
@@ -23,7 +23,7 @@ func consumeLogQueue() {
 
 	for {
 		select {
-		case log := <-logQueue:
+		case log := <-SessionQueue:
 			buffer = append(buffer, log)
 			if len(buffer) >= 1000 {
 				insertManyStream(buffer)

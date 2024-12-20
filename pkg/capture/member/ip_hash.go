@@ -38,9 +38,13 @@ func Store(i interface{}) {
 		m = &UaCache
 		v = hash.Value.(string)
 		break
-	case types.Device:
+	case types.DeviceName:
 		m = &DeviceCache
-		v = hash.Value.(types.DeviceRecord)
+		v = hash.Value.(string)
+		break
+	case types.DeviceType:
+		m = &DeviceCache
+		v = hash.Value.(string)
 		break
 	}
 
@@ -106,6 +110,8 @@ func DelMemory(ip string) {
 	TTLCache.Delete(ip)
 	UaCache.Delete(ip)
 	DeviceCache.Delete(ip)
+	DeviceNameCache.Delete(ip)
+	DeviceTypeCache.Delete(ip)
 	MacCache.Delete(ip)
 }
 

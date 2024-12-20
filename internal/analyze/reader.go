@@ -10,6 +10,7 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/components/features/application"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/sessions"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/utils"
 	"io"
 	"slices"
@@ -95,7 +96,7 @@ func (sr *StreamReader) Run(wg *sync.WaitGroup) {
 						Metadata:            sr.Parent.Metadata,
 					}
 					select {
-					case logQueue <- sessionData:
+					case sessions.SessionQueue <- sessionData:
 					default:
 
 					}

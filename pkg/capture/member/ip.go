@@ -10,13 +10,15 @@ import (
 // IP 相关的核心逻辑
 
 var (
-	TTLAnalyze  sync.Map
-	TTLCache    sync.Map
-	MacCache    sync.Map
-	UaCache     sync.Map
-	DeviceCache sync.Map
-	Mutex       sync.Map
-	Events      = make(chan PropertyChangeEvent, 100)
+	TTLAnalyze      sync.Map
+	TTLCache        sync.Map
+	MacCache        sync.Map
+	UaCache         sync.Map
+	DeviceCache     sync.Map
+	DeviceNameCache sync.Map
+	DeviceTypeCache sync.Map
+	Mutex           sync.Map
+	Events          = make(chan PropertyChangeEvent, 100)
 )
 
 // IP锁

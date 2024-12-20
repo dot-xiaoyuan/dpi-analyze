@@ -45,10 +45,14 @@ func CheckUDP(userIP, tranIP string, udp *layers.UDP) gopacket.LayerType {
 		pushTask(userIP, tranIP, types.NTP)
 		return layers.LayerTypeNTP
 	}
-	if len(udp.Payload) > 5 && (udp.Payload[0]&0b11000000 == 0b11000000 || udp.Payload[0]&0b10000000 == 0) {
-		pushTask(userIP, tranIP, types.QUIC)
-		return LayerTypeQUIC
+	if udp.SrcPort == 5353 || udp.DstPort == 5353 {
+		pushTask(userIP, tranIP, types.MDNS)
+		return LayerTypeMDNS
 	}
+	//if len(udp.Payload) > 5 && (udp.Payload[0]&0b11000000 == 0b11000000 || udp.Payload[0]&0b10000000 == 0) {
+	//	pushTask(userIP, tranIP, types.QUIC)
+	//	return LayerTypeQUIC
+	//}
 	if udp.SrcPort == 69 || udp.DstPort == 69 {
 		pushTask(userIP, tranIP, types.TFTP)
 		return LayerTypeTFTP

@@ -1,6 +1,7 @@
 package analyze
 
 import (
+	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/analyze/memory"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture"
@@ -9,12 +10,16 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/i18n"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/sessions"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/statictics"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/users"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/reassembly"
 	"go.uber.org/zap"
+	"net"
+	"strings"
 	"time"
 )
 
@@ -39,7 +44,7 @@ func (ac *AssemblerContext) GetCaptureInfo() gopacket.CaptureInfo {
 
 func NewAnalyzer() *Analyze {
 	//
-	StartLogConsumer()
+	sessions.StartLogConsumer()
 	resolve.StartUserAgentConsumer()
 	// 清空有序集合以及遗留数据
 	member.CleanUp()
@@ -54,11 +59,53 @@ func NewAnalyzer() *Analyze {
 	}
 }
 
+// 将 []byte 转换为 MAC 地址字符串
+func byteArrayToMAC(b []byte) string {
+	return fmt.Sprintf("%02x:%02x:%02x:%02x:%02x:%02x", b[0], b[1], b[2], b[3], b[4], b[5])
+}
+
+// 将 []byte 转换为 IP 地址字符串
+func byteArrayToIP(b []byte) string {
+	return net.IP(b).String() // 使用 net.IP 类型将 []byte 转换为 IP 地址字符串
+}
+
 func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 	//zap.L().Debug("Packet", zap.Int("count", capture.PacketsCount))
 	if packet == nil {
 		return
 	}
+	// icmp
+	//if icmpLayer := packet.Layer(layers.LayerTypeICMPv4); icmpLayer != nil {
+	//	icmp := icmpLayer.(*layers.ICMPv4)
+	//	fmt.Printf("ICMP Packet:\n")
+	//	fmt.Printf("ICMP Type: %d, Code: %d\n", icmp.Id, icmp.TypeCode)
+	//	fmt.Printf("Source IP: %s\n", byteArrayToIP(packet.NetworkLayer().NetworkFlow().Src().Raw()))
+	//	fmt.Printf("Destination IP: %s\n", byteArrayToIP(packet.NetworkLayer().NetworkFlow().Dst().Raw()))
+	//}
+	// arp
+	//if arpLayer := packet.Layer(layers.LayerTypeARP); arpLayer != nil {
+	//	arp := arpLayer.(*layers.ARP)
+	//	if arp.Operation == 2 {
+	//		// 输出 ARP 包的各字段
+	//		fmt.Printf("ARP Packet:\n")
+	//		fmt.Printf("  Opcode: %d\n", arp.Operation)
+	//		fmt.Printf("  Source MAC: %s\n", byteArrayToMAC(arp.SourceHwAddress))
+	//		fmt.Printf("  Target MAC: %s\n", byteArrayToMAC(arp.DstHwAddress))
+	//		fmt.Printf("  Source IP: %s\n", byteArrayToIP(arp.SourceProtAddress))
+	//		fmt.Printf("  Target IP: %s\n", byteArrayToIP(arp.DstProtAddress))
+	//	}
+	//}
+	// dhcp
+	//if dhcpLayer := packet.Layer(layers.LayerTypeDHCPv4); dhcpLayer != nil {
+	//	dhcp := dhcpLayer.(*layers.DHCPv4)
+	//	fmt.Printf("DHCP Packet:\n")
+	//	fmt.Printf("  Opcode: %d\n", dhcp.Operation)
+	//	fmt.Printf(" client MAC:%s\n", dhcp.ClientHWAddr)
+	//	fmt.Printf(" client IP:%s\n", dhcp.ClientIP)
+	//	fmt.Printf(" pelay IP:%s\n", dhcp.RelayAgentIP)
+	//	fmt.Printf(" server name:%s\n", dhcp.ServerName)
+	//	fmt.Printf(" you client IP:%s\n", dhcp.YourClientIP)
+	//}
 	if packet.NetworkLayer() == nil || packet.TransportLayer() == nil {
 		return
 	}
@@ -90,6 +137,18 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 		ip = ipv6.SrcIP.String()
 		dip = ipv6.DstIP.String()
 	}
+
+	// 过滤广播地址
+	//if ip == "255.255.255.255" {
+	//	return
+	//}
+	var srcPort, dstPort string
+	if packet.TransportLayer() != nil {
+		srcPort, dstPort = packet.TransportLayer().TransportFlow().Src().String(), packet.TransportLayer().TransportFlow().Dst().String()
+	} else {
+		srcPort, dstPort = "", ""
+	}
+
 	// user_ip 转储缓存
 	var userIP, tranIP, userMac string
 	if users.ExitsUser(ip) {
@@ -101,7 +160,14 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 	if userIP == "" && config.FollowOnlyOnlineUsers {
 		return
 	} else {
-		userIP, tranIP, userMac = ip, dip, ethernet.SrcMac
+		//zap.L().Debug("T", zap.String("ip", ip), zap.String("tranIP", dip), zap.String("srcPort", srcPort), zap.String("dstPort", dstPort))
+		// 按照端口区分出入口
+		if len(srcPort) > 0 && srcPort > "443" {
+			userIP, tranIP, userMac = ip, dip, ethernet.SrcMac
+		} else {
+			userIP, tranIP, userMac = dip, ip, ethernet.DstMac
+		}
+
 	}
 	// 如果 TTL = 255，跳过该数据包
 	if internet.TTL == 255 {
@@ -125,7 +191,7 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 	}
 	trafficMap.Update(transmission)
 
-	if config.UseTTL && userIP == ip {
+	if config.UseTTL && isValidIP(userIP) {
 		_ = ants.Submit(func() { // 插入 IP hash TTL表
 			member.Store(member.Hash{
 				IP:    userIP,
@@ -133,8 +199,7 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 				Value: internet.TTL,
 			})
 			// 如果TTL = 127，则记录设备为win
-			if internet.TTL > 64 && internet.TTL <= 128 {
-				//zap.L().Debug("ttl analyze", zap.Uint8("ttl", internet.TTL))
+			if internet.TTL >= 126 && internet.TTL <= 128 {
 				// 判断缓存中是否有
 				if !member.GetAnalyze(ip) {
 					resolve.AnalyzeByTTL(userIP, internet.TTL)
@@ -144,7 +209,7 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 		})
 	}
 
-	if len(userMac) > 0 {
+	if len(userMac) > 0 && isValidIP(userIP) {
 		_ = ants.Submit(func() { // 插入 IP hash Mac表
 			member.Store(member.Hash{
 				IP:    userIP,
@@ -167,6 +232,30 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 		udp := udpLayer.(*layers.UDP)
 
 		layerType := CheckUDP(userIP, tranIP, udp)
+		// mdns
+		if layerType == LayerTypeMDNS {
+			_ = dstPort
+			device := protocols.ParseMDNS(packet.ApplicationLayer().Payload(), userIP, userMac)
+			zap.L().Debug("mDNS handle:", zap.Any("device", device))
+			if len(device.Name) > 0 {
+				_ = ants.Submit(func() {
+					member.Store(member.Hash{
+						IP:    userIP,
+						Field: types.DeviceName,
+						Value: device.Name,
+					})
+				})
+			}
+			if len(device.Type) > 0 {
+				_ = ants.Submit(func() {
+					member.Store(member.Hash{
+						IP:    userIP,
+						Field: types.DeviceType,
+						Value: device.Type,
+					})
+				})
+			}
+		}
 		// dhcp协议日志输出
 		if layerType == layers.LayerTypeDHCPv4 {
 			dhcp := packet.Layer(layers.LayerTypeDHCPv4).(*layers.DHCPv4)
@@ -192,4 +281,43 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 			TC: ref.Add(-closeTimeout),
 		})
 	}
+}
+
+// 判断是否是广播地址、回环地址等
+func isValidIP(ip string) bool {
+	// 检查回环地址
+	if strings.HasPrefix(ip, "127.") {
+		return false
+	}
+
+	// 检查广播地址
+	if ip == "255.255.255.255" || strings.HasSuffix(ip, "255") {
+		return false
+	}
+
+	// 检查网络地址（0.0.0.0/24, 192.168.1.0/24 等）
+	if ip == "0.0.0.0" || strings.HasSuffix(ip, ".0") {
+		return false
+	}
+
+	// 检查私有地址段
+	//privateNetworks := []string{"10.", "172.", "192."}
+	//for _, prefix := range privateNetworks {
+	//	if strings.HasPrefix(ip, prefix) {
+	//		return false
+	//	}
+	//}
+
+	// 检查 Link-local 地址（如 169.254.x.x）
+	if strings.HasPrefix(ip, "169.254.") {
+		return false
+	}
+
+	// 通过 IP 格式判断
+	//parsedIP := net.ParseIP(ip)
+	//if parsedIP == nil {
+	//	return false
+	//}
+
+	return true
 }
