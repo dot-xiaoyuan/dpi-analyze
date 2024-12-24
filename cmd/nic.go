@@ -54,6 +54,10 @@ var NicCmd = &cobra.Command{
 					continue
 				}
 
+				if ipNet.IP.IsLinkLocalUnicast() {
+					continue
+				}
+
 				// 获取子网信息
 				ip, ipNet, err := utils.GetSubnetInfo(addr.String())
 				if err != nil {

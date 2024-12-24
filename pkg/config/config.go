@@ -44,7 +44,7 @@ var (
 	UseFeature            bool
 	WebPort               uint
 	Detach                bool
-	IPNet                 *net.IPNet
+	IPNet                 []*net.IPNet
 )
 
 type Yaml struct {

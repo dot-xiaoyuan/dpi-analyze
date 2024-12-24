@@ -6,6 +6,8 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/member"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/observer"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/i18n"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/utils"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
 	"go.uber.org/zap"
@@ -58,6 +60,10 @@ func StartCapture(ctx context.Context, c Config, handler PacketHandler, done cha
 		zap.L().Info(i18n.TT("Analyze network card", map[string]interface{}{
 			"nic": c.Nic,
 		}), zap.Error(Err))
+
+		// 获取子网信息
+		config.IPNet = utils.GetSubnetInfoByNic(c.Nic)
+		zap.L().Info("Listening for packets on interface", zap.String("interface", c.Nic), zap.Any("Network address", config.IPNet))
 	}
 
 	if Err != nil {

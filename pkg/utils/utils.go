@@ -213,7 +213,7 @@ func GetIPRange(ipNet *net.IPNet, broadcast net.IP) (net.IP, net.IP) {
 	return firstHost, lastHost
 }
 
-func GetSubnetInfoByNic(nic string) (ip net.IP, ipNet *net.IPNet, err error) {
+func GetSubnetInfoByNic(nic string) []*net.IPNet {
 	// 获取所有网卡接口
 	interfaces, err := net.Interfaces()
 	if err != nil {
@@ -221,40 +221,52 @@ func GetSubnetInfoByNic(nic string) (ip net.IP, ipNet *net.IPNet, err error) {
 	}
 
 	for _, iface := range interfaces {
-		if iface.Name != nic {
+		if iface.Name != nic && nic != "any" {
 			continue
 		}
 		// 获取网卡的所有地址
 		var addrs []net.Addr
+		var ipNets []*net.IPNet
 		addrs, err = iface.Addrs()
 		if err != nil {
-			return
+			return ipNets
 		}
 
 		// 查找并返回第一个有效地址的子网信息
 		for _, addr := range addrs {
 			var ok bool
 			// 检查地址类型（IPv4 或 IPv6）
-			ipNet, ok = addr.(*net.IPNet)
+			n, ok := addr.(*net.IPNet)
 			if !ok {
 				continue
 			}
 
 			// 跳过链路本地地址（例如 fe80::）
-			//if ipNet.IP.IsLinkLocalUnicast() {
-			//	continue
-			//}
-			// 解析并返回 CIDR 信息
-			if ipNet, ok = addr.(*net.IPNet); ok {
-				return GetSubnetInfo(ipNet.String()) // 调用已有的 GetSubnetInfo 函数
+			if n.IP.IsLinkLocalUnicast() {
+				continue
 			}
+			// 解析并返回 CIDR 信息
+			_, ipNet, err := GetSubnetInfo(n.String())
+			if err != nil {
+				continue
+			}
+
+			ipNets = append(ipNets, ipNet)
 		}
+		return ipNets
 	}
-	return
+	return nil
 }
 
 // IsIPInRange 检查 IP 地址是否在子网范围内
 func IsIPInRange(ip net.IP) bool {
 	// 检查 IP 地址是否在子网范围内
-	return config.IPNet.Contains(ip)
+	var ok bool
+	for _, ipNet := range config.IPNet {
+		ok = ipNet.Contains(ip)
+		if ok {
+			return true
+		}
+	}
+	return false
 }

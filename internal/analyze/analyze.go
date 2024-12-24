@@ -14,6 +14,7 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/sessions"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/statictics"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/users"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/utils"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/reassembly"
@@ -120,12 +121,14 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 	// 网络层
 	internet := types.Internet{}
 	var ip, dip string
+	var srcIPNet net.IP
 	if packet.NetworkLayer().LayerType() == layers.LayerTypeIPv4 {
 		ipv4 := packet.Layer(layers.LayerTypeIPv4).(*layers.IPv4)
 		// 设置网络层信息 IPv4
 		internet.TTL = ipv4.TTL
 		internet.DstIP = ipv4.DstIP.String()
 		// 设置源IP
+		srcIPNet = ipv4.SrcIP
 		ip = ipv4.SrcIP.String()
 		dip = ipv4.DstIP.String()
 	} else if packet.NetworkLayer().LayerType() == layers.LayerTypeIPv6 {
@@ -134,6 +137,7 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 		internet.TTL = ipv6.HopLimit
 		internet.DstIP = ipv6.DstIP.String()
 		// 设置源IP
+		srcIPNet = ipv6.SrcIP
 		ip = ipv6.SrcIP.String()
 		dip = ipv6.DstIP.String()
 	}
@@ -160,18 +164,18 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 	if userIP == "" && config.FollowOnlyOnlineUsers {
 		return
 	} else {
-		//zap.L().Debug("T", zap.String("ip", ip), zap.String("tranIP", dip), zap.String("srcPort", srcPort), zap.String("dstPort", dstPort))
-		// 按照端口区分出入口
-		if len(srcPort) > 0 && srcPort > "443" {
+		// 按照子网IP段划分是否是源IP
+		if utils.IsIPInRange(srcIPNet) {
 			userIP, tranIP, userMac = ip, dip, ethernet.SrcMac
 		} else {
+			return
 			userIP, tranIP, userMac = dip, ip, ethernet.DstMac
 		}
 	}
 	// mDNS
 	if srcPort == "5353" || dstPort == "5353" {
+
 		device := protocols.ParseMDNS(packet.ApplicationLayer().Payload(), userIP, userMac)
-		//zap.L().Debug("mDNS handle:", zap.Any("device", device))
 		if len(device.Name) > 0 {
 			_ = ants.Submit(func() {
 				member.Store(member.Hash{
