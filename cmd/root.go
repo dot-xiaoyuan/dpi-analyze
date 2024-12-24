@@ -57,6 +57,7 @@ func init() {
 	rootCmd.AddCommand(StatusCmd)
 	rootCmd.AddCommand(RestartCmd)
 	rootCmd.AddCommand(CleanCmd)
+	rootCmd.AddCommand(NicCmd)
 }
 
 func rootRunFunc(c *cobra.Command, args []string) {
