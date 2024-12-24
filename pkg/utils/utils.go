@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/binary"
 	"fmt"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"io"
 	"net"
 	"strings"
@@ -182,4 +183,78 @@ func FormatBytes(bytes int) string {
 		exp++
 	}
 	return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
+}
+
+// GetSubnetInfo 获取子网相关信息
+func GetSubnetInfo(cidrStr string) (ip net.IP, ipNet *net.IPNet, err error) {
+	// 解析 CIDR 地址
+	return net.ParseCIDR(cidrStr)
+}
+
+// GetBroadcast 获取广播地址
+func GetBroadcast(ipNet *net.IPNet) net.IP {
+	// 获取广播地址
+	broadcast := make(net.IP, len(ipNet.IP))
+	for i := range ipNet.IP {
+		broadcast[i] = ipNet.IP[i] | ^ipNet.Mask[i]
+	}
+	return broadcast
+}
+
+func GetIPRange(ipNet *net.IPNet, broadcast net.IP) (net.IP, net.IP) {
+	// 有效主机范围
+	firstHost := make(net.IP, len(ipNet.IP))
+	lastHost := make(net.IP, len(ipNet.IP))
+	copy(firstHost, ipNet.IP)
+	copy(lastHost, broadcast)
+	firstHost[len(firstHost)-1]++ // 第一有效地址
+	lastHost[len(lastHost)-1]--   // 最后一有效地址
+
+	return firstHost, lastHost
+}
+
+func GetSubnetInfoByNic(nic string) (ip net.IP, ipNet *net.IPNet, err error) {
+	// 获取所有网卡接口
+	interfaces, err := net.Interfaces()
+	if err != nil {
+		fmt.Println("Error fetching interfaces:", err)
+	}
+
+	for _, iface := range interfaces {
+		if iface.Name != nic {
+			continue
+		}
+		// 获取网卡的所有地址
+		var addrs []net.Addr
+		addrs, err = iface.Addrs()
+		if err != nil {
+			return
+		}
+
+		// 查找并返回第一个有效地址的子网信息
+		for _, addr := range addrs {
+			var ok bool
+			// 检查地址类型（IPv4 或 IPv6）
+			ipNet, ok = addr.(*net.IPNet)
+			if !ok {
+				continue
+			}
+
+			// 跳过链路本地地址（例如 fe80::）
+			//if ipNet.IP.IsLinkLocalUnicast() {
+			//	continue
+			//}
+			// 解析并返回 CIDR 信息
+			if ipNet, ok = addr.(*net.IPNet); ok {
+				return GetSubnetInfo(ipNet.String()) // 调用已有的 GetSubnetInfo 函数
+			}
+		}
+	}
+	return
+}
+
+// IsIPInRange 检查 IP 地址是否在子网范围内
+func IsIPInRange(ip net.IP) bool {
+	// 检查 IP 地址是否在子网范围内
+	return config.IPNet.Contains(ip)
 }

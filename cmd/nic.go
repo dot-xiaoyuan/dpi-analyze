@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/utils"
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 	"net"
@@ -46,46 +47,28 @@ var NicCmd = &cobra.Command{
 				}
 
 				// 跳过链路本地地址（例如 fe80::）
-				if ipNet.IP.IsLinkLocalUnicast() {
-					continue
+				//if ipNet.IP.IsLinkLocalUnicast() {
+				//	continue
+				//}
+
+				// 获取子网信息
+				ip, ipNet, err := utils.GetSubnetInfo(addr.String())
+				if err != nil {
+					fmt.Println("Error:", err)
+					return
 				}
-
-				var ip net.IP
-				ip, ipNet, err = net.ParseCIDR(addr.String())
-				if err != nil || ipNet.IP == nil {
-					continue
-				}
-				// 获取网络地址
-				network := ipNet.IP
-
-				// 获取子网掩码的位数
-				mask := ipNet.Mask
-				maskSize, _ := mask.Size()
-
-				// 获取广播地址
-				broadcast := make(net.IP, len(network))
-				for i := range network {
-					broadcast[i] = network[i] | ^mask[i]
-				}
-
-				// 有效主机范围
-				firstHost := make(net.IP, len(network))
-				lastHost := make(net.IP, len(network))
-				copy(firstHost, network)
-				copy(lastHost, broadcast)
-				firstHost[len(firstHost)-1]++ // 第一有效地址
-				lastHost[len(lastHost)-1]--   // 最后一有效地址
-
+				broadcast := utils.GetBroadcast(ipNet)
+				firstHost, lastHost := utils.GetIPRange(ipNet, broadcast)
 				table.Append([]string{
 					iface.Name,
 					ip.String(),
-					mask.String(),
-					fmt.Sprintf("%s/%d", network, maskSize),
+					ipNet.Mask.String(),
+					ipNet.String(),
 					broadcast.String(),
 					fmt.Sprintf("%s - %s", firstHost, lastHost),
 				})
 				//recorded = true
-				break // 只记录第一条
+				continue // 只记录第一条
 			}
 		}
 		// 渲染表格
