@@ -14,7 +14,7 @@ var NicCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// 创建表格
 		table := tablewriter.NewWriter(os.Stdout)
-		table.SetHeader([]string{"Interface Name", "IP Address", "Subnet Mask", "Network Range"})
+		table.SetHeader([]string{"Interface Name", "IP Address", "Subnet Mask", "Network Address", "Broadcast Address", "Valid Host Range"})
 
 		// 获取所有网卡接口
 		interfaces, err := net.Interfaces()
@@ -37,7 +37,7 @@ var NicCmd = &cobra.Command{
 			}
 
 			// 只记录第一条有效地址
-			var recorded bool
+			//var recorded bool
 			for _, addr := range addrs {
 				// 检查地址类型（IPv4 或 IPv6）
 				ipNet, ok := addr.(*net.IPNet)
@@ -50,23 +50,43 @@ var NicCmd = &cobra.Command{
 					continue
 				}
 
-				// 提取 IP、子网掩码和网段
-				ip := ipNet.IP.String()
-				mask := net.IP(ipNet.Mask).String()
-				network := ipNet.String()
+				_, ipNet, err = net.ParseCIDR(addr.String())
+				if err != nil || ipNet.IP == nil {
+					continue
+				}
+				// 获取网络地址
+				network := ipNet.IP
 
-				// 添加到表格
-				table.Append([]string{iface.Name, ip, mask, network})
-				recorded = true
+				// 获取子网掩码的位数
+				mask := ipNet.Mask
+				maskSize, _ := mask.Size()
+
+				// 获取广播地址
+				broadcast := make(net.IP, len(network))
+				for i := range network {
+					broadcast[i] = network[i] | ^mask[i]
+				}
+
+				// 有效主机范围
+				firstHost := make(net.IP, len(network))
+				lastHost := make(net.IP, len(network))
+				copy(firstHost, network)
+				copy(lastHost, broadcast)
+				firstHost[len(firstHost)-1]++ // 第一有效地址
+				lastHost[len(lastHost)-1]--   // 最后一有效地址
+
+				table.Append([]string{
+					iface.Name,
+					network.String(),
+					mask.String(),
+					fmt.Sprintf("%s/%d", network, maskSize),
+					broadcast.String(),
+					fmt.Sprintf("%s - %s", firstHost, lastHost),
+				})
+				//recorded = true
 				break // 只记录第一条
 			}
-
-			// 如果没有记录任何地址，添加一个空记录以表明该接口无有效地址
-			if !recorded {
-				table.Append([]string{iface.Name, "N/A", "N/A", "N/A"})
-			}
 		}
-
 		// 渲染表格
 		table.Render()
 	},
