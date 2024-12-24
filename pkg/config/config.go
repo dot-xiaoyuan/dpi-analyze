@@ -7,6 +7,7 @@ import (
 	"github.com/denisbrodbeck/machineid"
 	"github.com/spf13/viper"
 	"log"
+	"net"
 	"os"
 	"path/filepath"
 	"strings"
@@ -43,6 +44,7 @@ var (
 	UseFeature            bool
 	WebPort               uint
 	Detach                bool
+	IPNet                 *net.IPNet
 )
 
 type Yaml struct {
