@@ -50,7 +50,8 @@ var NicCmd = &cobra.Command{
 					continue
 				}
 
-				_, ipNet, err = net.ParseCIDR(addr.String())
+				var ip net.IP
+				ip, ipNet, err = net.ParseCIDR(addr.String())
 				if err != nil || ipNet.IP == nil {
 					continue
 				}
@@ -77,7 +78,7 @@ var NicCmd = &cobra.Command{
 
 				table.Append([]string{
 					iface.Name,
-					network.String(),
+					ip.String(),
 					mask.String(),
 					fmt.Sprintf("%s/%d", network, maskSize),
 					broadcast.String(),
