@@ -9,6 +9,7 @@ import (
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/capture/resolve"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/i18n"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/component/types"
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/components/features"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/protocols"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/sessions"
@@ -26,8 +27,8 @@ import (
 
 // 流量检测分析
 
-const closeTimeout time.Duration = time.Hour * 24
-const timeout time.Duration = time.Minute * 5
+const closeTimeout time.Duration = time.Second * 30
+const timeout time.Duration = time.Second * 10
 
 type Analyze struct {
 	Assembler *reassembly.Assembler
@@ -173,8 +174,7 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 		}
 	}
 	// mDNS
-	if srcPort == "5353" || dstPort == "5353" {
-
+	if srcPort == "5353" || dstPort == "5353" && packet.NetworkLayer().LayerType() == layers.LayerTypeIPv4 {
 		device := protocols.ParseMDNS(packet.ApplicationLayer().Payload(), userIP, userMac)
 		if len(device.Name) > 0 {
 			_ = ants.Submit(func() {
@@ -227,7 +227,7 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 	}
 	trafficMap.Update(transmission)
 
-	if config.UseTTL && isValidIP(userIP) {
+	if config.UseTTL && userIP == ip {
 		_ = ants.Submit(func() { // 插入 IP hash TTL表
 			member.Store(member.Hash{
 				IP:    userIP,
@@ -245,7 +245,7 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 		})
 	}
 
-	if len(userMac) > 0 && isValidIP(userIP) {
+	if len(userMac) > 0 && userIP == ip {
 		_ = ants.Submit(func() { // 插入 IP hash Mac表
 			member.Store(member.Hash{
 				IP:    userIP,
@@ -263,6 +263,16 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 		}
 		a.Assembler.AssembleWithContext(packet.NetworkLayer().NetworkFlow(), tcp, ac)
 	}
+	// 定期刷新流，设置刷新时间，例如10秒
+	ticker := time.NewTicker(2 * time.Minute)
+	go func() {
+		for range ticker.C {
+			a.Assembler.FlushWithOptions(reassembly.FlushOptions{
+				T:  packet.Metadata().Timestamp.Add(-time.Minute),
+				TC: packet.Metadata().Timestamp.Add(-time.Minute * 2),
+			})
+		}
+	}()
 	// analyze UDP
 	if udpLayer := packet.Layer(layers.LayerTypeUDP); udpLayer != nil {
 		udp := udpLayer.(*layers.UDP)
@@ -272,6 +282,27 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 		if layerType == layers.LayerTypeDHCPv4 {
 			dhcp := packet.Layer(layers.LayerTypeDHCPv4).(*layers.DHCPv4)
 			zap.L().Debug("dhcp", zap.Any("layer", dhcp))
+		}
+		if layerType == layers.LayerTypeDNS {
+			dns := packet.Layer(layers.LayerTypeDNS).(*layers.DNS)
+			zap.L().Debug("dns", zap.Any("layer", dns))
+			for _, quest := range dns.Questions {
+				if ok, domain := features.HandleFeatureMatch(string(quest.Name), userIP, types.DeviceRecord{}); ok {
+					resolve.Handle(types.DeviceRecord{
+						IP:           userIP,
+						OriginChanel: types.DNSProperty,
+						OriginValue:  string(quest.Name),
+						Os:           "",
+						Version:      "",
+						Device:       "",
+						Brand:        strings.ToLower(domain.BrandName),
+						Model:        "",
+						Description:  domain.Description,
+						Icon:         domain.Icon,
+						LastSeen:     time.Now(),
+					})
+				}
+			}
 		}
 		// 会话数累加
 		capture.SessionCount++
@@ -285,14 +316,16 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 		})
 	}
 
-	if capture.PacketsCount%1000 == 0 {
-		//zap.L().Debug(i18n.T("capture packet"), zap.Int("count", capture.PacketsCount))
-		ref := packet.Metadata().Timestamp
-		_, _ = a.Assembler.FlushWithOptions(reassembly.FlushOptions{
-			T:  ref.Add(-timeout),
-			TC: ref.Add(-closeTimeout),
-		})
-	}
+	//if capture.PacketsCount%1000 == 0 {
+	//	zap.L().Debug(i18n.T("capture packet"), zap.Int("count", capture.PacketsCount))
+	//	ref := packet.Metadata().Timestamp
+	//	zap.L().Debug("metadata timestamp", zap.Any("ref", ref))
+	//	flushed, closed := a.Assembler.FlushWithOptions(reassembly.FlushOptions{
+	//		T:  ref.Add(-timeout),
+	//		TC: ref.Add(-closeTimeout),
+	//	})
+	//	zap.L().Debug("Flush stream", zap.Int("flushed", flushed), zap.Int("closed", closed))
+	//}
 }
 
 // 判断是否是广播地址、回环地址等
