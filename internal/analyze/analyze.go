@@ -175,7 +175,7 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 		}
 	}
 	// mDNS
-	if srcPort == "5353" || dstPort == "5353" && packet.NetworkLayer().LayerType() == layers.LayerTypeIPv4 && len(packet.ApplicationLayer().Payload()) > 0 {
+	if srcPort == "5353" || dstPort == "5353" && packet.NetworkLayer().LayerType() == layers.LayerTypeIPv4 && packet.ApplicationLayer() != nil {
 		payload := packet.ApplicationLayer().Payload()
 		device := protocols.ParseMDNS(payload, userIP, userMac)
 
