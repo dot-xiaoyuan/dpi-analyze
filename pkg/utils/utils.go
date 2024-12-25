@@ -220,15 +220,13 @@ func GetSubnetInfoByNic(nic string) []*net.IPNet {
 	if err != nil {
 		fmt.Println("Error fetching interfaces:", err)
 	}
-
+	var ipNets []*net.IPNet
 	for _, iface := range interfaces {
 		if iface.Name != nic && nic != "any" {
 			continue
 		}
-		zap.L().Debug("iface", zap.String("name", iface.Name), zap.String("nic", nic))
 		// 获取网卡的所有地址
 		var addrs []net.Addr
-		var ipNets []*net.IPNet
 		addrs, err = iface.Addrs()
 		if err != nil {
 			zap.L().Error("Error fetching addresses", zap.String("name", iface.Name), zap.String("nic", nic), zap.Error(err))
@@ -241,6 +239,7 @@ func GetSubnetInfoByNic(nic string) []*net.IPNet {
 			// 检查地址类型（IPv4 或 IPv6）
 			n, ok := addr.(*net.IPNet)
 			if !ok {
+				zap.L().Warn("Failed to cast address to *net.IPNet", zap.String("addr", addr.String()))
 				continue
 			}
 
@@ -258,9 +257,9 @@ func GetSubnetInfoByNic(nic string) []*net.IPNet {
 
 			ipNets = append(ipNets, ipNet)
 		}
-		return ipNets
+
 	}
-	return nil
+	return ipNets
 }
 
 // IsIPInRange 检查 IP 地址是否在子网范围内
