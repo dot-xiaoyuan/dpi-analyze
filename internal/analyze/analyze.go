@@ -270,28 +270,31 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 
 		layerType := CheckUDP(userIP, tranIP, udp)
 		// dhcp协议日志输出
-		if layerType == layers.LayerTypeDHCPv4 {
-			dhcp := packet.Layer(layers.LayerTypeDHCPv4).(*layers.DHCPv4)
-			zap.L().Debug("dhcp", zap.Any("layer", dhcp))
-		}
+		//if layerType == layers.LayerTypeDHCPv4 {
+		//	dhcp := packet.Layer(layers.LayerTypeDHCPv4).(*layers.DHCPv4)
+		//	zap.L().Debug("dhcp", zap.Any("layer", dhcp))
+		//}
 		if layerType == layers.LayerTypeDNS {
-			dns := packet.Layer(layers.LayerTypeDNS).(*layers.DNS)
-			for _, quest := range dns.Questions {
-				if ok, domain := features.HandleFeatureMatch(string(quest.Name), userIP, types.DeviceRecord{}); ok {
-					//zap.L().Debug("DNS Question", zap.String("Question", fmt.Sprintf("%s", quest.Name)), zap.String("domain", domain.BrandName))
-					resolve.Handle(types.DeviceRecord{
-						IP:           userIP,
-						OriginChanel: types.DNSProperty,
-						OriginValue:  string(quest.Name),
-						Os:           "",
-						Version:      "",
-						Device:       "",
-						Brand:        strings.ToLower(domain.BrandName),
-						Model:        "",
-						Description:  domain.Description,
-						Icon:         domain.Icon,
-						LastSeen:     time.Now(),
-					})
+			dnsLayer := packet.Layer(layers.LayerTypeDNS)
+			if dnsLayer != nil {
+				dns := dnsLayer.(*layers.DNS)
+				for _, quest := range dns.Questions {
+					if ok, domain := features.HandleFeatureMatch(string(quest.Name), userIP, types.DeviceRecord{}); ok {
+						//zap.L().Debug("DNS Question", zap.String("Question", fmt.Sprintf("%s", quest.Name)), zap.String("domain", domain.BrandName))
+						resolve.Handle(types.DeviceRecord{
+							IP:           userIP,
+							OriginChanel: types.DNSProperty,
+							OriginValue:  string(quest.Name),
+							Os:           "",
+							Version:      "",
+							Device:       "",
+							Brand:        strings.ToLower(domain.BrandName),
+							Model:        "",
+							Description:  domain.Description,
+							Icon:         domain.Icon,
+							LastSeen:     time.Now(),
+						})
+					}
 				}
 			}
 		}
