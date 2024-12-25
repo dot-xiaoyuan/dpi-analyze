@@ -1,6 +1,9 @@
 package handler
 
-import "github.com/dot-xiaoyuan/dpi-analyze/pkg/socket"
+import (
+	"github.com/dot-xiaoyuan/dpi-analyze/pkg/socket"
+	"go.uber.org/zap"
+)
 
 func InitHandlers() {
 	socket.RegisterHandler(socket.Dashboard, Dashboard)
@@ -13,4 +16,5 @@ func InitHandlers() {
 	socket.RegisterHandler(socket.ConfigList, ConfigList)
 	socket.RegisterHandler(socket.FeatureLibrary, FeatureLibrary)
 	socket.RegisterHandler(socket.FeatureUpdate, FeatureUpdate)
+	zap.L().Info("Unix socket handler initialized")
 }

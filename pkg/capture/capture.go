@@ -34,7 +34,7 @@ type Config struct {
 // PacketHandler 处理数据包接口
 type PacketHandler interface {
 	HandlePacket(packet gopacket.Packet)
-	FlushStream(ctx context.Context)
+	//FlushStream(ctx context.Context)
 }
 
 // StartCapture 开始捕获数据包
@@ -104,7 +104,7 @@ func StartCapture(ctx context.Context, c Config, handler PacketHandler, done cha
 	// packet chan
 	packets := source.Packets()
 
-	go handler.FlushStream(ctx)
+	//go handler.FlushStream(ctx)
 
 	var mu sync.Mutex
 	for {

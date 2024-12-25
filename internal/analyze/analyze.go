@@ -317,16 +317,16 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 		})
 	}
 
-	//if capture.PacketsCount%1000 == 0 {
-	//	zap.L().Debug(i18n.T("capture packet"), zap.Int("count", capture.PacketsCount))
-	//	ref := packet.Metadata().Timestamp
-	//	zap.L().Debug("metadata timestamp", zap.Any("ref", ref))
-	//	flushed, closed := a.Assembler.FlushWithOptions(reassembly.FlushOptions{
-	//		T:  ref.Add(-timeout),
-	//		TC: ref.Add(-closeTimeout),
-	//	})
-	//	zap.L().Debug("Flush stream", zap.Int("flushed", flushed), zap.Int("closed", closed))
-	//}
+	if capture.PacketsCount%100000 == 0 {
+		//zap.L().Debug(i18n.T("capture packet"), zap.Int("count", capture.PacketsCount))
+		ref := packet.Metadata().Timestamp
+		//zap.L().Debug("metadata timestamp", zap.Any("ref", ref))
+		flushed, closed := a.Assembler.FlushWithOptions(reassembly.FlushOptions{
+			T:  ref.Add(-time.Minute),
+			TC: ref.Add(-time.Minute * 2),
+		})
+		zap.L().Debug("Flush stream", zap.Int("flushed", flushed), zap.Int("closed", closed))
+	}
 }
 
 func (a *Analyze) FlushStream(ctx context.Context) {

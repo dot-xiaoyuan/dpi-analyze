@@ -256,10 +256,12 @@ func loadComponents() {
 	// 2.首次加载先全量加载一次，然后定时同步
 	userSync := users.UserSync{}
 	userSync.CleanUp()
-	if err = users.SyncOnlineUsers(); err != nil {
-		//sp.Stop()
-		os.Exit(1)
-	}
+	_ = ants.Submit(func() {
+		if err = users.SyncOnlineUsers(); err != nil {
+			//sp.Stop()
+			os.Exit(1)
+		}
+	})
 
 	_, err = cron.AddJob("@every 30m", userSync)
 	if err != nil {
