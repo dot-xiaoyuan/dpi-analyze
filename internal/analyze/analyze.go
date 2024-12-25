@@ -1,6 +1,7 @@
 package analyze
 
 import (
+	"context"
 	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/internal/analyze/memory"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/ants"
@@ -263,19 +264,6 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 		}
 		a.Assembler.AssembleWithContext(packet.NetworkLayer().NetworkFlow(), tcp, ac)
 	}
-	// 定期刷新流，设置刷新时间，例如10秒
-	ticker := time.NewTicker(2 * time.Minute)
-	go func() {
-		defer ticker.Stop()
-		select {
-		case <-ticker.C:
-			flushed, closed := a.Assembler.FlushWithOptions(reassembly.FlushOptions{
-				T:  packet.Metadata().Timestamp.Add(-time.Minute),
-				TC: packet.Metadata().Timestamp.Add(-time.Minute * 5),
-			})
-			zap.L().Debug("Flush Stream", zap.Int("flushed", flushed), zap.Int("closed", closed))
-		}
-	}()
 	// analyze UDP
 	if udpLayer := packet.Layer(layers.LayerTypeUDP); udpLayer != nil {
 		udp := udpLayer.(*layers.UDP)
@@ -329,6 +317,26 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 	//	})
 	//	zap.L().Debug("Flush stream", zap.Int("flushed", flushed), zap.Int("closed", closed))
 	//}
+}
+
+func (a *Analyze) FlushStream(ctx context.Context) {
+	// 定期刷新流的 Goroutine
+	ticker := time.NewTicker(2 * time.Minute)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			zap.L().Info("Stopping flow assembler flush")
+			return
+		case <-ticker.C:
+			zap.L().Info("Flushing timed-out streams")
+			flushed, closed := a.Assembler.FlushWithOptions(reassembly.FlushOptions{
+				T:  time.Now().Add(-time.Minute),
+				TC: time.Now().Add(-time.Minute * 2),
+			})
+			zap.L().Debug("Flush Stream", zap.Int("flushed", flushed), zap.Int("closed_close", closed))
+		}
+	}
 }
 
 // 判断是否是广播地址、回环地址等
