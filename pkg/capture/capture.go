@@ -84,6 +84,7 @@ func StartCapture(ctx context.Context, c Config, handler PacketHandler, done cha
 			"bpf": c.BerkeleyPacketFilter,
 		}))
 	}
+	zap.L().Info("是否仅关注在线用户", zap.Bool("switch", config.FollowOnlyOnlineUsers))
 	// 关闭捕获设备
 	defer func() {
 		if Handle != nil {
