@@ -285,9 +285,9 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 		}
 		if layerType == layers.LayerTypeDNS {
 			dns := packet.Layer(layers.LayerTypeDNS).(*layers.DNS)
-			zap.L().Debug("dns", zap.Any("layer", dns))
 			for _, quest := range dns.Questions {
 				if ok, domain := features.HandleFeatureMatch(string(quest.Name), userIP, types.DeviceRecord{}); ok {
+					zap.L().Debug("DNS Question", zap.String("Question", fmt.Sprintf("%s", quest.Name)), zap.String("domain", domain.BrandName))
 					resolve.Handle(types.DeviceRecord{
 						IP:           userIP,
 						OriginChanel: types.DNSProperty,
