@@ -159,7 +159,7 @@ func ensureIndex() error {
 func batchInsertToMongo(docs []interface{}) error {
 	collection := mongo.GetMongoClient().Database(types.MongoDatabaseFeatures).Collection(types.OnlineUsersFeature)
 
-	batchSize := 500
+	batchSize := 100
 	for i := 0; i < len(docs); i += batchSize {
 		end := i + batchSize
 		if end > len(docs) {
