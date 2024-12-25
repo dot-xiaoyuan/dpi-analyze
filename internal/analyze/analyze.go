@@ -266,7 +266,9 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 	// 定期刷新流，设置刷新时间，例如10秒
 	ticker := time.NewTicker(2 * time.Minute)
 	go func() {
-		for range ticker.C {
+		defer ticker.Stop()
+		select {
+		case <-ticker.C:
 			flushed, closed := a.Assembler.FlushWithOptions(reassembly.FlushOptions{
 				T:  packet.Metadata().Timestamp.Add(-time.Minute),
 				TC: packet.Metadata().Timestamp.Add(-time.Minute * 5),
