@@ -175,36 +175,37 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 		}
 	}
 	// mDNS
-	if srcPort == "5353" || dstPort == "5353" && packet.NetworkLayer().LayerType() == layers.LayerTypeIPv4 {
-		device := protocols.ParseMDNS(packet.ApplicationLayer().Payload(), userIP, userMac)
-		if len(device.Name) > 0 {
+	if srcPort == "5353" || dstPort == "5353" && packet.NetworkLayer().LayerType() == layers.LayerTypeIPv4 && len(packet.ApplicationLayer().Payload()) > 0 {
+		payload := packet.ApplicationLayer().Payload()
+		device := protocols.ParseMDNS(payload, userIP, userMac)
+
+		if len(device.Name) > 0 || len(device.Type) > 0 || len(device.MAC) > 0 {
 			_ = ants.Submit(func() {
-				member.Store(member.Hash{
-					IP:    userIP,
-					Field: types.DeviceName,
-					Value: device.Name,
-				})
-			})
-		}
-		if len(device.Type) > 0 {
-			_ = ants.Submit(func() {
-				member.Store(member.Hash{
-					IP:    userIP,
-					Field: types.DeviceType,
-					Value: device.Type,
-				})
-			})
-		}
-		if len(device.MAC) > 0 {
-			_ = ants.Submit(func() {
-				member.Store(member.Hash{
-					IP:    userIP,
-					Field: types.Mac,
-					Value: device.MAC,
-				})
+				if len(strings.TrimSpace(device.Name)) > 0 {
+					member.Store(member.Hash{
+						IP:    userIP,
+						Field: types.DeviceName,
+						Value: device.Name,
+					})
+				}
+				if len(strings.TrimSpace(device.Type)) > 0 {
+					member.Store(member.Hash{
+						IP:    userIP,
+						Field: types.DeviceType,
+						Value: device.Type,
+					})
+				}
+				if len(device.MAC) > 0 { // 假设 MAC 校验在 ParseMDNS 已完成
+					member.Store(member.Hash{
+						IP:    userIP,
+						Field: types.Mac,
+						Value: device.MAC,
+					})
+				}
 			})
 		}
 	}
+
 	// 记录mac和ip地址绑定关系
 	// 如果 TTL = 255，跳过该数据包
 	if internet.TTL == 255 {

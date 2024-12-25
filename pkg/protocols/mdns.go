@@ -2,9 +2,9 @@ package protocols
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
+	"go.uber.org/zap"
 	"strings"
 )
 
@@ -49,18 +49,18 @@ var serviceDescriptions = map[string]string{
 
 // 根据服务类型返回具体的服务描述
 func getServiceDescription(input string) (string, string) {
-	// 找到第一个 "._" 出现的位置
-	index := strings.Index(input, "._")
-	if index == -1 {
-		// 如果没有找到 "._" 返回原始字符串和空字符串
-		return input, ""
+	parts := strings.SplitN(input, "._", 2)
+	if len(parts) < 2 {
+		return input, "" // 没有匹配到服务类型，直接返回
 	}
 
-	// 截取分割前后的字符串
-	before := input[:index]
-	after := input[index+1:] // 跳过 "._" 部分
+	// 查找描述
+	description, found := serviceDescriptions["._"+parts[1]]
+	if !found {
+		return parts[0], "" // 没有匹配到描述，返回基础名称
+	}
 
-	return before, serviceDescriptions[after]
+	return parts[0], description
 }
 
 // ParseMDNS 解析 mDNS 数据包
@@ -73,16 +73,14 @@ func ParseMDNS(data []byte, srcIP, srcMac string) Device {
 	// 解码数据包
 	err := parser.DecodeLayers(data, &decodedLayers)
 	if err != nil {
-		fmt.Println("Error decoding mDNS packet:", err)
+		zap.L().Error("Failed to decode mDNS layer", zap.Error(err))
 		return Device{}
 	}
 
 	device := Device{
-		MAC: srcMac,
+		MAC:  srcMac,
+		IPv4: srcIP,
 	}
-
-	// 使用源 IP 作为默认的设备 IP 地址
-	device.IPv4 = srcIP
 
 	// 遍历解码后的层，查找 DNS 层
 	for _, layerType := range decodedLayers {
@@ -113,6 +111,11 @@ func ParseMDNS(data []byte, srcIP, srcMac string) Device {
 				case layers.DNSTypeTXT:
 					// 提取设备描述（来自 TXT 记录）
 					device.Description = string(answer.TXT)
+				}
+
+				// 优化：一旦发现关键字段，提前退出循环
+				if device.Name != "" && device.IPv4 != "" && device.Services != "" {
+					break
 				}
 			}
 		}
