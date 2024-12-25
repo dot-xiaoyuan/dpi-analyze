@@ -242,7 +242,11 @@ func GetSubnetInfoByNic(nic string) []*net.IPNet {
 				zap.L().Warn("Failed to cast address to *net.IPNet", zap.String("addr", addr.String()))
 				continue
 			}
-
+			// 跳过回环地址
+			if n.IP.IsLoopback() {
+				zap.L().Warn("跳过回环地址", zap.String("name", iface.Name), zap.String("nic", nic), zap.String("ip", n.IP.String()))
+				continue
+			}
 			// 跳过链路本地地址（例如 fe80::）
 			if n.IP.IsLinkLocalUnicast() {
 				zap.L().Warn("跳过链路本地地址", zap.String("name", iface.Name), zap.String("nic", nic), zap.String("ip", n.IP.String()))
