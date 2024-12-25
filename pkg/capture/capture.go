@@ -64,7 +64,7 @@ func StartCapture(ctx context.Context, c Config, handler PacketHandler, done cha
 
 		// 获取子网信息
 		config.IPNet = utils.GetSubnetInfoByNic(c.Nic)
-		zap.L().Info("Listening for packets on interface", zap.String("interface", c.Nic), zap.String("Network address", fmt.Sprintf("%s", config.IPNet)))
+		zap.L().Info("Listening for packets on interface", zap.String("interface", c.Nic), zap.String("Network address", fmt.Sprintf("%s", config.IPNet)), zap.Int("len", len(config.IPNet)))
 	}
 
 	if Err != nil {

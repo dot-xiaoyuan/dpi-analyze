@@ -167,7 +167,7 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 		return
 	} else {
 		// 按照子网IP段划分是否是源IP
-		if utils.IsIPInRange(srcIPNet) {
+		if len(config.IPNet) > 0 && utils.IsIPInRange(srcIPNet) {
 			userIP, tranIP, userMac = ip, dip, ethernet.SrcMac
 		} else {
 			return
