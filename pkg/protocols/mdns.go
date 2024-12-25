@@ -2,9 +2,9 @@ package protocols
 
 import (
 	"bytes"
+	"errors"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
-	"go.uber.org/zap"
 	"strings"
 )
 
@@ -64,7 +64,7 @@ func getServiceDescription(input string) (string, string) {
 }
 
 // ParseMDNS 解析 mDNS 数据包
-func ParseMDNS(data []byte, srcIP, srcMac string) Device {
+func ParseMDNS(data []byte, srcIP, srcMac string) (Device, error) {
 	// 创建 DNS 解析器
 	dnsLayer := &layers.DNS{}
 	parser := gopacket.NewDecodingLayerParser(layers.LayerTypeDNS, dnsLayer)
@@ -73,8 +73,8 @@ func ParseMDNS(data []byte, srcIP, srcMac string) Device {
 	// 解码数据包
 	err := parser.DecodeLayers(data, &decodedLayers)
 	if err != nil {
-		zap.L().Error("Failed to decode mDNS layer", zap.Error(err))
-		return Device{}
+		// zap.L().Error("Failed to decode mDNS layer", zap.Error(err))
+		return Device{}, err
 	}
 
 	device := Device{
@@ -87,7 +87,7 @@ func ParseMDNS(data []byte, srcIP, srcMac string) Device {
 		if layerType == layers.LayerTypeDNS {
 			// 解析 Answers 部分（提取设备核心信息）
 			if len(dnsLayer.Questions) > 0 {
-				return Device{}
+				return Device{}, errors.New("DNS questions are not supported")
 			}
 			for _, answer := range dnsLayer.Answers {
 				if bytes.Contains(answer.Name, []byte("_services._dns")) {
@@ -129,9 +129,9 @@ func ParseMDNS(data []byte, srcIP, srcMac string) Device {
 	}
 	// 如果设备的 IPv4 或 IPv6 地址有效，则返回该设备
 	if len(device.Name) > 0 {
-		return device
+		return device, nil
 	}
 
 	// 如果没有有效的 IP 地址信息，返回空设备
-	return Device{}
+	return Device{}, errors.New("mDNS device not found")
 }

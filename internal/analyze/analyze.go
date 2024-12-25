@@ -175,37 +175,40 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 		}
 	}
 	// mDNS
-	if (srcPort == "5353" || dstPort == "5353") &&
-		packet.NetworkLayer().LayerType() == layers.LayerTypeIPv4 &&
-		packet.ApplicationLayer() != nil {
+	if udpLayer := packet.Layer(layers.LayerTypeUDP); udpLayer != nil {
+		if (srcPort == "5353" || dstPort == "5353") &&
+			packet.NetworkLayer().LayerType() == layers.LayerTypeIPv4 &&
+			packet.ApplicationLayer() != nil {
 
-		payload := packet.ApplicationLayer().Payload()
-		device := protocols.ParseMDNS(payload, userIP, userMac)
-
-		if len(device.Name) > 0 || len(device.Type) > 0 || len(device.MAC) > 0 {
-			_ = ants.Submit(func() {
-				if len(strings.TrimSpace(device.Name)) > 0 {
-					member.Store(member.Hash{
-						IP:    userIP,
-						Field: types.DeviceName,
-						Value: device.Name,
+			payload := packet.ApplicationLayer().Payload()
+			device, err := protocols.ParseMDNS(payload, userIP, userMac)
+			if err == nil {
+				if len(device.Name) > 0 || len(device.Type) > 0 || len(device.MAC) > 0 {
+					_ = ants.Submit(func() {
+						if len(strings.TrimSpace(device.Name)) > 0 {
+							member.Store(member.Hash{
+								IP:    userIP,
+								Field: types.DeviceName,
+								Value: device.Name,
+							})
+						}
+						if len(strings.TrimSpace(device.Type)) > 0 {
+							member.Store(member.Hash{
+								IP:    userIP,
+								Field: types.DeviceType,
+								Value: device.Type,
+							})
+						}
+						if len(device.MAC) > 0 { // 假设 MAC 校验在 ParseMDNS 已完成
+							member.Store(member.Hash{
+								IP:    userIP,
+								Field: types.Mac,
+								Value: device.MAC,
+							})
+						}
 					})
 				}
-				if len(strings.TrimSpace(device.Type)) > 0 {
-					member.Store(member.Hash{
-						IP:    userIP,
-						Field: types.DeviceType,
-						Value: device.Type,
-					})
-				}
-				if len(device.MAC) > 0 { // 假设 MAC 校验在 ParseMDNS 已完成
-					member.Store(member.Hash{
-						IP:    userIP,
-						Field: types.Mac,
-						Value: device.MAC,
-					})
-				}
-			})
+			}
 		}
 	}
 
