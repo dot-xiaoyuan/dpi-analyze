@@ -267,10 +267,11 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 	ticker := time.NewTicker(2 * time.Minute)
 	go func() {
 		for range ticker.C {
-			a.Assembler.FlushWithOptions(reassembly.FlushOptions{
+			flushed, closed := a.Assembler.FlushWithOptions(reassembly.FlushOptions{
 				T:  packet.Metadata().Timestamp.Add(-time.Minute),
-				TC: packet.Metadata().Timestamp.Add(-time.Minute * 2),
+				TC: packet.Metadata().Timestamp.Add(-time.Minute * 5),
 			})
+			zap.L().Debug("Flush Stream", zap.Int("flushed", flushed), zap.Int("closed", closed))
 		}
 	}()
 	// analyze UDP
@@ -287,7 +288,7 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 			dns := packet.Layer(layers.LayerTypeDNS).(*layers.DNS)
 			for _, quest := range dns.Questions {
 				if ok, domain := features.HandleFeatureMatch(string(quest.Name), userIP, types.DeviceRecord{}); ok {
-					zap.L().Debug("DNS Question", zap.String("Question", fmt.Sprintf("%s", quest.Name)), zap.String("domain", domain.BrandName))
+					//zap.L().Debug("DNS Question", zap.String("Question", fmt.Sprintf("%s", quest.Name)), zap.String("domain", domain.BrandName))
 					resolve.Handle(types.DeviceRecord{
 						IP:           userIP,
 						OriginChanel: types.DNSProperty,

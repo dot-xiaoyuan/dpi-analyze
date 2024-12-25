@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"github.com/dot-xiaoyuan/dpi-analyze/pkg/config"
+	"go.uber.org/zap"
 	"io"
 	"net"
 	"strings"
@@ -224,11 +225,13 @@ func GetSubnetInfoByNic(nic string) []*net.IPNet {
 		if iface.Name != nic && nic != "any" {
 			continue
 		}
+		zap.L().Debug("iface", zap.String("name", iface.Name), zap.String("nic", nic))
 		// 获取网卡的所有地址
 		var addrs []net.Addr
 		var ipNets []*net.IPNet
 		addrs, err = iface.Addrs()
 		if err != nil {
+			zap.L().Error("Error fetching addresses", zap.String("name", iface.Name), zap.String("nic", nic), zap.Error(err))
 			return ipNets
 		}
 
@@ -243,11 +246,13 @@ func GetSubnetInfoByNic(nic string) []*net.IPNet {
 
 			// 跳过链路本地地址（例如 fe80::）
 			if n.IP.IsLinkLocalUnicast() {
+				zap.L().Warn("跳过链路本地地址", zap.String("name", iface.Name), zap.String("nic", nic), zap.String("ip", n.IP.String()))
 				continue
 			}
 			// 解析并返回 CIDR 信息
 			_, ipNet, err := GetSubnetInfo(n.String())
 			if err != nil {
+				zap.L().Error("Error fetching subnet info", zap.String("name", iface.Name), zap.String("nic", nic), zap.Error(err))
 				continue
 			}
 
