@@ -163,15 +163,15 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 		userIP, tranIP, userMac = dip, ip, ethernet.DstMac
 	}
 	// 仅关注在线用户 如果在线用户中不存在该IP跳过该数据包
-	if userIP == "" && config.FollowOnlyOnlineUsers {
-		return
+	if config.FollowOnlyOnlineUsers {
+		if userIP == "" {
+			return
+		}
 	} else {
-		// 按照子网IP段划分是否是源IP
 		if len(config.IPNet) > 0 && utils.IsIPInRange(srcIPNet) {
 			userIP, tranIP, userMac = ip, dip, ethernet.SrcMac
 		} else {
 			return
-			userIP, tranIP, userMac = dip, ip, ethernet.DstMac
 		}
 	}
 	// mDNS
@@ -334,7 +334,7 @@ func (a *Analyze) FlushStream(ctx context.Context) {
 				T:  time.Now().Add(-time.Minute),
 				TC: time.Now().Add(-time.Minute * 2),
 			})
-			zap.L().Debug("Flush Stream", zap.Int("flushed", flushed), zap.Int("closed_close", closed))
+			zap.L().Debug("Flush Stream", zap.Any("", a.Assembler.MaxBufferedPagesPerConnection), zap.Int("flushed", flushed), zap.Int("closed_close", closed))
 		}
 	}
 }
