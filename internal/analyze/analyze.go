@@ -337,9 +337,15 @@ func (a *Analyze) FlushStream(ctx context.Context) {
 			return
 		case <-ticker.C:
 			zap.L().Info("Flushing timed-out streams")
+			// 设置 FlushOptions 参数
+			flushTime := time.Now().Add(-time.Minute)
+			checkTime := time.Now().Add(-time.Minute * 2)
+			if checkTime.After(flushTime) {
+				checkTime = flushTime
+			}
 			flushed, closed := a.Assembler.FlushWithOptions(reassembly.FlushOptions{
-				T:  time.Now().Add(-time.Minute),
-				TC: time.Now().Add(-time.Minute * 2),
+				T:  flushTime,
+				TC: checkTime,
 			})
 			zap.L().Debug("Flush Stream", zap.Any("", a.Assembler.MaxBufferedPagesPerConnection), zap.Int("flushed", flushed), zap.Int("closed_close", closed))
 		}
