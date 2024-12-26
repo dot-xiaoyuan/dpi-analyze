@@ -84,7 +84,7 @@ func ipCounter(ip, source string) (bool, error) {
 	count++
 
 	// 达到阈值
-	if count >= 15 {
+	if count >= 50 {
 		// 重置计数
 		zap.L().Debug("threshold reached", zap.Int("input", count), zap.String("source", source))
 		resetIpCount(cacheKey)
