@@ -86,7 +86,7 @@ func storeMongo(device types.DeviceRecord) {
 
 // 触发事件函数
 func triggerEvent(ip string) {
-	zap.L().Warn("Event Triggered: Multiple devices detected for IP ", zap.String("ip", ip))
+	//zap.L().Warn("Event Triggered: Multiple devices detected for IP ", zap.String("ip", ip))
 	triggerLock.Lock()
 	Discover(ip)
 	triggerLock.Unlock()
