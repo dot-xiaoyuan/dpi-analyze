@@ -71,7 +71,7 @@ func (sr *StreamReader) Run(wg *sync.WaitGroup) {
 				if !sr.isSaved {
 					sr.isSaved = true
 					// save 2 mongo
-					if sr.Protocol == "unknown" {
+					if len(sr.Protocol) == 0 {
 						sr.Parent.Wg.Done()
 						return
 					}

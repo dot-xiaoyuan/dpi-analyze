@@ -287,6 +287,7 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 				dns := dnsLayer.(*layers.DNS)
 				for _, quest := range dns.Questions {
 					if ok, domain := features.HandleFeatureMatch(string(quest.Name), userIP, types.DeviceRecord{}); ok {
+						zap.L().Debug("DNS Question", zap.String("quest", fmt.Sprintf("%s", quest.Name)), zap.String("ip", userIP))
 						//zap.L().Debug("DNS Question", zap.String("Question", fmt.Sprintf("%s", quest.Name)), zap.String("domain", domain.BrandName))
 						resolve.Handle(types.DeviceRecord{
 							IP:           userIP,
