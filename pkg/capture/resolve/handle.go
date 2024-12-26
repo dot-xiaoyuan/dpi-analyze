@@ -116,6 +116,10 @@ func (d *Device) checkDevice() {
 			update = true
 			break
 		}
+		// window 跳过联想
+		if d.Record.Brand == "windows" && oldRecord.OriginChanel == types.DNSProperty && oldRecord.Brand == "lenovo" {
+			break
+		}
 		// 联想
 		if d.Record.Brand == "lenovo" && oldRecord.Os == "windows" && oldRecord.Brand == "windows" {
 			// 更新操作系统和版本
