@@ -185,6 +185,7 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 			if err == nil {
 				if len(device.Name) > 0 || len(device.Type) > 0 || len(device.MAC) > 0 {
 					_ = ants.Submit(func() {
+						zap.L().Debug("mDNS", zap.Any("device", device))
 						if len(strings.TrimSpace(device.Name)) > 0 {
 							member.Store(member.Hash{
 								IP:    userIP,

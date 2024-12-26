@@ -21,10 +21,10 @@ var (
 
 func HandleFeatureMatch(input, ip string, dr types.DeviceRecord) (ok bool, domain parser.Domain) {
 	// 使用 IP 计数逻辑和品牌匹配逻辑
-	ok, result, source := Match(input, ip, ipCounter)
+	ok, result, _ := Match(input, ip, ipCounter)
 	if ok {
 		domain = result.(parser.Domain)
-		zap.L().Debug("Brand matched Result", zap.String("input", input), zap.String("source", source), zap.String("brand", domain.DomainName))
+		//zap.L().Debug("Brand matched Result", zap.String("input", input), zap.String("source", source), zap.String("brand", domain.DomainName))
 		// 特殊处理
 		// macos修改icon
 		if domain.BrandName == "apple" {
