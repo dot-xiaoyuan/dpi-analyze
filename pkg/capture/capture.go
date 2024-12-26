@@ -12,6 +12,7 @@ import (
 	"github.com/google/gopacket/pcap"
 	"go.uber.org/zap"
 	"sync"
+	"time"
 )
 
 // 数据包捕获和抓取
@@ -35,6 +36,7 @@ type Config struct {
 type PacketHandler interface {
 	HandlePacket(packet gopacket.Packet)
 	//FlushStream(ctx context.Context)
+	FlushWithOptions()
 }
 
 // StartCapture 开始捕获数据包
@@ -106,6 +108,15 @@ func StartCapture(ctx context.Context, c Config, handler PacketHandler, done cha
 	packets := source.Packets()
 
 	//go handler.FlushStream(ctx)
+	go func() {
+		ticker := time.NewTicker(time.Minute * 5)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			zap.L().Info("每5分钟清理流")
+			handler.FlushWithOptions()
+		}
+	}()
 
 	var mu sync.Mutex
 	for {

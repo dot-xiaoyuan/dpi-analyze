@@ -329,6 +329,10 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 	}
 }
 
+func (a *Analyze) FlushWithOptions() {
+	a.Assembler.FlushCloseOlderThan(time.Now().Add(-time.Minute * 5))
+}
+
 func (a *Analyze) FlushStream(ctx context.Context) {
 	// 定期刷新流的 Goroutine
 	ticker := time.NewTicker(2 * time.Minute)
