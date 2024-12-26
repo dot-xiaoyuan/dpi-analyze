@@ -78,6 +78,7 @@ func (d *Device) storeRedis(update bool) {
 	d.rdb.SAdd(d.ctx, key, jsonData).Val()
 	// 设置过期时间
 	d.rdb.Expire(d.ctx, key, 24*time.Hour).Val()
+	d.checkCount()
 }
 
 // 删除设备数量统计
