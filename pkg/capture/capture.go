@@ -100,6 +100,7 @@ func StartCapture(ctx context.Context, c Config, handler PacketHandler, done cha
 	}
 
 	source := gopacket.NewPacketSource(Handle, Decoder)
+	source.Lazy = true
 	source.NoCopy = true
 	// packet chan
 	packets := source.Packets()
