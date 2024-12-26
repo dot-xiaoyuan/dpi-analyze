@@ -55,7 +55,7 @@ func getServiceDescription(input string) (string, string) {
 	}
 
 	// 查找描述
-	description, found := serviceDescriptions["._"+parts[1]]
+	description, found := serviceDescriptions["_"+parts[1]]
 	if !found {
 		return parts[0], "" // 没有匹配到描述，返回基础名称
 	}
