@@ -56,59 +56,36 @@ func (sr *StreamReader) Run(wg *sync.WaitGroup) {
 	defer wg.Done()
 	b := bufio.NewReader(sr)
 
-	buffer := make([]byte, 0, 4096)
-	data := make([]byte, 1024)
+	buffer := make([]byte, 0, 8192) // 初始化更大的缓冲区
+	dataPool := sync.Pool{
+		New: func() interface{} {
+			return make([]byte, 1024)
+		},
+	}
 
 	var protocolIdentified bool
 	var handler protocols.ProtocolHandler
 	var headerBytesLimit = 512
 
 	for {
+		// 从池中获取 data 缓冲区
+		data := dataPool.Get().([]byte)
 		// read by Reader
 		n, err := b.Read(data)
 		if err != nil {
 			if err == io.EOF {
 				if !sr.isSaved {
-					sr.isSaved = true
-					// save 2 mongo
-					if len(sr.Protocol) == 0 {
-						sr.Parent.Wg.Done()
-						return
-					}
-					sessionData := types.Sessions{
-						Ident:               sr.Ident,
-						SessionId:           sr.Parent.SessionID,
-						SrcIp:               sr.SrcIP,
-						DstIp:               sr.DstIP,
-						SrcPort:             sr.SrcPort,
-						DstPort:             sr.DstPort,
-						PacketCount:         sr.Parent.PacketsCount,
-						ByteCount:           sr.Parent.BytesCount,
-						Protocol:            string(sr.Protocol),
-						MissBytes:           sr.Parent.MissBytes,
-						OutOfOrderPackets:   sr.Parent.OutOfOrderPackets,
-						OutOfOrderBytes:     sr.Parent.OutOfOrderBytes,
-						OverlapBytes:        sr.Parent.OverlapBytes,
-						OverlapPackets:      sr.Parent.OverlapPackets,
-						StartTime:           sr.Parent.StartTime,
-						EndTime:             time.Now(),
-						ProtocolFlags:       sr.Parent.ProtocolFlags,
-						ApplicationProtocol: sr.Parent.ApplicationProtocol,
-						Metadata:            sr.Parent.Metadata,
-					}
-					select {
-					case sessions.SessionQueue <- sessionData:
-					default:
+					sr.saveSessionData()
 
-					}
-					sr.Parent.Wg.Done()
 				}
 				break
 			}
+			dataPool.Put(data) // 出现错误时归还缓冲区
 			continue
 		}
 		// push读取的数据
 		buffer = append(buffer, data[:n]...)
+		dataPool.Put(data)
 
 		// 只使用 buffer 的前512字节进行协议判断
 		if !protocolIdentified && len(buffer) > headerBytesLimit {
@@ -119,6 +96,7 @@ func (sr *StreamReader) Run(wg *sync.WaitGroup) {
 			}
 		}
 
+		// 数据处理
 		if protocolIdentified && handler != nil {
 			processedBytes, needsMoreData := handler.HandleData(buffer, sr)
 			if !needsMoreData {
@@ -126,6 +104,43 @@ func (sr *StreamReader) Run(wg *sync.WaitGroup) {
 			}
 		}
 	}
+}
+
+// 保存数据到mongodb
+func (sr *StreamReader) saveSessionData() {
+	sr.isSaved = true
+	// save 2 mongo
+	if len(sr.Protocol) == 0 {
+		sr.Parent.Wg.Done()
+		return
+	}
+	sessionData := types.Sessions{
+		Ident:               sr.Ident,
+		SessionId:           sr.Parent.SessionID,
+		SrcIp:               sr.SrcIP,
+		DstIp:               sr.DstIP,
+		SrcPort:             sr.SrcPort,
+		DstPort:             sr.DstPort,
+		PacketCount:         sr.Parent.PacketsCount,
+		ByteCount:           sr.Parent.BytesCount,
+		Protocol:            string(sr.Protocol),
+		MissBytes:           sr.Parent.MissBytes,
+		OutOfOrderPackets:   sr.Parent.OutOfOrderPackets,
+		OutOfOrderBytes:     sr.Parent.OutOfOrderBytes,
+		OverlapBytes:        sr.Parent.OverlapBytes,
+		OverlapPackets:      sr.Parent.OverlapPackets,
+		StartTime:           sr.Parent.StartTime,
+		EndTime:             time.Now(),
+		ProtocolFlags:       sr.Parent.ProtocolFlags,
+		ApplicationProtocol: sr.Parent.ApplicationProtocol,
+		Metadata:            sr.Parent.Metadata,
+	}
+	select {
+	case sessions.SessionQueue <- sessionData:
+	default:
+
+	}
+	sr.Parent.Wg.Done()
 }
 
 func (sr *StreamReader) LockParent() {

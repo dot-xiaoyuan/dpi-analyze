@@ -12,7 +12,6 @@ import (
 	"github.com/google/gopacket/pcap"
 	"go.uber.org/zap"
 	"sync"
-	"time"
 )
 
 // 数据包捕获和抓取
@@ -35,8 +34,8 @@ type Config struct {
 // PacketHandler 处理数据包接口
 type PacketHandler interface {
 	HandlePacket(packet gopacket.Packet)
-	//FlushStream(ctx context.Context)
-	FlushWithOptions()
+	FlushStream(ctx context.Context)
+	//FlushWithOptions()
 }
 
 // StartCapture 开始捕获数据包
@@ -107,16 +106,16 @@ func StartCapture(ctx context.Context, c Config, handler PacketHandler, done cha
 	// packet chan
 	packets := source.Packets()
 
-	//go handler.FlushStream(ctx)
-	go func() {
-		ticker := time.NewTicker(time.Minute * 5)
-		defer ticker.Stop()
-
-		for range ticker.C {
-			zap.L().Info("每5分钟清理流")
-			handler.FlushWithOptions()
-		}
-	}()
+	go handler.FlushStream(ctx)
+	//go func() {
+	//	ticker := time.NewTicker(time.Minute * 5)
+	//	defer ticker.Stop()
+	//
+	//	for range ticker.C {
+	//		zap.L().Info("每5分钟清理流")
+	//		handler.FlushWithOptions()
+	//	}
+	//}()
 
 	var mu sync.Mutex
 	for {
@@ -131,6 +130,11 @@ func StartCapture(ctx context.Context, c Config, handler PacketHandler, done cha
 				done <- struct{}{}
 				return
 			}
+			// 跳过空包
+			if packet == nil {
+				continue
+			}
+
 			PacketsCount++
 			mu.Lock()
 			// 因为需要重组，所以不能使用go协程进行异步处理

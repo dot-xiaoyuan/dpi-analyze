@@ -62,53 +62,7 @@ func NewAnalyzer() *Analyze {
 	}
 }
 
-// 将 []byte 转换为 MAC 地址字符串
-func byteArrayToMAC(b []byte) string {
-	return fmt.Sprintf("%02x:%02x:%02x:%02x:%02x:%02x", b[0], b[1], b[2], b[3], b[4], b[5])
-}
-
-// 将 []byte 转换为 IP 地址字符串
-func byteArrayToIP(b []byte) string {
-	return net.IP(b).String() // 使用 net.IP 类型将 []byte 转换为 IP 地址字符串
-}
-
 func (a *Analyze) HandlePacket(packet gopacket.Packet) {
-	//zap.L().Debug("Packet", zap.Int("count", capture.PacketsCount))
-	if packet == nil {
-		return
-	}
-	// icmp
-	//if icmpLayer := packet.Layer(layers.LayerTypeICMPv4); icmpLayer != nil {
-	//	icmp := icmpLayer.(*layers.ICMPv4)
-	//	fmt.Printf("ICMP Packet:\n")
-	//	fmt.Printf("ICMP Type: %d, Code: %d\n", icmp.Id, icmp.TypeCode)
-	//	fmt.Printf("Source IP: %s\n", byteArrayToIP(packet.NetworkLayer().NetworkFlow().Src().Raw()))
-	//	fmt.Printf("Destination IP: %s\n", byteArrayToIP(packet.NetworkLayer().NetworkFlow().Dst().Raw()))
-	//}
-	// arp
-	//if arpLayer := packet.Layer(layers.LayerTypeARP); arpLayer != nil {
-	//	arp := arpLayer.(*layers.ARP)
-	//	if arp.Operation == 2 {
-	//		// 输出 ARP 包的各字段
-	//		fmt.Printf("ARP Packet:\n")
-	//		fmt.Printf("  Opcode: %d\n", arp.Operation)
-	//		fmt.Printf("  Source MAC: %s\n", byteArrayToMAC(arp.SourceHwAddress))
-	//		fmt.Printf("  Target MAC: %s\n", byteArrayToMAC(arp.DstHwAddress))
-	//		fmt.Printf("  Source IP: %s\n", byteArrayToIP(arp.SourceProtAddress))
-	//		fmt.Printf("  Target IP: %s\n", byteArrayToIP(arp.DstProtAddress))
-	//	}
-	//}
-	// dhcp
-	//if dhcpLayer := packet.Layer(layers.LayerTypeDHCPv4); dhcpLayer != nil {
-	//	dhcp := dhcpLayer.(*layers.DHCPv4)
-	//	fmt.Printf("DHCP Packet:\n")
-	//	fmt.Printf("  Opcode: %d\n", dhcp.Operation)
-	//	fmt.Printf(" client MAC:%s\n", dhcp.ClientHWAddr)
-	//	fmt.Printf(" client IP:%s\n", dhcp.ClientIP)
-	//	fmt.Printf(" pelay IP:%s\n", dhcp.RelayAgentIP)
-	//	fmt.Printf(" server name:%s\n", dhcp.ServerName)
-	//	fmt.Printf(" you client IP:%s\n", dhcp.YourClientIP)
-	//}
 	if packet.NetworkLayer() == nil || packet.TransportLayer() == nil {
 		return
 	}
@@ -185,7 +139,7 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 			if err == nil {
 				if len(device.Name) > 0 || len(device.Type) > 0 || len(device.MAC) > 0 {
 					_ = ants.Submit(func() {
-						zap.L().Debug("mDNS", zap.Any("device", device))
+						//zap.L().Debug("mDNS", zap.Any("device", device))
 						if len(strings.TrimSpace(device.Name)) > 0 {
 							member.Store(member.Hash{
 								IP:    userIP,
@@ -331,13 +285,13 @@ func (a *Analyze) HandlePacket(packet gopacket.Packet) {
 	}
 }
 
-func (a *Analyze) FlushWithOptions() {
-	a.Assembler.FlushCloseOlderThan(time.Now().Add(-time.Minute * 5))
-}
+//func (a *Analyze) FlushWithOptions() {
+//	a.Assembler.FlushCloseOlderThan(time.Now().Add(-time.Minute * 5))
+//}
 
 func (a *Analyze) FlushStream(ctx context.Context) {
 	// 定期刷新流的 Goroutine
-	ticker := time.NewTicker(2 * time.Minute)
+	ticker := time.NewTicker(1 * time.Minute)
 	defer ticker.Stop()
 	for {
 		select {
@@ -345,57 +299,7 @@ func (a *Analyze) FlushStream(ctx context.Context) {
 			zap.L().Info("Stopping flow assembler flush")
 			return
 		case <-ticker.C:
-			zap.L().Info("Flushing timed-out streams")
-			// 设置 FlushOptions 参数
-			flushTime := time.Now().Add(-time.Minute)
-			checkTime := time.Now().Add(-time.Minute * 2)
-			if checkTime.After(flushTime) {
-				checkTime = flushTime
-			}
-			flushed, closed := a.Assembler.FlushWithOptions(reassembly.FlushOptions{
-				T:  flushTime,
-				TC: checkTime,
-			})
-			zap.L().Debug("Flush Stream", zap.Any("", a.Assembler.MaxBufferedPagesPerConnection), zap.Int("flushed", flushed), zap.Int("closed_close", closed))
+			a.Assembler.FlushCloseOlderThan(time.Now().Add(-time.Minute))
 		}
 	}
-}
-
-// 判断是否是广播地址、回环地址等
-func isValidIP(ip string) bool {
-	// 检查回环地址
-	if strings.HasPrefix(ip, "127.") {
-		return false
-	}
-
-	// 检查广播地址
-	if ip == "255.255.255.255" || strings.HasSuffix(ip, "255") {
-		return false
-	}
-
-	// 检查网络地址（0.0.0.0/24, 192.168.1.0/24 等）
-	if ip == "0.0.0.0" || strings.HasSuffix(ip, ".0") {
-		return false
-	}
-
-	// 检查私有地址段
-	//privateNetworks := []string{"10.", "172.", "192."}
-	//for _, prefix := range privateNetworks {
-	//	if strings.HasPrefix(ip, prefix) {
-	//		return false
-	//	}
-	//}
-
-	// 检查 Link-local 地址（如 169.254.x.x）
-	if strings.HasPrefix(ip, "169.254.") {
-		return false
-	}
-
-	// 通过 IP 格式判断
-	//parsedIP := net.ParseIP(ip)
-	//if parsedIP == nil {
-	//	return false
-	//}
-
-	return true
 }
